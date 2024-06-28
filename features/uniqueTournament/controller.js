@@ -42,7 +42,7 @@ const getTournamentById = async (req, res, next) => {
     return apiResponse({
       res,
       status: false,
-      message: "Error fetching unique tournament",
+      message: "Internal server error",
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
     });
   }
@@ -82,7 +82,7 @@ const getSeasonsByTournament = async (req, res, next) => {
     return apiResponse({
       res,
       status: false,
-      message: "Error fetching seasons",
+      message: "Internal server error",
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
     });
   }
@@ -125,6 +125,12 @@ const getFeaturedEventsByTournament = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
@@ -150,7 +156,12 @@ const getMediaByTournament = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    next(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
@@ -176,7 +187,12 @@ const getSeasonInfoByTournament = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    next(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
@@ -202,7 +218,12 @@ const getSeasonStandingByTournament = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    next(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
@@ -271,7 +292,12 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    next(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
@@ -305,13 +331,17 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
-        data: null,
-        status: true,
+        status: false,
         message: "No matches found",
-        statusCode: StatusCodes.OK,
+        statusCode: StatusCodes.BAD_REQUEST,
       });
     } else {
-      next(error);
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 };

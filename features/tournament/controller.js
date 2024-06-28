@@ -35,11 +35,16 @@ const getSeasonStandingsByTeams = async (req, res, next) => {
         statusCode: StatusCodes.OK,
       });
     } else {
-      next(error);
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 };
 
 export default {
-  getSeasonStandingsByTeams
+  getSeasonStandingsByTeams,
 };

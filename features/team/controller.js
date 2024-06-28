@@ -24,10 +24,16 @@ const getTeamPerformance = async (req, res, next) => {
     return apiResponse({
       res,
       data: data,
+      message: "Team performance fetched successfully!",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    next(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
@@ -46,10 +52,16 @@ const getTopPlayers = async (req, res, next) => {
     return apiResponse({
       res,
       data: data,
+      message: "Top players fetched successfully",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    next(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 const getTeamDetails = async (req, res, next) => {
@@ -86,10 +98,16 @@ const getTeamDetails = async (req, res, next) => {
     return apiResponse({
       res,
       data: data,
+      message: "Team details fetched successfully",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    next(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 const getTeamPLayers = async (req, res, next) => {
@@ -123,10 +141,16 @@ const getTeamPLayers = async (req, res, next) => {
     return apiResponse({
       res,
       data: data,
+      message: "Team player fetched successfully",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    next(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
@@ -161,7 +185,12 @@ const getTeamMatchesByTeam = async (req, res, next) => {
         statusCode: StatusCodes.OK,
       });
     } else {
-      next(error);
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 };
@@ -186,7 +215,12 @@ const getTeamPlayerStatisticsSeasons = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    next(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
@@ -228,7 +262,12 @@ const getTeamMedia = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    next(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 

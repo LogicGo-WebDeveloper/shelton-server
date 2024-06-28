@@ -35,16 +35,20 @@ const getPlayerDetailsById = async (req, res, next) => {
         statusCode: StatusCodes.OK,
       });
     } else {
-      next(error);
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 };
 
-
 const getPlayerMatchesById = async (req, res, next) => {
   try {
     const { id, span, page } = req.params;
-    
+
     const key = cacheService.getCacheKey(req);
 
     let data = cacheService.getCache(key);
@@ -63,7 +67,12 @@ const getPlayerMatchesById = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    next(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 

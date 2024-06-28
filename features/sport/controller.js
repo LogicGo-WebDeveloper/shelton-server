@@ -23,7 +23,10 @@ const getCountryLeagueList = async (req, res, next) => {
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
         // Store the fetched data in the database
-        const newCountryLeagueListEntry = new CountryLeagueList({ sport, data });
+        const newCountryLeagueListEntry = new CountryLeagueList({
+          sport,
+          data,
+        });
         await newCountryLeagueListEntry.save();
       }
     }
@@ -40,14 +43,19 @@ const getCountryLeagueList = async (req, res, next) => {
       return apiResponse({
         res,
         status: false,
-        message: "Forbidden: You don't have permission to access this resource.",
+        message:
+          "Forbidden: You don't have permission to access this resource.",
         statusCode: StatusCodes.FORBIDDEN,
       });
     }
-    next(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
-
 
 const getSportList = async (req, res, next) => {
   try {
@@ -63,7 +71,6 @@ const getSportList = async (req, res, next) => {
       if (sportListEntry) {
         data = sportListEntry.data;
       } else {
-
         // Fetch data from the API
         data = await sportService.getSportList(timezoneOffset);
         cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
@@ -74,14 +81,14 @@ const getSportList = async (req, res, next) => {
       }
     }
 
-    let formattedData = Object.keys(data).map(key => {
+    let formattedData = Object.keys(data).map((key) => {
       return {
-          id: key,
-          name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, ' '),
-          live: data[key].live,
-          total: data[key].total
+        id: key,
+        name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
+        live: data[key].live,
+        total: data[key].total,
       };
-  });
+    });
 
     return apiResponse({
       res,
@@ -94,7 +101,7 @@ const getSportList = async (req, res, next) => {
     return apiResponse({
       res,
       status: false,
-      message: error.message,
+      message: "Internal server error",
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
     });
   }

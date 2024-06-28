@@ -13,17 +13,22 @@ const getLeagueTournamentList = async (req, res, next) => {
     let data = cacheService.getCache(key);
 
     if (!data) {
-       // Check if data exists in the database
-       const leagueTournamentList = await LeagueTournamentList.findOne({ categoryId: id });
-       if (leagueTournamentList) {
+      // Check if data exists in the database
+      const leagueTournamentList = await LeagueTournamentList.findOne({
+        categoryId: id,
+      });
+      if (leagueTournamentList) {
         data = leagueTournamentList.data;
       } else {
-         // Fetch data from the API
+        // Fetch data from the API
         data = await categoryService.getLeagueTournamentList(id);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
         // Store the fetched data in the database
-        const leagueTournamentEntry = new LeagueTournamentList({ categoryId: id, data });
+        const leagueTournamentEntry = new LeagueTournamentList({
+          categoryId: id,
+          data,
+        });
         await leagueTournamentEntry.save();
       }
     }
@@ -36,7 +41,12 @@ const getLeagueTournamentList = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    next(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
