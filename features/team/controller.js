@@ -29,12 +29,22 @@ const getTeamPerformance = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No data found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 
@@ -58,12 +68,22 @@ const getTopPlayers = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No data found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 const getTeamDetails = async (req, res, next) => {
@@ -105,12 +125,22 @@ const getTeamDetails = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No data found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 const getTeamPLayers = async (req, res, next) => {
@@ -142,58 +172,58 @@ const getTeamPLayers = async (req, res, next) => {
     }
 
     const teamPlayerData = await PlayerTeam.aggregate([
-        { $match: { teamId: req.params.id } },
-        {
-          $project: {
-            players: {
-              $map: {
-                input: "$data.players",
-                as: "playerObj",
-                in: {
-                  name: "$$playerObj.player.name",
-                  position: "$$playerObj.player.position",
-                  id: "$$playerObj.player.id",
-                  country: "$$playerObj.player.country.name"
-                }
-              }
+      { $match: { teamId: req.params.id } },
+      {
+        $project: {
+          players: {
+            $map: {
+              input: "$data.players",
+              as: "playerObj",
+              in: {
+                name: "$$playerObj.player.name",
+                position: "$$playerObj.player.position",
+                id: "$$playerObj.player.id",
+                country: "$$playerObj.player.country.name",
+              },
             },
-            foreignPlayers: {
-              $map: {
-                input: "$data.foreignPlayers",
-                as: "playerObj",
-                in: {
-                  name: "$$playerObj.player.name",
-                  position: "$$playerObj.player.position",
-                  id: "$$playerObj.player.id",
-                  country: "$$playerObj.player.country.name"
-                }
-              }
+          },
+          foreignPlayers: {
+            $map: {
+              input: "$data.foreignPlayers",
+              as: "playerObj",
+              in: {
+                name: "$$playerObj.player.name",
+                position: "$$playerObj.player.position",
+                id: "$$playerObj.player.id",
+                country: "$$playerObj.player.country.name",
+              },
             },
-            nationalPlayers: {
-              $map: {
-                input: "$data.nationalPlayers",
-                as: "playerObj",
-                in: {
-                  name: "$$playerObj.player.name",
-                  position: "$$playerObj.player.position",
-                  id: "$$playerObj.player.id",
-                  country: "$$playerObj.player.country.name"
-                }
-              }
+          },
+          nationalPlayers: {
+            $map: {
+              input: "$data.nationalPlayers",
+              as: "playerObj",
+              in: {
+                name: "$$playerObj.player.name",
+                position: "$$playerObj.player.position",
+                id: "$$playerObj.player.id",
+                country: "$$playerObj.player.country.name",
+              },
             },
-            supportStaff: {
-              $map: {
-                input: "$data.supportStaff",
-                as: "playerObj",
-                in: {
-                  name: "$$playerObj.name",
-                  role: "$$playerObj.role",
-                  id: "$$playerObj.id",
-                }
-              }
-            }
-          }
-        }
+          },
+          supportStaff: {
+            $map: {
+              input: "$data.supportStaff",
+              as: "playerObj",
+              in: {
+                name: "$$playerObj.name",
+                role: "$$playerObj.role",
+                id: "$$playerObj.id",
+              },
+            },
+          },
+        },
+      },
     ]);
 
     const teamPlayerDataObject = teamPlayerData[0];
@@ -206,12 +236,22 @@ const getTeamPLayers = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No data found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 
@@ -276,12 +316,22 @@ const getTeamPlayerStatisticsSeasons = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No data found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 
@@ -323,12 +373,22 @@ const getTeamMedia = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No data found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 
