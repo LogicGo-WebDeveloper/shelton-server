@@ -7,6 +7,7 @@ import Tournament from "./models/tournamentSchema.js";
 import Season from "./models/seasonsSchema.js";
 import TopPlayers from "./models/topPlayesSchema.js";
 import FeaturedMatches from "./models/topPlayesSchema.js";
+import SeasonStanding from "./models/standingSchema.js";
 
 const getTournamentById = async (req, res, next) => {
   try {
@@ -220,32 +221,81 @@ const getSeasonStandingByTournament = async (req, res, next) => {
     const { id, seasonId, type } = req.params;
 
     const key = cacheService.getCacheKey(req);
-
     let data = cacheService.getCache(key);
 
     if (!data) {
-      data = await service.getSeasonStandingByTournament(id, seasonId, type);
+      const seasonStanding = await SeasonStanding.findOne({ tournamentId: id });
+      if (seasonStanding) {
+        const season = seasonStanding.seasons.find(
+          (season) => season.seasonId === seasonId
+        );
+        if (season) {
+          data = season.data;
+        } else {
+          data = await service.getSeasonStandingByTournament(id, seasonId, type);
+          cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
+          seasonStanding.seasons.push({ seasonId, type, data: data });
+          await seasonStanding.save();
+        }
+      } else {
+        data = await service.getSeasonStandingByTournament(id, seasonId, type);
+        cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
 
-      cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
+        const seasonStandingEntry = new SeasonStanding({
+          tournamentId: id,
+          seasons: [{ seasonId: seasonId, data: data }],
+        });
+        await seasonStandingEntry.save();
+      }
     }
+
+    const seasonStandingData = await SeasonStanding.aggregate([
+      { $match: { tournamentId: id, "seasons.seasonId": seasonId } },
+      { $unwind: "$seasons" },
+      { $match: { "seasons.seasonId": seasonId } },
+      {
+        $project: {
+          name: { $arrayElemAt: ["$seasons.data.tournament.name", 0] },
+          id: { $arrayElemAt: ["$seasons.data.tournament.id", 0] },
+          rows: {
+            $map: {
+              input: { $arrayElemAt: ["$seasons.data.rows", 0] },
+              as: "rowObj",
+              in: {
+                position: "$$rowObj.position",
+                matches: "$$rowObj.matches",
+                draws: "$$rowObj.draws",
+                losses: "$$rowObj.losses",
+                points: "$$rowObj.points",
+                netRunRate: "$$rowObj.netRunRate",
+                noResult: "$$rowObj.noResult",
+                wins: "$$rowObj.wins",
+                id: "$$rowObj.id",
+                teamName: "$$rowObj.team.shortName"
+              }
+            }
+          }
+        }
+      }
+    ]);
 
     return apiResponse({
       res,
-      data: data,
+      data: seasonStandingData,
       status: true,
       message: "Season standing fetched successfully",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    next(error);
+    // return apiResponse({
+    //   res,
+    //   status: false,
+    //   message: "Internal server error",
+    //   statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    // });
   }
 };
-
 const getSeasonTopPlayersByTournament = async (req, res, next) => {
   try {
     const { id, seasonId, positionDetailed } = req.params;

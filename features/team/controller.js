@@ -141,7 +141,6 @@ const getTeamPLayers = async (req, res, next) => {
       cacheService.setCache(key, data, cacheTTL.ONE_DAY);
     }
 
-
     const teamPlayerData = await PlayerTeam.aggregate([
         { $match: { teamId: req.params.id } },
         {
@@ -197,12 +196,11 @@ const getTeamPLayers = async (req, res, next) => {
         }
     ]);
 
-
-    console.log("teamPlayerData", teamPlayerData)
+    const teamPlayerDataObject = teamPlayerData[0];
 
     return apiResponse({
       res,
-      data: teamPlayerData,
+      data: teamPlayerDataObject,
       status: true,
       message: "Team player fetched successfully",
       statusCode: StatusCodes.OK,
