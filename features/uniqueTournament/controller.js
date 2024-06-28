@@ -411,9 +411,255 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
       return acc;
     }, {});
 
+    const teamPlayerData = await TopPlayers.aggregate([
+      { $match: { tournamentId: id } },
+      {
+        $project: {
+          runsScored: {
+            $map: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.runsScored", 0],
+              },
+              as: "runsObj",
+              in: {
+                $map: {
+                  input: "$$runsObj",
+                  as: "run",
+                  in: {
+                    runsScored: "$$run.statistics.runsScored",
+                    player: "$$run.player.name",
+                  },
+                },
+              },
+            },
+          },
+
+          battingStrikeRate: {
+            $map: {
+              input: {
+                $arrayElemAt: [
+                  "$seasons.playerStatistics.battingStrikeRate",
+                  0,
+                ],
+              },
+              as: "battingStrikeRateObj",
+              in: {
+                $map: {
+                  input: "$$battingStrikeRateObj",
+                  as: "battingStrikeRate",
+                  in: {
+                    battingStrikeRate:
+                      "$$battingStrikeRate.statistics.battingStrikeRate",
+                    player: "$$battingStrikeRate.player.name",
+                  },
+                },
+              },
+            },
+          },
+
+          battingAverage: {
+            $map: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.battingAverage", 0],
+              },
+              as: "runsScoredAverageObj",
+              in: {
+                $map: {
+                  input: "$$runsScoredAverageObj",
+                  as: "runsScoredAverage",
+                  in: {
+                    battingAverage:
+                      "$$runsScoredAverage.statistics.battingAverage",
+                    player: "$$runsScoredAverage.player.name",
+                  },
+                },
+              },
+            },
+          },
+
+          fifties: {
+            $map: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.fifties", 0],
+              },
+              as: "fiftiesObj",
+              in: {
+                $map: {
+                  input: "$$fiftiesObj",
+                  as: "fifties",
+                  in: {
+                    fifties: "$$fifties.statistics.fifties",
+                    player: "$$fifties.player.name",
+                  },
+                },
+              },
+            },
+          },
+
+          hundreds: {
+            $map: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.hundreds", 0],
+              },
+              as: "hundredsObj",
+              in: {
+                $map: {
+                  input: "$$hundredsObj",
+                  as: "hundreds",
+                  in: {
+                    hundreds: "$$hundreds.statistics.hundreds",
+                    player: "$$hundreds.player.name",
+                  },
+                },
+              },
+            },
+          },
+
+          fours: {
+            $map: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.fours", 0],
+              },
+              as: "foursObj",
+              in: {
+                $map: {
+                  input: "$$foursObj",
+                  as: "fours",
+                  in: {
+                    fours: "$$fours.statistics.fours",
+                    player: "$$fours.player.name",
+                  },
+                },
+              },
+            },
+          },
+
+          sixes: {
+            $map: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.sixes", 0],
+              },
+              as: "sixesObj",
+              in: {
+                $map: {
+                  input: "$$sixesObj",
+                  as: "sixes",
+                  in: {
+                    sixes: "$$sixes.statistics.sixes",
+                    player: "$$sixes.player.name",
+                  },
+                },
+              },
+            },
+          },
+
+          nineties: {
+            $map: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.nineties", 0],
+              },
+              as: "ninetiesObj",
+              in: {
+                $map: {
+                  input: "$$ninetiesObj",
+                  as: "nineties",
+                  in: {
+                    nineties: "$$nineties.statistics.nineties",
+                    player: "$$nineties.player.name",
+                  },
+                },
+              },
+            },
+          },
+
+          bowlingAverage: {
+            $map: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.bowlingAverage", 0],
+              },
+              as: "bowlingAverageObj",
+              in: {
+                $map: {
+                  input: "$$bowlingAverageObj",
+                  as: "bowlingAverage",
+                  in: {
+                    bowlingAverage:
+                      "$$bowlingAverage.statistics.bowlingAverage",
+                    player: "$$bowlingAverage.player.name",
+                  },
+                },
+              },
+            },
+          },
+
+          fiveWicketsHaul: {
+            $map: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.fiveWicketsHaul", 0],
+              },
+              as: "fiveWicketsHaulObj",
+              in: {
+                $map: {
+                  input: "$$fiveWicketsHaulObj",
+                  as: "fiveWicketsHaul",
+                  in: {
+                    fiveWicketsHaul:
+                      "$$fiveWicketsHaul.statistics.fiveWicketsHaul",
+                    player: "$$fiveWicketsHaul.player.name",
+                  },
+                },
+              },
+            },
+          },
+
+          economy: {
+            $map: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.economy", 0],
+              },
+              as: "economyObj",
+              in: {
+                $map: {
+                  input: "$$economyObj",
+                  as: "economy",
+                  in: {
+                    economy: "$$economy.statistics.economy",
+                    player: "$$economy.player.name",
+                  },
+                },
+              },
+            },
+          },
+
+          bowlingStrikeRate: {
+            $map: {
+              input: {
+                $arrayElemAt: [
+                  "$seasons.playerStatistics.bowlingStrikeRate",
+                  0,
+                ],
+              },
+              as: "bowlingStrikeRateObj",
+              in: {
+                $map: {
+                  input: "$$bowlingStrikeRateObj",
+                  as: "bowlingStrikeRate",
+                  in: {
+                    bowlingStrikeRate:
+                      "$$bowlingStrikeRate.statistics.bowlingStrikeRate",
+                    player: "$$bowlingStrikeRate.player.name",
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    ]);
+
     return apiResponse({
       res,
-      data: transformedData,
+      data: teamPlayerData,
       status: true,
       message: "Season top players fetched successfully",
       statusCode: StatusCodes.OK,
