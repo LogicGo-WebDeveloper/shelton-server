@@ -319,7 +319,7 @@ const getSeasonStandingByTournament = async (req, res, next) => {
                 netRunRate: "$$rowObj.netRunRate",
                 noResult: "$$rowObj.noResult",
                 wins: "$$rowObj.wins",
-                id: "$$rowObj.id",
+                id: "$$rowObj.team.id",
                 teamName: "$$rowObj.team.shortName"
               }
             }
