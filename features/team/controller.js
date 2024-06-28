@@ -314,22 +314,12 @@ const getTeamPlayerStatisticsSeasons = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    if (error.response && error.response.status === 404) {
-      return apiResponse({
-        res,
-        data: null,
-        status: true,
-        message: "No data found",
-        statusCode: StatusCodes.OK,
-      });
-    } else {
-      return apiResponse({
-        res,
-        status: false,
-        message: "Internal server error",
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-      });
-    }
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
@@ -371,22 +361,12 @@ const getTeamMedia = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    if (error.response && error.response.status === 404) {
-      return apiResponse({
-        res,
-        data: null,
-        status: true,
-        message: "No data found",
-        statusCode: StatusCodes.OK,
-      });
-    } else {
-      return apiResponse({
-        res,
-        status: false,
-        message: "Internal server error",
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-      });
-    }
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
