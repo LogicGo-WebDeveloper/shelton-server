@@ -59,21 +59,22 @@ const getCountryLeagueList = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    if (error.response && error.response.status === 403) {
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No data found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
       return apiResponse({
         res,
         status: false,
-        message:
-          "Forbidden: You don't have permission to access this resource.",
-        statusCode: StatusCodes.FORBIDDEN,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       });
     }
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
   }
 };
 
@@ -118,12 +119,22 @@ const getSportList = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No data found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 
