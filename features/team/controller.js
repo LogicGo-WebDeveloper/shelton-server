@@ -141,9 +141,68 @@ const getTeamPLayers = async (req, res, next) => {
       cacheService.setCache(key, data, cacheTTL.ONE_DAY);
     }
 
+
+    const teamPlayerData = await PlayerTeam.aggregate([
+        { $match: { teamId: req.params.id } },
+        {
+          $project: {
+            players: {
+              $map: {
+                input: "$data.players",
+                as: "playerObj",
+                in: {
+                  name: "$$playerObj.player.name",
+                  position: "$$playerObj.player.position",
+                  id: "$$playerObj.player.id",
+                  country: "$$playerObj.player.country.name"
+                }
+              }
+            },
+            foreignPlayers: {
+              $map: {
+                input: "$data.foreignPlayers",
+                as: "playerObj",
+                in: {
+                  name: "$$playerObj.player.name",
+                  position: "$$playerObj.player.position",
+                  id: "$$playerObj.player.id",
+                  country: "$$playerObj.player.country.name"
+                }
+              }
+            },
+            nationalPlayers: {
+              $map: {
+                input: "$data.nationalPlayers",
+                as: "playerObj",
+                in: {
+                  name: "$$playerObj.player.name",
+                  position: "$$playerObj.player.position",
+                  id: "$$playerObj.player.id",
+                  country: "$$playerObj.player.country.name"
+                }
+              }
+            },
+            supportStaff: {
+              $map: {
+                input: "$data.supportStaff",
+                as: "playerObj",
+                in: {
+                  name: "$$playerObj.name",
+                  role: "$$playerObj.role",
+                  id: "$$playerObj.id",
+                }
+              }
+            }
+          }
+        }
+    ]);
+
+
+    console.log("teamPlayerData", teamPlayerData)
+
     return apiResponse({
       res,
-      data: data,
+      data: teamPlayerData,
       status: true,
       message: "Team player fetched successfully",
       statusCode: StatusCodes.OK,

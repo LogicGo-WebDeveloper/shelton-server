@@ -27,7 +27,7 @@ app.use(
     origin: config.frontendUrl.split(","),
   })
 );
-
+  
 app.use("/api/auth", route.authRoute);
 app.use("/api/v1/sport", route.sportRoute);
 app.use("/api/v1/unique-tournament", route.uniqueTournamentRoute);
