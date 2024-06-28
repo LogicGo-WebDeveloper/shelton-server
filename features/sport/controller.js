@@ -18,6 +18,7 @@ const getCountryLeagueList = async (req, res, next) => {
       if (countryLeagueListEntry) {
         data = countryLeagueListEntry.data;
       } else {
+        console.log(22);
         // Fetch data from the API
         data = await sportService.getCountryLeagueList(sport);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
@@ -31,9 +32,28 @@ const getCountryLeagueList = async (req, res, next) => {
       }
     }
 
+    const modifyData = await CountryLeagueList.aggregate([
+      { $match: { sport: sport } },
+      {
+        $project: {
+          data: {
+            $map: {
+              input: "$data",
+              as: "dataObj",
+              in: {
+                name: "$$dataObj.name",
+                slug: "$$dataObj.slug",
+                id: "$$dataObj.id",
+              },
+            },
+          },
+        },
+      },
+    ]);
+
     return apiResponse({
       res,
-      data: data,
+      data: modifyData,
       status: true,
       message: "Tournament leagues fetched successfully",
       statusCode: StatusCodes.OK,

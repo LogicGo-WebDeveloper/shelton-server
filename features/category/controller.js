@@ -33,9 +33,28 @@ const getLeagueTournamentList = async (req, res, next) => {
       }
     }
 
+    const modifyData = await LeagueTournamentList.aggregate([
+      { $match: { categoryId: id } },
+      {
+        $project: {
+          data: {
+            $map: {
+              input: "$data",
+              as: "dataObj",
+              in: {
+                name: "$$dataObj.name",
+                slug: "$$dataObj.slug",
+                id: "$$dataObj.id",
+              },
+            },
+          },
+        },
+      },
+    ]);
+
     return apiResponse({
       res,
-      data: data,
+      data: modifyData,
       status: true,
       message: "league tournament list fetched successfully",
       statusCode: StatusCodes.OK,

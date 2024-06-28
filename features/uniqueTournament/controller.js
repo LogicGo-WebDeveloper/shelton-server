@@ -31,9 +31,28 @@ const getTournamentById = async (req, res, next) => {
       }
     }
 
+    const modifyData = await Tournament.aggregate([
+      { $match: { tournamentId: id } },
+      {
+        $project: {
+          data: {
+            $map: {
+              input: "$data",
+              as: "dataObj",
+              in: {
+                name: "$$dataObj.name",
+                slug: "$$dataObj.slug",
+                id: "$$dataObj.id",
+              },
+            },
+          },
+        },
+      },
+    ]);
+
     return apiResponse({
       res,
-      body: data,
+      body: modifyData,
       status: true,
       message: "unique tournament fetched successfully",
       statusCode: StatusCodes.OK,
