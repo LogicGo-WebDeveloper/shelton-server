@@ -6,6 +6,7 @@ import cacheTTL from "../cache/constants.js";
 import Tournament from "./models/tournamentSchema.js";
 import Season from "./models/seasonsSchema.js";
 import TopPlayers from "./models/topPlayesSchema.js";
+import FeaturedMatches from "./models/topPlayesSchema.js";
 
 const getTournamentById = async (req, res, next) => {
   try {
@@ -99,6 +100,20 @@ const getFeaturedEventsByTournament = async (req, res, next) => {
       data = await service.getFeaturedEventsByTournament(id);
 
       cacheService.setCache(key, data, cacheTTL.ONE_MINUTE);
+
+      const featuredData = await FeaturedMatches.findOne({ tournamentId: id });
+
+      if (featuredData) {
+        data = featuredData;
+      } else {
+        // Fetch data from the API
+        data = await service.getFeaturedEventsByTournament(id);
+        cacheService.setCache(key, data, cacheTTL.ONE_DAY);
+
+        // Store the fetched data in the database
+        const seasonEntry = new FeaturedMatches({ tournamentId: id, data });
+        await seasonEntry.save();
+      }
     }
 
     return apiResponse({
@@ -202,12 +217,18 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
       // Check if data exists in the database
       const topPlayers = await TopPlayers.findOne({ tournamentId: id });
       if (topPlayers) {
-        const season = topPlayers.seasons.find(season => season.seasonId === seasonId);
+        const season = topPlayers.seasons.find(
+          (season) => season.seasonId === seasonId
+        );
         if (season) {
           data = season.playerStatistics;
         } else {
           // Fetch data from the API
-          data = await service.getSeasonTopPlayersByTournament(id, seasonId, positionDetailed);
+          data = await service.getSeasonTopPlayersByTournament(
+            id,
+            seasonId,
+            positionDetailed
+          );
           cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
 
           // Add new season to the existing tournament
@@ -216,20 +237,24 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
         }
       } else {
         // Fetch data from the API
-        data = await service.getSeasonTopPlayersByTournament(id, seasonId, positionDetailed);
+        data = await service.getSeasonTopPlayersByTournament(
+          id,
+          seasonId,
+          positionDetailed
+        );
         cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
 
         // Create new tournament with the season
         const topPlayersEntry = new TopPlayers({
           tournamentId: id,
-          seasons: [{ seasonId: seasonId, playerStatistics: data }]
+          seasons: [{ seasonId: seasonId, playerStatistics: data }],
         });
         await topPlayersEntry.save();
       }
     }
 
     const transformedData = data.reduce((acc, item) => {
-      Object.keys(item).forEach(key => {
+      Object.keys(item).forEach((key) => {
         if (!acc[key]) {
           acc[key] = [];
         }

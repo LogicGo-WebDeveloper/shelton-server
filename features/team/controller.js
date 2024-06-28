@@ -3,6 +3,9 @@ import { StatusCodes } from "http-status-codes";
 import cacheService from "../cache/service.js";
 import service from "./service.js";
 import cacheTTL from "../cache/constants.js";
+import PlayerTeam from "./models/playerByteamSchema.js";
+import TeamDetails from "./models/teamDetailsSchema.js";
+import teamMedia from "./models/teamMediaSchema.js";
 
 const getTeamPerformance = async (req, res, next) => {
   try {
@@ -58,6 +61,25 @@ const getTeamDetails = async (req, res, next) => {
     if (!data) {
       data = await service.getTeamDetails(req.params);
 
+      const detailsTeam = await TeamDetails.findOne({
+        teamId: req.params.id,
+      });
+
+      if (detailsTeam) {
+        data = detailsTeam;
+      } else {
+        // Fetch data from the API
+        data = await service.getTeamDetails(req.params);
+        cacheService.setCache(key, data, cacheTTL.ONE_DAY);
+
+        // Store the fetched data in the database
+        const teamDetailsEntry = new TeamDetails({
+          teamId: req.params.id,
+          data,
+        });
+        await teamDetailsEntry.save();
+      }
+
       cacheService.setCache(key, data, cacheTTL.ONE_DAY);
     }
 
@@ -79,6 +101,22 @@ const getTeamPLayers = async (req, res, next) => {
     if (!data) {
       data = await service.getTeamPLayers(req.params);
 
+      const teamPlayerData = await PlayerTeam.findOne({
+        teamId: req.params.id,
+      });
+
+      if (teamPlayerData) {
+        data = teamPlayerData;
+      } else {
+        // Fetch data from the API
+        data = await service.getTeamPLayers(req.params);
+        cacheService.setCache(key, data, cacheTTL.ONE_DAY);
+
+        // Store the fetched data in the database
+        const teamPlayerEntry = new PlayerTeam({ teamId: req.params.id, data });
+        await teamPlayerEntry.save();
+      }
+
       cacheService.setCache(key, data, cacheTTL.ONE_DAY);
     }
 
@@ -92,8 +130,6 @@ const getTeamPLayers = async (req, res, next) => {
   }
 };
 
-
-
 const getTeamMatchesByTeam = async (req, res, next) => {
   try {
     const { id, span, page } = req.params;
@@ -103,11 +139,7 @@ const getTeamMatchesByTeam = async (req, res, next) => {
     let data = cacheService.getCache(key);
 
     if (!data) {
-      data = await service.getTeamMatchesByTeam(
-        id,
-        span,
-        page
-      );
+      data = await service.getTeamMatchesByTeam(id, span, page);
 
       cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
     }
@@ -169,6 +201,22 @@ const getTeamMedia = async (req, res, next) => {
     if (!data) {
       data = await service.getTeamMedia(id);
 
+      const teamPlayerData = await teamMedia.findOne({
+        teamId: req.params.id,
+      });
+
+      if (teamPlayerData) {
+        data = teamPlayerData;
+      } else {
+        // Fetch data from the API
+        data = await service.getTeamMedia(id);
+        cacheService.setCache(key, data, cacheTTL.ONE_DAY);
+
+        // Store the fetched data in the database
+        const teamMediaEntry = new teamMedia({ teamId: req.params.id, data });
+        await teamMediaEntry.save();
+      }
+
       cacheService.setCache(key, data, cacheTTL.ONE_DAY);
     }
 
@@ -191,5 +239,5 @@ export default {
   getTeamPLayers,
   getTeamMatchesByTeam,
   getTeamPlayerStatisticsSeasons,
-  getTeamMedia
+  getTeamMedia,
 };
