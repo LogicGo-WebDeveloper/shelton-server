@@ -24,6 +24,7 @@ const getTeamPerformance = async (req, res, next) => {
     return apiResponse({
       res,
       data: data,
+      status: true,
       message: "Team performance fetched successfully!",
       statusCode: StatusCodes.OK,
     });
@@ -52,6 +53,7 @@ const getTopPlayers = async (req, res, next) => {
     return apiResponse({
       res,
       data: data,
+      status: true,
       message: "Top players fetched successfully",
       statusCode: StatusCodes.OK,
     });
@@ -98,6 +100,7 @@ const getTeamDetails = async (req, res, next) => {
     return apiResponse({
       res,
       data: data,
+      status: true,
       message: "Team details fetched successfully",
       statusCode: StatusCodes.OK,
     });
@@ -141,6 +144,7 @@ const getTeamPLayers = async (req, res, next) => {
     return apiResponse({
       res,
       data: data,
+      status: true,
       message: "Team player fetched successfully",
       statusCode: StatusCodes.OK,
     });
