@@ -6,6 +6,7 @@ import cacheTTL from "../cache/constants.js";
 import PlayerTeam from "./models/playerByteamSchema.js";
 import TeamDetails from "./models/teamDetailsSchema.js";
 import teamMedia from "./models/teamMediaSchema.js";
+import TeamMatches from "./models/teamMatchesSchema.js";
 
 const getTeamPerformance = async (req, res, next) => {
   try {
@@ -218,20 +219,72 @@ const getTeamPLayers = async (req, res, next) => {
 const getTeamMatchesByTeam = async (req, res, next) => {
   try {
     const { id, span, page } = req.params;
-
     const key = cacheService.getCacheKey(req);
-
     let data = cacheService.getCache(key);
 
-    if (!data) {
-      data = await service.getTeamMatchesByTeam(id, span, page);
+    const teamMatchesData = await TeamMatches.findOne({ teamId: id });
+    const count = Math.ceil(teamMatchesData?.matches?.length / 10);
+    const adjustedPage = Math.floor((page - 1) / 3);
 
-      cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
+    console.log("adjustedPage", adjustedPage)
+
+    if (!data || page > count) {
+      if (teamMatchesData && page <= count) {
+        data = teamMatchesData;
+      } else {
+        const newData = await service.getTeamMatchesByTeam(id, span, adjustedPage);
+        if (teamMatchesData) {
+          // Filter out duplicate events
+          const existingEvents = teamMatchesData.matches.map(event => event.id);
+          const uniqueEvents = newData.events.filter(event => !existingEvents.includes(event.id));
+          // Push unique events to the existing data
+          teamMatchesData.matches.push(...uniqueEvents);
+          await teamMatchesData.save();
+          data = teamMatchesData;
+        } else {
+          // If no existing data, save the new data
+          const teamMatchesEntry = new TeamMatches({ teamId: id, matches: newData.events });
+          await teamMatchesEntry.save();
+          data = teamMatchesEntry;
+        }
+        cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
+      }
     }
+
+    const pageSize = 10;
+    const skip = (page - 1) * pageSize;
+
+    const filterMatches = await TeamMatches.aggregate([
+      { $match: { teamId: id } },
+      { $unwind: "$matches" },
+      { $skip: skip },
+      { $limit: pageSize },
+      {
+        $project: {
+          homeTeam: {
+            name: "$matches.homeTeam.name",
+            score: "$matches.homeScore.current",
+            wickets: "$matches.homeScore.innings.inning1.wickets",
+            overs: "$matches.homeScore.innings.inning1.overs"
+          },
+          awayTeam: {
+            name: "$matches.awayTeam.name",
+            score: "$matches.awayScore.current",
+            wickets: "$matches.awayScore.innings.inning1.wickets",
+            overs: "$matches.awayScore.innings.inning1.overs"
+          },
+          winner: {
+            $cond: { if: { $eq: ["$matches.winnerCode", 1] }, then: "$matches.homeTeam.name", else: "$matches.awayTeam.name" }
+          },
+          note: "$matches.note",
+          id: "$matches.id"
+        }
+      }
+    ]);
 
     return apiResponse({
       res,
-      data: data,
+      data: filterMatches,
       status: true,
       message: "Team matches fetched successfully",
       statusCode: StatusCodes.OK,
