@@ -320,7 +320,8 @@ const getSeasonStandingByTournament = async (req, res, next) => {
                 noResult: "$$rowObj.noResult",
                 wins: "$$rowObj.wins",
                 id: "$$rowObj.team.id",
-                teamName: "$$rowObj.team.shortName"
+                shortName: "$$rowObj.team.shortName",
+                teamName: "$$rowObj.team.name",
               }
             }
           }
