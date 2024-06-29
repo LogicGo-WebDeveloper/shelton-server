@@ -728,15 +728,21 @@ const getTeamDetails = async (req, res, next) => {
               },
               userCount: "$data.team.userCount",
               manager: {
-                name: "$data.team.manager.name",
-                slug: "$data.team.manager.slug",
-                shortName: "$data.team.manager.shortName",
-                id: "$data.team.manager.id",
-                country: {
-                  alpha2: "$data.team.manager.country.alpha2",
-                  alpha3: "$data.team.manager.country.alpha3",
-                  name: "$data.team.manager.country.name",
-                },
+                $cond: {
+                  if: { $eq: ["$data.team.manager", null] },
+                  then: null,
+                  else: {
+                    name: "$data.team.manager.name",
+                    slug: "$data.team.manager.slug",
+                    shortName: "$data.team.manager.shortName",
+                    id: "$data.team.manager.id",
+                    country: {
+                      alpha2: "$data.team.manager.country.alpha2",
+                      alpha3: "$data.team.manager.country.alpha3",
+                      name: "$data.team.manager.country.name",
+                    },
+                  }
+                }
               },
               venue: {
                 city: {
@@ -873,8 +879,6 @@ const getTeamPLayers = async (req, res, next) => {
         },
       },
     ]);
-
-    // const teamPlayerDataObject = teamPlayerData[0];
 
     return apiResponse({
       res,

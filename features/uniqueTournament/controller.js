@@ -6,7 +6,7 @@ import cacheTTL from "../cache/constants.js";
 import Tournament from "./models/tournamentSchema.js";
 import Season from "./models/seasonsSchema.js";
 import TopPlayers from "./models/topPlayesSchema.js";
-import FeaturedMatches from "./models/featuredMachesSchema.js";
+import FeaturedMatches from "./models/topPlayesSchema.js";
 import SeasonStanding from "./models/standingSchema.js";
 
 const getTournamentById = async (req, res, next) => {
@@ -158,7 +158,7 @@ const getFeaturedEventsByTournament = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: data[0],
+      data: data,
       status: true,
       message: "Featured events fetched successfully",
       statusCode: StatusCodes.OK,
@@ -199,7 +199,7 @@ const getMediaByTournament = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: data[0],
+      data: data,
       status: true,
       message: "Media fetched successfully",
       statusCode: StatusCodes.OK,
@@ -281,11 +281,7 @@ const getSeasonStandingByTournament = async (req, res, next) => {
         if (season) {
           data = season.data;
         } else {
-          data = await service.getSeasonStandingByTournament(
-            id,
-            seasonId,
-            type
-          );
+          data = await service.getSeasonStandingByTournament(id, seasonId, type);
           cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
           seasonStanding.seasons.push({ seasonId, type, data: data });
           await seasonStanding.save();
@@ -326,11 +322,11 @@ const getSeasonStandingByTournament = async (req, res, next) => {
                 id: "$$rowObj.team.id",
                 shortName: "$$rowObj.team.shortName",
                 teamName: "$$rowObj.team.name",
-              },
-            },
-          },
-        },
-      },
+              }
+            }
+          }
+        }
+      }
     ]);
 
     return apiResponse({
@@ -948,7 +944,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: teamPlayerData[0],
+      data: teamPlayerData,
       status: true,
       message: "Season top players fetched successfully",
       statusCode: StatusCodes.OK,
