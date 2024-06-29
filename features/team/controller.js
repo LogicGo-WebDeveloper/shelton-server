@@ -67,6 +67,7 @@ const getTopPlayers = async (req, res, next) => {
     });
   }
 };
+
 const getTeamDetails = async (req, res, next) => {
   try {
     const key = cacheService.getCacheKey(req);
@@ -74,27 +75,111 @@ const getTeamDetails = async (req, res, next) => {
     let data = cacheService.getCache(key);
 
     if (!data) {
-      data = await service.getTeamDetails(req.params);
+      // Check if the data exists in the database
+      let detailsTeam = await TeamDetails.findOne({ teamId: req.params.id });
 
-      const detailsTeam = await TeamDetails.findOne({
-        teamId: req.params.id,
-      });
-
-      if (detailsTeam) {
-        data = detailsTeam;
-      } else {
+      if (!detailsTeam) {
         // Fetch data from the API
-        data = await service.getTeamDetails(req.params);
-        cacheService.setCache(key, data, cacheTTL.ONE_DAY);
+        const apiData = await service.getTeamDetails(req.params);
 
         // Store the fetched data in the database
         const teamDetailsEntry = new TeamDetails({
           teamId: req.params.id,
-          data,
+          data: apiData,
         });
         await teamDetailsEntry.save();
-      }
+        // Set the data to be used for aggregation
+        detailsTeam = teamDetailsEntry;
+      } 
 
+      // Aggregate the data
+      const aggregatedData = await TeamDetails.aggregate([
+        { $match: { teamId: req.params.id } },
+        {
+          $project: {
+            _id: 0,
+            teamId: "$teamId",
+            team: {
+              name: "$data.team.name",
+              slug: "$data.team.slug",
+              shortName: "$data.team.shortName",
+              gender: "$data.team.gender",
+              category: {
+                name: "$data.team.category.name",
+                slug: "$data.team.category.slug",
+                id: "$data.team.category.id",
+                flag: "$data.team.category.flag",
+              },
+              tournament: {
+                name: "$data.team.tournament.name",
+                slug: "$data.team.tournament.slug",
+                uniqueTournament: {
+                  name: "$data.team.tournament.uniqueTournament.name",
+                  slug: "$data.team.tournament.uniqueTournament.slug",
+                  primaryColorHex: "$data.team.tournament.uniqueTournament.primaryColorHex",
+                  secondaryColorHex: "$data.team.tournament.uniqueTournament.secondaryColorHex",
+                  userCount: "$data.team.tournament.uniqueTournament.userCount",
+                  id: "$data.team.tournament.uniqueTournament.id",
+                  hasPerformanceGraphFeature: "$data.team.tournament.uniqueTournament.hasPerformanceGraphFeature",
+                  displayInverseHomeAwayTeams: "$data.team.tournament.uniqueTournament.displayInverseHomeAwayTeams",
+                },
+                priority: "$data.team.tournament.priority",
+                isLive: "$data.team.tournament.isLive",
+                id: "$data.team.tournament.id",
+              },
+              primaryUniqueTournament: {
+                name: "$data.team.primaryUniqueTournament.name",
+                slug: "$data.team.primaryUniqueTournament.slug",
+                userCount: "$data.team.primaryUniqueTournament.userCount",
+                hasPerformanceGraphFeature: "$data.team.primaryUniqueTournament.hasPerformanceGraphFeature",
+                id: "$data.team.primaryUniqueTournament.id",
+                displayInverseHomeAwayTeams: "$data.team.primaryUniqueTournament.displayInverseHomeAwayTeams",
+              },
+              userCount: "$data.team.userCount",
+              manager: {
+                name: "$data.team.manager.name",
+                slug: "$data.team.manager.slug",
+                shortName: "$data.team.manager.shortName",
+                id: "$data.team.manager.id",
+                country: {
+                  alpha2: "$data.team.manager.country.alpha2",
+                  alpha3: "$data.team.manager.country.alpha3",
+                  name: "$data.team.manager.country.name",
+                },
+              },
+              venue: {
+                city: {
+                  name: "$data.team.venue.city.name",
+                },
+                stadium: {
+                  name: "$data.team.venue.stadium.name",
+                  capacity: "$data.team.venue.stadium.capacity",
+                },
+                id: "$data.team.venue.id",
+                country: {
+                  alpha2: "$data.team.venue.country.alpha2",
+                  alpha3: "$data.team.venue.country.alpha3",
+                  name: "$data.team.venue.country.name",
+                },
+              },
+              nameCode: "$data.team.nameCode",
+              class: "$data.team.class",
+              disabled: "$data.team.disabled",
+              national: "$data.team.national",
+              type: "$data.team.type",
+              id: "$data.team.id",
+              country: {
+                alpha2: "$data.team.country.alpha2",
+                alpha3: "$data.team.country.alpha3",
+                name: "$data.team.country.name",
+              },
+              fullName: "$data.team.fullName",
+            },
+          },
+        },
+      ]);
+
+      data = aggregatedData[0];
       cacheService.setCache(key, data, cacheTTL.ONE_DAY);
     }
 
@@ -114,6 +199,7 @@ const getTeamDetails = async (req, res, next) => {
     });
   }
 };
+
 const getTeamPLayers = async (req, res, next) => {
   try {
     const key = cacheService.getCacheKey(req);
