@@ -98,295 +98,500 @@ const getTopPlayers = async (req, res, next) => {
       {
         $project: {
           runsScored: {
-            $reduce: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.runsScored", 0],
-              },
-              initialValue: [],
-              in: {
-                $concatArrays: [
-                  "$$value",
+            $cond: {
+              if: {
+                $eq: [
                   {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        runsScored: "$$run.statistics.runsScored",
-                        player: "$$run.player.name",
-                      },
+                    $size: {
+                      $arrayElemAt: ["$seasons.playerStatistics.runsScored", 0],
                     },
                   },
+                  0,
                 ],
+              },
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: ["$seasons.playerStatistics.runsScored", 0],
+                  },
+                  initialValue: [],
+                  in: {
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            runsScored: "$$run.statistics.runsScored",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           },
 
           battingStrikeRate: {
-            $reduce: {
-              input: {
-                $arrayElemAt: [
-                  "$seasons.playerStatistics.battingStrikeRate",
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: {
+                      $arrayElemAt: [
+                        "$seasons.playerStatistics.battingStrikeRate",
+                        0,
+                      ],
+                    },
+                  },
                   0,
                 ],
               },
-              initialValue: [],
-              in: {
-                $concatArrays: [
-                  "$$value",
-                  {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        battingStrikeRate: "$$run.statistics.battingStrikeRate",
-                        player: "$$run.player.name",
-                      },
-                    },
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: [
+                      "$seasons.playerStatistics.battingStrikeRate",
+                      0,
+                    ],
                   },
-                ],
+                  initialValue: [],
+                  in: {
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            battingStrikeRate:
+                              "$$run.statistics.battingStrikeRate",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           },
 
           battingAverage: {
-            $reduce: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.battingAverage", 0],
-              },
-              initialValue: [],
-              in: {
-                $concatArrays: [
-                  "$$value",
+            $cond: {
+              if: {
+                $eq: [
                   {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        battingAverage: "$$run.statistics.battingAverage",
-                        player: "$$run.player.name",
-                      },
+                    $size: {
+                      $arrayElemAt: [
+                        "$seasons.playerStatistics.battingAverage",
+                        0,
+                      ],
                     },
                   },
+                  0,
                 ],
+              },
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: [
+                      "$seasons.playerStatistics.battingAverage",
+                      0,
+                    ],
+                  },
+                  initialValue: [],
+                  in: {
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            battingAverage: "$$run.statistics.battingAverage",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           },
 
           fifties: {
-            $reduce: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.fifties", 0],
-              },
-              initialValue: [],
-              in: {
-                $concatArrays: [
-                  "$$value",
+            $cond: {
+              if: {
+                $eq: [
                   {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        fifties: "$$run.statistics.fifties",
-                        player: "$$run.player.name",
-                      },
+                    $size: {
+                      $arrayElemAt: ["$seasons.playerStatistics.fifties", 0],
                     },
                   },
+                  0,
                 ],
+              },
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: ["$seasons.playerStatistics.fifties", 0],
+                  },
+                  initialValue: [],
+                  in: {
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            fifties: "$$run.statistics.fifties",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           },
 
           hundreds: {
-            $reduce: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.hundreds", 0],
-              },
-              initialValue: [],
-              in: {
-                $concatArrays: [
-                  "$$value",
+            $cond: {
+              if: {
+                $eq: [
                   {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        hundreds: "$$run.statistics.hundreds",
-                        player: "$$run.player.name",
-                      },
+                    $size: {
+                      $arrayElemAt: ["$seasons.playerStatistics.hundreds", 0],
                     },
                   },
+                  0,
                 ],
+              },
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: ["$seasons.playerStatistics.hundreds", 0],
+                  },
+                  initialValue: [],
+                  in: {
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            hundreds: "$$run.statistics.hundreds",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           },
 
           fours: {
-            $reduce: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.fours", 0],
-              },
-              initialValue: [],
-              in: {
-                $concatArrays: [
-                  "$$value",
+            $cond: {
+              if: {
+                $eq: [
                   {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        fours: "$$run.statistics.fours",
-                        player: "$$run.player.name",
-                      },
+                    $size: {
+                      $arrayElemAt: ["$seasons.playerStatistics.fours", 0],
                     },
                   },
+                  0,
                 ],
+              },
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: ["$seasons.playerStatistics.fours", 0],
+                  },
+                  initialValue: [],
+                  in: {
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            fours: "$$run.statistics.fours",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           },
 
           sixes: {
-            $reduce: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.sixes", 0],
-              },
-              initialValue: [],
-              in: {
-                $concatArrays: [
-                  "$$value",
+            $cond: {
+              if: {
+                $eq: [
                   {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        sixes: "$$run.statistics.sixes",
-                        player: "$$run.player.name",
-                      },
+                    $size: {
+                      $arrayElemAt: ["$seasons.playerStatistics.sixes", 0],
                     },
                   },
+                  0,
                 ],
+              },
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: ["$seasons.playerStatistics.sixes", 0],
+                  },
+                  initialValue: [],
+                  in: {
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            sixes: "$$run.statistics.sixes",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           },
 
           nineties: {
-            $reduce: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.nineties", 0],
-              },
-              initialValue: [],
-              in: {
-                $concatArrays: [
-                  "$$value",
+            $cond: {
+              if: {
+                $eq: [
                   {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        nineties: "$$run.statistics.nineties",
-                        player: "$$run.player.name",
-                      },
+                    $size: {
+                      $arrayElemAt: ["$seasons.playerStatistics.nineties", 0],
                     },
                   },
+                  0,
                 ],
+              },
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: ["$seasons.playerStatistics.nineties", 0],
+                  },
+                  initialValue: [],
+                  in: {
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            nineties: "$$run.statistics.nineties",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           },
 
           bowlingAverage: {
-            $reduce: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.bowlingAverage", 0],
-              },
-              initialValue: [],
-              in: {
-                $concatArrays: [
-                  "$$value",
+            $cond: {
+              if: {
+                $eq: [
                   {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        bowlingAverage: "$$run.statistics.bowlingAverage",
-                        player: "$$run.player.name",
-                      },
+                    $size: {
+                      $arrayElemAt: [
+                        "$seasons.playerStatistics.bowlingAverage",
+                        0,
+                      ],
                     },
                   },
+                  0,
                 ],
+              },
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: [
+                      "$seasons.playerStatistics.bowlingAverage",
+                      0,
+                    ],
+                  },
+                  initialValue: [],
+                  in: {
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            bowlingAverage: "$$run.statistics.bowlingAverage",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           },
 
           fiveWicketsHaul: {
-            $reduce: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.fiveWicketsHaul", 0],
-              },
-              initialValue: [],
-              in: {
-                $concatArrays: [
-                  "$$value",
+            $cond: {
+              if: {
+                $eq: [
                   {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        fiveWicketsHaul: "$$run.statistics.fiveWicketsHaul",
-                        player: "$$run.player.name",
-                      },
+                    $size: {
+                      $arrayElemAt: [
+                        "$seasons.playerStatistics.fiveWicketsHaul",
+                        0,
+                      ],
                     },
                   },
+                  0,
                 ],
+              },
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: [
+                      "$seasons.playerStatistics.fiveWicketsHaul",
+                      0,
+                    ],
+                  },
+                  initialValue: [],
+                  in: {
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            fiveWicketsHaul: "$$run.statistics.fiveWicketsHaul",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           },
-
           economy: {
-            $reduce: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.economy", 0],
-              },
-              initialValue: [],
-              in: {
-                $concatArrays: [
-                  "$$value",
+            $cond: {
+              if: {
+                $eq: [
                   {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        economy: "$$run.statistics.economy",
-                        player: "$$run.player.name",
-                      },
+                    $size: {
+                      $arrayElemAt: ["$seasons.playerStatistics.economy", 0],
                     },
                   },
+                  0,
                 ],
+              },
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: ["$seasons.playerStatistics.economy", 0],
+                  },
+                  initialValue: [],
+                  in: {
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            economy: "$$run.statistics.economy",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           },
 
           bowlingStrikeRate: {
-            $reduce: {
-              input: {
-                $arrayElemAt: [
-                  "$seasons.playerStatistics.bowlingStrikeRate",
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: {
+                      $arrayElemAt: [
+                        "$seasons.playerStatistics.bowlingStrikeRate",
+                        0,
+                      ],
+                    },
+                  },
                   0,
                 ],
               },
-              initialValue: [],
-              in: {
-                $concatArrays: [
-                  "$$value",
-                  {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        bowlingStrikeRate: "$$run.statistics.bowlingStrikeRate",
-                        player: "$$run.player.name",
-                      },
-                    },
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: [
+                      "$seasons.playerStatistics.bowlingStrikeRate",
+                      0,
+                    ],
                   },
-                ],
+                  initialValue: [],
+                  in: {
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            bowlingStrikeRate:
+                              "$$run.statistics.bowlingStrikeRate",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           },
@@ -445,7 +650,7 @@ const getTeamDetails = async (req, res, next) => {
         await teamDetailsEntry.save();
         // Set the data to be used for aggregation
         detailsTeam = teamDetailsEntry;
-      } 
+      }
 
       // Aggregate the data
       const aggregatedData = await TeamDetails.aggregate([
@@ -471,12 +676,16 @@ const getTeamDetails = async (req, res, next) => {
                 uniqueTournament: {
                   name: "$data.team.tournament.uniqueTournament.name",
                   slug: "$data.team.tournament.uniqueTournament.slug",
-                  primaryColorHex: "$data.team.tournament.uniqueTournament.primaryColorHex",
-                  secondaryColorHex: "$data.team.tournament.uniqueTournament.secondaryColorHex",
+                  primaryColorHex:
+                    "$data.team.tournament.uniqueTournament.primaryColorHex",
+                  secondaryColorHex:
+                    "$data.team.tournament.uniqueTournament.secondaryColorHex",
                   userCount: "$data.team.tournament.uniqueTournament.userCount",
                   id: "$data.team.tournament.uniqueTournament.id",
-                  hasPerformanceGraphFeature: "$data.team.tournament.uniqueTournament.hasPerformanceGraphFeature",
-                  displayInverseHomeAwayTeams: "$data.team.tournament.uniqueTournament.displayInverseHomeAwayTeams",
+                  hasPerformanceGraphFeature:
+                    "$data.team.tournament.uniqueTournament.hasPerformanceGraphFeature",
+                  displayInverseHomeAwayTeams:
+                    "$data.team.tournament.uniqueTournament.displayInverseHomeAwayTeams",
                 },
                 priority: "$data.team.tournament.priority",
                 isLive: "$data.team.tournament.isLive",
@@ -486,9 +695,11 @@ const getTeamDetails = async (req, res, next) => {
                 name: "$data.team.primaryUniqueTournament.name",
                 slug: "$data.team.primaryUniqueTournament.slug",
                 userCount: "$data.team.primaryUniqueTournament.userCount",
-                hasPerformanceGraphFeature: "$data.team.primaryUniqueTournament.hasPerformanceGraphFeature",
+                hasPerformanceGraphFeature:
+                  "$data.team.primaryUniqueTournament.hasPerformanceGraphFeature",
                 id: "$data.team.primaryUniqueTournament.id",
-                displayInverseHomeAwayTeams: "$data.team.primaryUniqueTournament.displayInverseHomeAwayTeams",
+                displayInverseHomeAwayTeams:
+                  "$data.team.primaryUniqueTournament.displayInverseHomeAwayTeams",
               },
               userCount: "$data.team.userCount",
               manager: {

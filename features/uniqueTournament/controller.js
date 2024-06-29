@@ -53,7 +53,7 @@ const getTournamentById = async (req, res, next) => {
 
     return apiResponse({
       res,
-      body: modifyData[0],
+      body: modifyData,
       status: true,
       message: "unique tournament fetched successfully",
       statusCode: StatusCodes.OK,
@@ -417,18 +417,38 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
       {
         $project: {
           runsScored: {
-            $map: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.runsScored", 0],
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: {
+                      $arrayElemAt: ["$seasons.playerStatistics.runsScored", 0],
+                    },
+                  },
+                  0,
+                ],
               },
-              as: "runsObj",
-              in: {
-                $map: {
-                  input: "$$runsObj",
-                  as: "run",
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: ["$seasons.playerStatistics.runsScored", 0],
+                  },
+                  initialValue: [],
                   in: {
-                    runsScored: "$$run.statistics.runsScored",
-                    player: "$$run.player.name",
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            runsScored: "$$run.statistics.runsScored",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
                   },
                 },
               },
@@ -436,22 +456,45 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
           },
 
           battingStrikeRate: {
-            $map: {
-              input: {
-                $arrayElemAt: [
-                  "$seasons.playerStatistics.battingStrikeRate",
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: {
+                      $arrayElemAt: [
+                        "$seasons.playerStatistics.battingStrikeRate",
+                        0,
+                      ],
+                    },
+                  },
                   0,
                 ],
               },
-              as: "battingStrikeRateObj",
-              in: {
-                $map: {
-                  input: "$$battingStrikeRateObj",
-                  as: "battingStrikeRate",
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: [
+                      "$seasons.playerStatistics.battingStrikeRate",
+                      0,
+                    ],
+                  },
+                  initialValue: [],
                   in: {
-                    battingStrikeRate:
-                      "$$battingStrikeRate.statistics.battingStrikeRate",
-                    player: "$$battingStrikeRate.player.name",
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            battingStrikeRate:
+                              "$$run.statistics.battingStrikeRate",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
                   },
                 },
               },
@@ -459,19 +502,44 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
           },
 
           battingAverage: {
-            $map: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.battingAverage", 0],
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: {
+                      $arrayElemAt: [
+                        "$seasons.playerStatistics.battingAverage",
+                        0,
+                      ],
+                    },
+                  },
+                  0,
+                ],
               },
-              as: "runsScoredAverageObj",
-              in: {
-                $map: {
-                  input: "$$runsScoredAverageObj",
-                  as: "runsScoredAverage",
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: [
+                      "$seasons.playerStatistics.battingAverage",
+                      0,
+                    ],
+                  },
+                  initialValue: [],
                   in: {
-                    battingAverage:
-                      "$$runsScoredAverage.statistics.battingAverage",
-                    player: "$$runsScoredAverage.player.name",
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            battingAverage: "$$run.statistics.battingAverage",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
                   },
                 },
               },
@@ -479,18 +547,38 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
           },
 
           fifties: {
-            $map: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.fifties", 0],
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: {
+                      $arrayElemAt: ["$seasons.playerStatistics.fifties", 0],
+                    },
+                  },
+                  0,
+                ],
               },
-              as: "fiftiesObj",
-              in: {
-                $map: {
-                  input: "$$fiftiesObj",
-                  as: "fifties",
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: ["$seasons.playerStatistics.fifties", 0],
+                  },
+                  initialValue: [],
                   in: {
-                    fifties: "$$fifties.statistics.fifties",
-                    player: "$$fifties.player.name",
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            fifties: "$$run.statistics.fifties",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
                   },
                 },
               },
@@ -498,18 +586,38 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
           },
 
           hundreds: {
-            $map: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.hundreds", 0],
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: {
+                      $arrayElemAt: ["$seasons.playerStatistics.hundreds", 0],
+                    },
+                  },
+                  0,
+                ],
               },
-              as: "hundredsObj",
-              in: {
-                $map: {
-                  input: "$$hundredsObj",
-                  as: "hundreds",
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: ["$seasons.playerStatistics.hundreds", 0],
+                  },
+                  initialValue: [],
                   in: {
-                    hundreds: "$$hundreds.statistics.hundreds",
-                    player: "$$hundreds.player.name",
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            hundreds: "$$run.statistics.hundreds",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
                   },
                 },
               },
@@ -517,18 +625,38 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
           },
 
           fours: {
-            $map: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.fours", 0],
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: {
+                      $arrayElemAt: ["$seasons.playerStatistics.fours", 0],
+                    },
+                  },
+                  0,
+                ],
               },
-              as: "foursObj",
-              in: {
-                $map: {
-                  input: "$$foursObj",
-                  as: "fours",
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: ["$seasons.playerStatistics.fours", 0],
+                  },
+                  initialValue: [],
                   in: {
-                    fours: "$$fours.statistics.fours",
-                    player: "$$fours.player.name",
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            fours: "$$run.statistics.fours",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
                   },
                 },
               },
@@ -536,18 +664,38 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
           },
 
           sixes: {
-            $map: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.sixes", 0],
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: {
+                      $arrayElemAt: ["$seasons.playerStatistics.sixes", 0],
+                    },
+                  },
+                  0,
+                ],
               },
-              as: "sixesObj",
-              in: {
-                $map: {
-                  input: "$$sixesObj",
-                  as: "sixes",
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: ["$seasons.playerStatistics.sixes", 0],
+                  },
+                  initialValue: [],
                   in: {
-                    sixes: "$$sixes.statistics.sixes",
-                    player: "$$sixes.player.name",
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            sixes: "$$run.statistics.sixes",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
                   },
                 },
               },
@@ -555,18 +703,38 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
           },
 
           nineties: {
-            $map: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.nineties", 0],
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: {
+                      $arrayElemAt: ["$seasons.playerStatistics.nineties", 0],
+                    },
+                  },
+                  0,
+                ],
               },
-              as: "ninetiesObj",
-              in: {
-                $map: {
-                  input: "$$ninetiesObj",
-                  as: "nineties",
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: ["$seasons.playerStatistics.nineties", 0],
+                  },
+                  initialValue: [],
                   in: {
-                    nineties: "$$nineties.statistics.nineties",
-                    player: "$$nineties.player.name",
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            nineties: "$$run.statistics.nineties",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
                   },
                 },
               },
@@ -574,19 +742,44 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
           },
 
           bowlingAverage: {
-            $map: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.bowlingAverage", 0],
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: {
+                      $arrayElemAt: [
+                        "$seasons.playerStatistics.bowlingAverage",
+                        0,
+                      ],
+                    },
+                  },
+                  0,
+                ],
               },
-              as: "bowlingAverageObj",
-              in: {
-                $map: {
-                  input: "$$bowlingAverageObj",
-                  as: "bowlingAverage",
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: [
+                      "$seasons.playerStatistics.bowlingAverage",
+                      0,
+                    ],
+                  },
+                  initialValue: [],
                   in: {
-                    bowlingAverage:
-                      "$$bowlingAverage.statistics.bowlingAverage",
-                    player: "$$bowlingAverage.player.name",
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            bowlingAverage: "$$run.statistics.bowlingAverage",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
                   },
                 },
               },
@@ -594,38 +787,82 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
           },
 
           fiveWicketsHaul: {
-            $map: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.fiveWicketsHaul", 0],
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: {
+                      $arrayElemAt: [
+                        "$seasons.playerStatistics.fiveWicketsHaul",
+                        0,
+                      ],
+                    },
+                  },
+                  0,
+                ],
               },
-              as: "fiveWicketsHaulObj",
-              in: {
-                $map: {
-                  input: "$$fiveWicketsHaulObj",
-                  as: "fiveWicketsHaul",
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: [
+                      "$seasons.playerStatistics.fiveWicketsHaul",
+                      0,
+                    ],
+                  },
+                  initialValue: [],
                   in: {
-                    fiveWicketsHaul:
-                      "$$fiveWicketsHaul.statistics.fiveWicketsHaul",
-                    player: "$$fiveWicketsHaul.player.name",
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            fiveWicketsHaul: "$$run.statistics.fiveWicketsHaul",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
                   },
                 },
               },
             },
           },
-
           economy: {
-            $map: {
-              input: {
-                $arrayElemAt: ["$seasons.playerStatistics.economy", 0],
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: {
+                      $arrayElemAt: ["$seasons.playerStatistics.economy", 0],
+                    },
+                  },
+                  0,
+                ],
               },
-              as: "economyObj",
-              in: {
-                $map: {
-                  input: "$$economyObj",
-                  as: "economy",
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: ["$seasons.playerStatistics.economy", 0],
+                  },
+                  initialValue: [],
                   in: {
-                    economy: "$$economy.statistics.economy",
-                    player: "$$economy.player.name",
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            economy: "$$run.statistics.economy",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
                   },
                 },
               },
@@ -633,22 +870,45 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
           },
 
           bowlingStrikeRate: {
-            $map: {
-              input: {
-                $arrayElemAt: [
-                  "$seasons.playerStatistics.bowlingStrikeRate",
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: {
+                      $arrayElemAt: [
+                        "$seasons.playerStatistics.bowlingStrikeRate",
+                        0,
+                      ],
+                    },
+                  },
                   0,
                 ],
               },
-              as: "bowlingStrikeRateObj",
-              in: {
-                $map: {
-                  input: "$$bowlingStrikeRateObj",
-                  as: "bowlingStrikeRate",
+              then: null,
+              else: {
+                $reduce: {
+                  input: {
+                    $arrayElemAt: [
+                      "$seasons.playerStatistics.bowlingStrikeRate",
+                      0,
+                    ],
+                  },
+                  initialValue: [],
                   in: {
-                    bowlingStrikeRate:
-                      "$$bowlingStrikeRate.statistics.bowlingStrikeRate",
-                    player: "$$bowlingStrikeRate.player.name",
+                    $concatArrays: [
+                      "$$value",
+                      {
+                        $map: {
+                          input: "$$this",
+                          as: "run",
+                          in: {
+                            bowlingStrikeRate:
+                              "$$run.statistics.bowlingStrikeRate",
+                            player: "$$run.player.name",
+                          },
+                        },
+                      },
+                    ],
                   },
                 },
               },
