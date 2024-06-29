@@ -7,6 +7,7 @@ import PlayerTeam from "./models/playerByteamSchema.js";
 import TeamDetails from "./models/teamDetailsSchema.js";
 import teamMedia from "./models/teamMediaSchema.js";
 import TeamMatches from "./models/teamMatchesSchema.js";
+import TeamTopPlayers from "./models/teamTopPlayer.js";
 
 const getTeamPerformance = async (req, res, next) => {
   try {
@@ -42,29 +43,383 @@ const getTeamPerformance = async (req, res, next) => {
 const getTopPlayers = async (req, res, next) => {
   try {
     const key = cacheService.getCacheKey(req);
+    let seasonId = req.params.seasonId;
+    let tournamentId = req.params.uniqueTournamentId;
+    let teamId = req.params.id;
+    let type = req.params.type;
 
     let data = cacheService.getCache(key);
 
     if (!data) {
       data = await service.getTopPlayers(req.params);
 
+      const teamTopPlayers = await TeamTopPlayers.findOne({
+        teamId: teamId,
+        tournamentId: tournamentId,
+        seasonId: seasonId,
+      });
+
+      if (teamTopPlayers) {
+        data = teamTopPlayers.playerStatistics;
+
+        // Fetch data from the API
+        data = await service.getTopPlayers(req.params);
+        cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
+
+        // Add new season to the existing tournament
+      } else {
+        // Fetch data from the API
+        data = await service.getTopPlayers(req.params);
+        cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
+
+        // Create new tournament with the season
+        const topPlayersEntry = new TeamTopPlayers({
+          teamId: teamId,
+          tournamentId: tournamentId,
+          seasonId: seasonId,
+          type: type,
+          seasons: [{ seasonId: seasonId, playerStatistics: data }],
+        });
+        await topPlayersEntry.save();
+      }
+
       cacheService.setCache(key, data, cacheTTL.ONE_DAY);
     }
 
+    const teamPlayerData = await TeamTopPlayers.aggregate([
+      {
+        $match: {
+          tournamentId: tournamentId,
+          teamId: teamId,
+          seasonId: seasonId,
+          type: type,
+        },
+      },
+      {
+        $project: {
+          runsScored: {
+            $reduce: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.runsScored", 0],
+              },
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  "$$value",
+                  {
+                    $map: {
+                      input: "$$this",
+                      as: "run",
+                      in: {
+                        runsScored: "$$run.statistics.runsScored",
+                        player: "$$run.player.name",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+
+          battingStrikeRate: {
+            $reduce: {
+              input: {
+                $arrayElemAt: [
+                  "$seasons.playerStatistics.battingStrikeRate",
+                  0,
+                ],
+              },
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  "$$value",
+                  {
+                    $map: {
+                      input: "$$this",
+                      as: "run",
+                      in: {
+                        battingStrikeRate: "$$run.statistics.battingStrikeRate",
+                        player: "$$run.player.name",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+
+          battingAverage: {
+            $reduce: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.battingAverage", 0],
+              },
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  "$$value",
+                  {
+                    $map: {
+                      input: "$$this",
+                      as: "run",
+                      in: {
+                        battingAverage: "$$run.statistics.battingAverage",
+                        player: "$$run.player.name",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+
+          fifties: {
+            $reduce: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.fifties", 0],
+              },
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  "$$value",
+                  {
+                    $map: {
+                      input: "$$this",
+                      as: "run",
+                      in: {
+                        fifties: "$$run.statistics.fifties",
+                        player: "$$run.player.name",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+
+          hundreds: {
+            $reduce: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.hundreds", 0],
+              },
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  "$$value",
+                  {
+                    $map: {
+                      input: "$$this",
+                      as: "run",
+                      in: {
+                        hundreds: "$$run.statistics.hundreds",
+                        player: "$$run.player.name",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+
+          fours: {
+            $reduce: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.fours", 0],
+              },
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  "$$value",
+                  {
+                    $map: {
+                      input: "$$this",
+                      as: "run",
+                      in: {
+                        fours: "$$run.statistics.fours",
+                        player: "$$run.player.name",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+
+          sixes: {
+            $reduce: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.sixes", 0],
+              },
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  "$$value",
+                  {
+                    $map: {
+                      input: "$$this",
+                      as: "run",
+                      in: {
+                        sixes: "$$run.statistics.sixes",
+                        player: "$$run.player.name",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+
+          nineties: {
+            $reduce: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.nineties", 0],
+              },
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  "$$value",
+                  {
+                    $map: {
+                      input: "$$this",
+                      as: "run",
+                      in: {
+                        nineties: "$$run.statistics.nineties",
+                        player: "$$run.player.name",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+
+          bowlingAverage: {
+            $reduce: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.bowlingAverage", 0],
+              },
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  "$$value",
+                  {
+                    $map: {
+                      input: "$$this",
+                      as: "run",
+                      in: {
+                        bowlingAverage: "$$run.statistics.bowlingAverage",
+                        player: "$$run.player.name",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+
+          fiveWicketsHaul: {
+            $reduce: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.fiveWicketsHaul", 0],
+              },
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  "$$value",
+                  {
+                    $map: {
+                      input: "$$this",
+                      as: "run",
+                      in: {
+                        fiveWicketsHaul: "$$run.statistics.fiveWicketsHaul",
+                        player: "$$run.player.name",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+
+          economy: {
+            $reduce: {
+              input: {
+                $arrayElemAt: ["$seasons.playerStatistics.economy", 0],
+              },
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  "$$value",
+                  {
+                    $map: {
+                      input: "$$this",
+                      as: "run",
+                      in: {
+                        economy: "$$run.statistics.economy",
+                        player: "$$run.player.name",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+
+          bowlingStrikeRate: {
+            $reduce: {
+              input: {
+                $arrayElemAt: [
+                  "$seasons.playerStatistics.bowlingStrikeRate",
+                  0,
+                ],
+              },
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  "$$value",
+                  {
+                    $map: {
+                      input: "$$this",
+                      as: "run",
+                      in: {
+                        bowlingStrikeRate: "$$run.statistics.bowlingStrikeRate",
+                        player: "$$run.player.name",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+    ]);
+
     return apiResponse({
       res,
-      data: data,
+      data: teamPlayerData[0],
       status: true,
       message: "Top players fetched successfully",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    console.log(error);
+
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No data found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 const getTeamDetails = async (req, res, next) => {
@@ -143,65 +498,65 @@ const getTeamPLayers = async (req, res, next) => {
     }
 
     const teamPlayerData = await PlayerTeam.aggregate([
-        { $match: { teamId: req.params.id } },
-        {
-          $project: {
-            players: {
-              $map: {
-                input: "$data.players",
-                as: "playerObj",
-                in: {
-                  name: "$$playerObj.player.name",
-                  position: "$$playerObj.player.position",
-                  id: "$$playerObj.player.id",
-                  country: "$$playerObj.player.country.name"
-                }
-              }
+      { $match: { teamId: req.params.id } },
+      {
+        $project: {
+          players: {
+            $map: {
+              input: "$data.players",
+              as: "playerObj",
+              in: {
+                name: "$$playerObj.player.name",
+                position: "$$playerObj.player.position",
+                id: "$$playerObj.player.id",
+                country: "$$playerObj.player.country.name",
+              },
             },
-            foreignPlayers: {
-              $map: {
-                input: "$data.foreignPlayers",
-                as: "playerObj",
-                in: {
-                  name: "$$playerObj.player.name",
-                  position: "$$playerObj.player.position",
-                  id: "$$playerObj.player.id",
-                  country: "$$playerObj.player.country.name"
-                }
-              }
+          },
+          foreignPlayers: {
+            $map: {
+              input: "$data.foreignPlayers",
+              as: "playerObj",
+              in: {
+                name: "$$playerObj.player.name",
+                position: "$$playerObj.player.position",
+                id: "$$playerObj.player.id",
+                country: "$$playerObj.player.country.name",
+              },
             },
-            nationalPlayers: {
-              $map: {
-                input: "$data.nationalPlayers",
-                as: "playerObj",
-                in: {
-                  name: "$$playerObj.player.name",
-                  position: "$$playerObj.player.position",
-                  id: "$$playerObj.player.id",
-                  country: "$$playerObj.player.country.name"
-                }
-              }
+          },
+          nationalPlayers: {
+            $map: {
+              input: "$data.nationalPlayers",
+              as: "playerObj",
+              in: {
+                name: "$$playerObj.player.name",
+                position: "$$playerObj.player.position",
+                id: "$$playerObj.player.id",
+                country: "$$playerObj.player.country.name",
+              },
             },
-            supportStaff: {
-              $map: {
-                input: "$data.supportStaff",
-                as: "playerObj",
-                in: {
-                  name: "$$playerObj.name",
-                  role: "$$playerObj.role",
-                  id: "$$playerObj.id",
-                }
-              }
-            }
-          }
-        }
+          },
+          supportStaff: {
+            $map: {
+              input: "$data.supportStaff",
+              as: "playerObj",
+              in: {
+                name: "$$playerObj.name",
+                role: "$$playerObj.role",
+                id: "$$playerObj.id",
+              },
+            },
+          },
+        },
+      },
     ]);
 
-    const teamPlayerDataObject = teamPlayerData[0];
+    // const teamPlayerDataObject = teamPlayerData[0];
 
     return apiResponse({
       res,
-      data: teamPlayerDataObject,
+      data: teamPlayerData,
       status: true,
       message: "Team player fetched successfully",
       statusCode: StatusCodes.OK,
@@ -226,24 +581,33 @@ const getTeamMatchesByTeam = async (req, res, next) => {
     const count = Math.ceil(teamMatchesData?.matches?.length / 10);
     const adjustedPage = Math.floor((page - 1) / 3);
 
-    console.log("adjustedPage", adjustedPage)
-
     if (!data || page > count) {
       if (teamMatchesData && page <= count) {
         data = teamMatchesData;
       } else {
-        const newData = await service.getTeamMatchesByTeam(id, span, adjustedPage);
+        const newData = await service.getTeamMatchesByTeam(
+          id,
+          span,
+          adjustedPage
+        );
         if (teamMatchesData) {
           // Filter out duplicate events
-          const existingEvents = teamMatchesData.matches.map(event => event.id);
-          const uniqueEvents = newData.events.filter(event => !existingEvents.includes(event.id));
+          const existingEvents = teamMatchesData.matches.map(
+            (event) => event.id
+          );
+          const uniqueEvents = newData.events.filter(
+            (event) => !existingEvents.includes(event.id)
+          );
           // Push unique events to the existing data
           teamMatchesData.matches.push(...uniqueEvents);
           await teamMatchesData.save();
           data = teamMatchesData;
         } else {
           // If no existing data, save the new data
-          const teamMatchesEntry = new TeamMatches({ teamId: id, matches: newData.events });
+          const teamMatchesEntry = new TeamMatches({
+            teamId: id,
+            matches: newData.events,
+          });
           await teamMatchesEntry.save();
           data = teamMatchesEntry;
         }
@@ -265,21 +629,25 @@ const getTeamMatchesByTeam = async (req, res, next) => {
             name: "$matches.homeTeam.name",
             score: "$matches.homeScore.current",
             wickets: "$matches.homeScore.innings.inning1.wickets",
-            overs: "$matches.homeScore.innings.inning1.overs"
+            overs: "$matches.homeScore.innings.inning1.overs",
           },
           awayTeam: {
             name: "$matches.awayTeam.name",
             score: "$matches.awayScore.current",
             wickets: "$matches.awayScore.innings.inning1.wickets",
-            overs: "$matches.awayScore.innings.inning1.overs"
+            overs: "$matches.awayScore.innings.inning1.overs",
           },
           winner: {
-            $cond: { if: { $eq: ["$matches.winnerCode", 1] }, then: "$matches.homeTeam.name", else: "$matches.awayTeam.name" }
+            $cond: {
+              if: { $eq: ["$matches.winnerCode", 1] },
+              then: "$matches.homeTeam.name",
+              else: "$matches.awayTeam.name",
+            },
           },
           note: "$matches.note",
-          id: "$matches.id"
-        }
-      }
+          id: "$matches.id",
+        },
+      },
     ]);
 
     return apiResponse({
