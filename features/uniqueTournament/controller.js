@@ -6,7 +6,7 @@ import cacheTTL from "../cache/constants.js";
 import Tournament from "./models/tournamentSchema.js";
 import Season from "./models/seasonsSchema.js";
 import TopPlayers from "./models/topPlayesSchema.js";
-import FeaturedMatches from "./models/topPlayesSchema.js";
+import FeaturedMatches from "./models/featuredMachesSchema.js";
 import SeasonStanding from "./models/standingSchema.js";
 
 const getTournamentById = async (req, res, next) => {
@@ -324,7 +324,8 @@ const getSeasonStandingByTournament = async (req, res, next) => {
                 noResult: "$$rowObj.noResult",
                 wins: "$$rowObj.wins",
                 id: "$$rowObj.team.id",
-                teamName: "$$rowObj.team.shortName",
+                shortName: "$$rowObj.team.shortName",
+                teamName: "$$rowObj.team.name",
               },
             },
           },
