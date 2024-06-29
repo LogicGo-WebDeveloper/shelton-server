@@ -8,6 +8,7 @@ import TeamDetails from "./models/teamDetailsSchema.js";
 import teamMedia from "./models/teamMediaSchema.js";
 import TeamMatches from "./models/teamMatchesSchema.js";
 import TeamTopPlayers from "./models/teamTopPlayer.js";
+import TeamSeasons from "./models/teamSeasons.js";
 
 const getTeamPerformance = async (req, res, next) => {
   try {
@@ -126,6 +127,8 @@ const getTopPlayers = async (req, res, next) => {
                           in: {
                             runsScored: "$$run.statistics.runsScored",
                             player: "$$run.player.name",
+                            playerId: "$$run.player.id",
+                            position: "$$run.player.position",
                           },
                         },
                       },
@@ -172,6 +175,8 @@ const getTopPlayers = async (req, res, next) => {
                             battingStrikeRate:
                               "$$run.statistics.battingStrikeRate",
                             player: "$$run.player.name",
+                            playerId: "$$run.player.id",
+                            position: "$$run.player.position",
                           },
                         },
                       },
@@ -217,6 +222,8 @@ const getTopPlayers = async (req, res, next) => {
                           in: {
                             battingAverage: "$$run.statistics.battingAverage",
                             player: "$$run.player.name",
+                            playerId: "$$run.player.id",
+                            position: "$$run.player.position",
                           },
                         },
                       },
@@ -256,6 +263,8 @@ const getTopPlayers = async (req, res, next) => {
                           in: {
                             fifties: "$$run.statistics.fifties",
                             player: "$$run.player.name",
+                            playerId: "$$run.player.id",
+                            position: "$$run.player.position",
                           },
                         },
                       },
@@ -295,6 +304,8 @@ const getTopPlayers = async (req, res, next) => {
                           in: {
                             hundreds: "$$run.statistics.hundreds",
                             player: "$$run.player.name",
+                            playerId: "$$run.player.id",
+                            position: "$$run.player.position",
                           },
                         },
                       },
@@ -334,6 +345,8 @@ const getTopPlayers = async (req, res, next) => {
                           in: {
                             fours: "$$run.statistics.fours",
                             player: "$$run.player.name",
+                            playerId: "$$run.player.id",
+                            position: "$$run.player.position",
                           },
                         },
                       },
@@ -373,6 +386,8 @@ const getTopPlayers = async (req, res, next) => {
                           in: {
                             sixes: "$$run.statistics.sixes",
                             player: "$$run.player.name",
+                            playerId: "$$run.player.id",
+                            position: "$$run.player.position",
                           },
                         },
                       },
@@ -412,6 +427,8 @@ const getTopPlayers = async (req, res, next) => {
                           in: {
                             nineties: "$$run.statistics.nineties",
                             player: "$$run.player.name",
+                            playerId: "$$run.player.id",
+                            position: "$$run.player.position",
                           },
                         },
                       },
@@ -457,6 +474,8 @@ const getTopPlayers = async (req, res, next) => {
                           in: {
                             bowlingAverage: "$$run.statistics.bowlingAverage",
                             player: "$$run.player.name",
+                            playerId: "$$run.player.id",
+                            position: "$$run.player.position",
                           },
                         },
                       },
@@ -502,6 +521,8 @@ const getTopPlayers = async (req, res, next) => {
                           in: {
                             fiveWicketsHaul: "$$run.statistics.fiveWicketsHaul",
                             player: "$$run.player.name",
+                            playerId: "$$run.player.id",
+                            position: "$$run.player.position",
                           },
                         },
                       },
@@ -540,6 +561,8 @@ const getTopPlayers = async (req, res, next) => {
                           in: {
                             economy: "$$run.statistics.economy",
                             player: "$$run.player.name",
+                            playerId: "$$run.player.id",
+                            position: "$$run.player.position",
                           },
                         },
                       },
@@ -586,6 +609,8 @@ const getTopPlayers = async (req, res, next) => {
                             bowlingStrikeRate:
                               "$$run.statistics.bowlingStrikeRate",
                             player: "$$run.player.name",
+                            playerId: "$$run.player.id",
+                            position: "$$run.player.position",
                           },
                         },
                       },
@@ -920,6 +945,7 @@ const getTeamMatchesByTeam = async (req, res, next) => {
       { $unwind: "$matches" },
       { $skip: skip },
       { $limit: pageSize },
+
       {
         $project: {
           homeTeam: {
@@ -943,6 +969,8 @@ const getTeamMatchesByTeam = async (req, res, next) => {
           },
           note: "$matches.note",
           id: "$matches.id",
+          endTimestamp: "$matches.endTimestamp",
+          startTimestamp: "$matches.endTimestamp",
         },
       },
     ]);
@@ -981,19 +1009,54 @@ const getTeamPlayerStatisticsSeasons = async (req, res, next) => {
     let data = cacheService.getCache(key);
 
     if (!data) {
-      data = await service.getTeamPlayerStatisticsSeasons(id);
+      const teamMatchesData = await TeamSeasons.findOne({ teamId: id });
+
+      if (teamMatchesData) {
+        data = teamMatchesData.seasons;
+      } else {
+        data = await service.getTeamPlayerStatisticsSeasons(id);
+
+        const teamSeasonEntry = new TeamSeasons({
+          teamId: id,
+          data: data.uniqueTournamentSeasons,
+        });
+        await teamSeasonEntry.save();
+      }
 
       cacheService.setCache(key, data, cacheTTL.ONE_DAY);
     }
+    const pageSize = 10;
+    // const skip = (page - 1) * pageSize;
+
+    const filterMatches = await TeamSeasons.aggregate([
+      { $match: { teamId: id } },
+      {
+        $project: {
+          uniqueTournament: {
+            $map: {
+              input: "$data.uniqueTournament",
+              as: "playerObj",
+              in: {
+                name: "$$playerObj.name",
+                slug: "$$playerObj.slug",
+                primaryColorHex: "$$playerObj.primaryColorHex",
+                id: "$$playerObj.id",
+              },
+            },
+          },
+        },
+      },
+    ]);
 
     return apiResponse({
       res,
-      data: data,
+      data: filterMatches[0],
       status: true,
       message: "Team player statistics seasons fetched successfully",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    // console.log(error);
     return apiResponse({
       res,
       status: false,
