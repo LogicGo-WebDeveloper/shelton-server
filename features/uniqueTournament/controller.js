@@ -6,7 +6,7 @@ import cacheTTL from "../cache/constants.js";
 import Tournament from "./models/tournamentSchema.js";
 import Season from "./models/seasonsSchema.js";
 import TopPlayers from "./models/topPlayesSchema.js";
-import FeaturedMatches from "./models/featuredMachesSchema.js";
+import FeaturedMatches from "./models/topPlayesSchema.js";
 import SeasonStanding from "./models/standingSchema.js";
 
 const getTournamentById = async (req, res, next) => {
@@ -103,7 +103,7 @@ const getSeasonsByTournament = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: data[0],
+      data: data,
       status: true,
       message: "Seasons fetched successfully",
       statusCode: StatusCodes.OK,
@@ -158,7 +158,7 @@ const getFeaturedEventsByTournament = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: data[0],
+      data: data,
       status: true,
       message: "Featured events fetched successfully",
       statusCode: StatusCodes.OK,
@@ -199,7 +199,7 @@ const getMediaByTournament = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: data[0],
+      data: data,
       status: true,
       message: "Media fetched successfully",
       statusCode: StatusCodes.OK,
@@ -281,11 +281,7 @@ const getSeasonStandingByTournament = async (req, res, next) => {
         if (season) {
           data = season.data;
         } else {
-          data = await service.getSeasonStandingByTournament(
-            id,
-            seasonId,
-            type
-          );
+          data = await service.getSeasonStandingByTournament(id, seasonId, type);
           cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
           seasonStanding.seasons.push({ seasonId, type, data: data });
           await seasonStanding.save();
@@ -326,11 +322,11 @@ const getSeasonStandingByTournament = async (req, res, next) => {
                 id: "$$rowObj.team.id",
                 shortName: "$$rowObj.team.shortName",
                 teamName: "$$rowObj.team.name",
-              },
-            },
-          },
-        },
-      },
+              }
+            }
+          }
+        }
+      }
     ]);
 
     return apiResponse({
@@ -421,295 +417,240 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
       {
         $project: {
           runsScored: {
-            $reduce: {
+            $map: {
               input: {
                 $arrayElemAt: ["$seasons.playerStatistics.runsScored", 0],
               },
-              initialValue: [],
+              as: "runsObj",
               in: {
-                $concatArrays: [
-                  "$$value",
-                  {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        runsScored: "$$run.statistics.runsScored",
-                        player: "$$run.player.name",
-                      },
-                    },
+                $map: {
+                  input: "$$runsObj",
+                  as: "run",
+                  in: {
+                    runsScored: "$$run.statistics.runsScored",
+                    player: "$$run.player.name",
                   },
-                ],
+                },
               },
             },
           },
 
           battingStrikeRate: {
-            $reduce: {
+            $map: {
               input: {
                 $arrayElemAt: [
                   "$seasons.playerStatistics.battingStrikeRate",
                   0,
                 ],
               },
-              initialValue: [],
+              as: "battingStrikeRateObj",
               in: {
-                $concatArrays: [
-                  "$$value",
-                  {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        battingStrikeRate: "$$run.statistics.battingStrikeRate",
-                        player: "$$run.player.name",
-                      },
-                    },
+                $map: {
+                  input: "$$battingStrikeRateObj",
+                  as: "battingStrikeRate",
+                  in: {
+                    battingStrikeRate:
+                      "$$battingStrikeRate.statistics.battingStrikeRate",
+                    player: "$$battingStrikeRate.player.name",
                   },
-                ],
+                },
               },
             },
           },
 
           battingAverage: {
-            $reduce: {
+            $map: {
               input: {
                 $arrayElemAt: ["$seasons.playerStatistics.battingAverage", 0],
               },
-              initialValue: [],
+              as: "runsScoredAverageObj",
               in: {
-                $concatArrays: [
-                  "$$value",
-                  {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        battingAverage: "$$run.statistics.battingAverage",
-                        player: "$$run.player.name",
-                      },
-                    },
+                $map: {
+                  input: "$$runsScoredAverageObj",
+                  as: "runsScoredAverage",
+                  in: {
+                    battingAverage:
+                      "$$runsScoredAverage.statistics.battingAverage",
+                    player: "$$runsScoredAverage.player.name",
                   },
-                ],
+                },
               },
             },
           },
 
           fifties: {
-            $reduce: {
+            $map: {
               input: {
                 $arrayElemAt: ["$seasons.playerStatistics.fifties", 0],
               },
-              initialValue: [],
+              as: "fiftiesObj",
               in: {
-                $concatArrays: [
-                  "$$value",
-                  {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        fifties: "$$run.statistics.fifties",
-                        player: "$$run.player.name",
-                      },
-                    },
+                $map: {
+                  input: "$$fiftiesObj",
+                  as: "fifties",
+                  in: {
+                    fifties: "$$fifties.statistics.fifties",
+                    player: "$$fifties.player.name",
                   },
-                ],
+                },
               },
             },
           },
 
           hundreds: {
-            $reduce: {
+            $map: {
               input: {
                 $arrayElemAt: ["$seasons.playerStatistics.hundreds", 0],
               },
-              initialValue: [],
+              as: "hundredsObj",
               in: {
-                $concatArrays: [
-                  "$$value",
-                  {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        hundreds: "$$run.statistics.hundreds",
-                        player: "$$run.player.name",
-                      },
-                    },
+                $map: {
+                  input: "$$hundredsObj",
+                  as: "hundreds",
+                  in: {
+                    hundreds: "$$hundreds.statistics.hundreds",
+                    player: "$$hundreds.player.name",
                   },
-                ],
+                },
               },
             },
           },
 
           fours: {
-            $reduce: {
+            $map: {
               input: {
                 $arrayElemAt: ["$seasons.playerStatistics.fours", 0],
               },
-              initialValue: [],
+              as: "foursObj",
               in: {
-                $concatArrays: [
-                  "$$value",
-                  {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        fours: "$$run.statistics.fours",
-                        player: "$$run.player.name",
-                      },
-                    },
+                $map: {
+                  input: "$$foursObj",
+                  as: "fours",
+                  in: {
+                    fours: "$$fours.statistics.fours",
+                    player: "$$fours.player.name",
                   },
-                ],
+                },
               },
             },
           },
 
           sixes: {
-            $reduce: {
+            $map: {
               input: {
                 $arrayElemAt: ["$seasons.playerStatistics.sixes", 0],
               },
-              initialValue: [],
+              as: "sixesObj",
               in: {
-                $concatArrays: [
-                  "$$value",
-                  {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        sixes: "$$run.statistics.sixes",
-                        player: "$$run.player.name",
-                      },
-                    },
+                $map: {
+                  input: "$$sixesObj",
+                  as: "sixes",
+                  in: {
+                    sixes: "$$sixes.statistics.sixes",
+                    player: "$$sixes.player.name",
                   },
-                ],
+                },
               },
             },
           },
 
           nineties: {
-            $reduce: {
+            $map: {
               input: {
                 $arrayElemAt: ["$seasons.playerStatistics.nineties", 0],
               },
-              initialValue: [],
+              as: "ninetiesObj",
               in: {
-                $concatArrays: [
-                  "$$value",
-                  {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        nineties: "$$run.statistics.nineties",
-                        player: "$$run.player.name",
-                      },
-                    },
+                $map: {
+                  input: "$$ninetiesObj",
+                  as: "nineties",
+                  in: {
+                    nineties: "$$nineties.statistics.nineties",
+                    player: "$$nineties.player.name",
                   },
-                ],
+                },
               },
             },
           },
 
           bowlingAverage: {
-            $reduce: {
+            $map: {
               input: {
                 $arrayElemAt: ["$seasons.playerStatistics.bowlingAverage", 0],
               },
-              initialValue: [],
+              as: "bowlingAverageObj",
               in: {
-                $concatArrays: [
-                  "$$value",
-                  {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        bowlingAverage: "$$run.statistics.bowlingAverage",
-                        player: "$$run.player.name",
-                      },
-                    },
+                $map: {
+                  input: "$$bowlingAverageObj",
+                  as: "bowlingAverage",
+                  in: {
+                    bowlingAverage:
+                      "$$bowlingAverage.statistics.bowlingAverage",
+                    player: "$$bowlingAverage.player.name",
                   },
-                ],
+                },
               },
             },
           },
 
           fiveWicketsHaul: {
-            $reduce: {
+            $map: {
               input: {
                 $arrayElemAt: ["$seasons.playerStatistics.fiveWicketsHaul", 0],
               },
-              initialValue: [],
+              as: "fiveWicketsHaulObj",
               in: {
-                $concatArrays: [
-                  "$$value",
-                  {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        fiveWicketsHaul: "$$run.statistics.fiveWicketsHaul",
-                        player: "$$run.player.name",
-                      },
-                    },
+                $map: {
+                  input: "$$fiveWicketsHaulObj",
+                  as: "fiveWicketsHaul",
+                  in: {
+                    fiveWicketsHaul:
+                      "$$fiveWicketsHaul.statistics.fiveWicketsHaul",
+                    player: "$$fiveWicketsHaul.player.name",
                   },
-                ],
+                },
               },
             },
           },
 
           economy: {
-            $reduce: {
+            $map: {
               input: {
                 $arrayElemAt: ["$seasons.playerStatistics.economy", 0],
               },
-              initialValue: [],
+              as: "economyObj",
               in: {
-                $concatArrays: [
-                  "$$value",
-                  {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        economy: "$$run.statistics.economy",
-                        player: "$$run.player.name",
-                      },
-                    },
+                $map: {
+                  input: "$$economyObj",
+                  as: "economy",
+                  in: {
+                    economy: "$$economy.statistics.economy",
+                    player: "$$economy.player.name",
                   },
-                ],
+                },
               },
             },
           },
 
           bowlingStrikeRate: {
-            $reduce: {
+            $map: {
               input: {
                 $arrayElemAt: [
                   "$seasons.playerStatistics.bowlingStrikeRate",
                   0,
                 ],
               },
-              initialValue: [],
+              as: "bowlingStrikeRateObj",
               in: {
-                $concatArrays: [
-                  "$$value",
-                  {
-                    $map: {
-                      input: "$$this",
-                      as: "run",
-                      in: {
-                        bowlingStrikeRate: "$$run.statistics.bowlingStrikeRate",
-                        player: "$$run.player.name",
-                      },
-                    },
+                $map: {
+                  input: "$$bowlingStrikeRateObj",
+                  as: "bowlingStrikeRate",
+                  in: {
+                    bowlingStrikeRate:
+                      "$$bowlingStrikeRate.statistics.bowlingStrikeRate",
+                    player: "$$bowlingStrikeRate.player.name",
                   },
-                ],
+                },
               },
             },
           },
@@ -719,7 +660,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: teamPlayerData[0],
+      data: teamPlayerData,
       status: true,
       message: "Season top players fetched successfully",
       statusCode: StatusCodes.OK,
