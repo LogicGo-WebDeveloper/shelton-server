@@ -159,7 +159,7 @@ const getFeaturedEventsByTournament = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: data,
+      data: data[0],
       status: true,
       message: "Featured events fetched successfully",
       statusCode: StatusCodes.OK,
@@ -282,7 +282,11 @@ const getSeasonStandingByTournament = async (req, res, next) => {
         if (season) {
           data = season.data;
         } else {
-          data = await service.getSeasonStandingByTournament(id, seasonId, type);
+          data = await service.getSeasonStandingByTournament(
+            id,
+            seasonId,
+            type
+          );
           cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
           seasonStanding.seasons.push({ seasonId, type, data: data });
           await seasonStanding.save();
@@ -323,11 +327,11 @@ const getSeasonStandingByTournament = async (req, res, next) => {
                 id: "$$rowObj.team.id",
                 shortName: "$$rowObj.team.shortName",
                 teamName: "$$rowObj.team.name",
-              }
-            }
-          }
-        }
-      }
+              },
+            },
+          },
+        },
+      },
     ]);
 
     return apiResponse({
@@ -910,8 +914,6 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
       },
     ]);
 
-
-
     return apiResponse({
       res,
       data: teamPlayerData[0],
@@ -948,37 +950,60 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
     let data = cacheService.getCache(key);
 
     const leagueMatchesData = await LeagueMatches.findOne({ tournamentId: id });
-    const findMatches = leagueMatchesData?.seasons?.find(season => season.seasonId === seasonId)
+    const findMatches = leagueMatchesData?.seasons?.find(
+      (season) => season.seasonId === seasonId
+    );
     const count = Math.ceil(findMatches?.data?.length / 10);
     const adjustedPage = Math.floor((page - 1) / 3);
 
     if (!data || page > count) {
       if (leagueMatchesData) {
         if (findMatches) {
-          if(page <= count){
-            console.log("9999999999999999999")
+          if (page <= count) {
+            console.log("9999999999999999999");
             data = findMatches.data;
           } else {
-            const newData = await service.getSeasonMatchesByTournament(id, seasonId, span, adjustedPage);
-              // console.log("findMatches", findMatches)
-            const existingEvents = findMatches.data.map((event) => event.id );
-            const uniqueEvents = newData.events.filter((event) => !existingEvents.includes(event.id));
+            const newData = await service.getSeasonMatchesByTournament(
+              id,
+              seasonId,
+              span,
+              adjustedPage
+            );
+            // console.log("findMatches", findMatches)
+            const existingEvents = findMatches.data.map((event) => event.id);
+            const uniqueEvents = newData.events.filter(
+              (event) => !existingEvents.includes(event.id)
+            );
             findMatches.data.push(...uniqueEvents);
             await leagueMatchesData.save();
             data = findMatches.data;
           }
         } else {
-          data = await service.getSeasonMatchesByTournament(id, seasonId, span, adjustedPage);
+          data = await service.getSeasonMatchesByTournament(
+            id,
+            seasonId,
+            span,
+            adjustedPage
+          );
           cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
-          leagueMatchesData.seasons.push({ seasonId, data: data.events }); 
+          leagueMatchesData.seasons.push({ seasonId, data: data.events });
           await leagueMatchesData.save();
         }
       } else {
-        const newData = await service.getSeasonMatchesByTournament(id, seasonId, span, 0);
+        const newData = await service.getSeasonMatchesByTournament(
+          id,
+          seasonId,
+          span,
+          0
+        );
         if (leagueMatchesData) {
           // Filter out duplicate events
-          const existingEvents = leagueMatchesData.seasons.map((season) => season.data);
-          const uniqueEvents = newData.data.filter((event) => !existingEvents.includes(event.id));
+          const existingEvents = leagueMatchesData.seasons.map(
+            (season) => season.data
+          );
+          const uniqueEvents = newData.data.filter(
+            (event) => !existingEvents.includes(event.id)
+          );
           // Push unique events to the existing data
           leagueMatchesData.seasons.push(...uniqueEvents);
           await leagueMatchesData.save();
@@ -993,7 +1018,6 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
           data = leagueMatchesEntry;
         }
         cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
-
       }
     }
 
