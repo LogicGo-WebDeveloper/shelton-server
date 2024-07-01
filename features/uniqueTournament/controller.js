@@ -129,16 +129,16 @@ const getSeasonsByTournament = async (req, res, next) => {
   }
 };
 
-const getFeaturedEventsByTournament = async (req, res, next) => {
+const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const key = cacheService.getCacheKey(req);
+    const key = cacheService.getCacheKey(req);  
 
     let data = cacheService.getCache(key);
 
     if (!data) {
-      data = await service.getFeaturedEventsByTournament(id);
+      data = await service.getLeagueFeaturedEventsByTournament(id);
 
       cacheService.setCache(key, data, cacheTTL.ONE_MINUTE);
 
@@ -148,7 +148,7 @@ const getFeaturedEventsByTournament = async (req, res, next) => {
         data = featuredData;
       } else {
         // Fetch data from the API
-        data = await service.getFeaturedEventsByTournament(id);
+        data = await service.getLeagueFeaturedEventsByTournament(id);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
         // Store the fetched data in the database
@@ -213,7 +213,7 @@ const getFeaturedEventsByTournament = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: aggregatedData[0],
+      data: aggregatedData,
       status: true,
       message: "Featured events fetched successfully",
       statusCode: StatusCodes.OK,
@@ -1122,7 +1122,7 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
 
 export default {
   getSeasonsByTournament,
-  getFeaturedEventsByTournament,
+  getLeagueFeaturedEventsByTournament,
   getMediaByTournament,
   getSeasonInfoByTournament,
   getSeasonStandingByTournament,

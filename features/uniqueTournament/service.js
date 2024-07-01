@@ -14,7 +14,7 @@ const getSeasonsByTournament = async (id) => {
   return data.seasons ?? [];
 };
 
-const getFeaturedEventsByTournament = async (id) => {
+const getLeagueFeaturedEventsByTournament = async (id) => {
   const { data } = await axiosInstance.get(
     `/api/v1/unique-tournament/${id}/featured-events`
   );
@@ -69,7 +69,7 @@ const getSeasonMatchesByTournament = async (id, seasonId, span, page) => {
 export default {
   getTournamentById,
   getSeasonsByTournament,
-  getFeaturedEventsByTournament,
+  getLeagueFeaturedEventsByTournament,
   getMediaByTournament,
   getSeasonInfoByTournament,
   getSeasonStandingByTournament,

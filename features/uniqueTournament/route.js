@@ -10,7 +10,7 @@ route.get("/:id", sportController.getTournamentById);
 route.get("/:id/seasons", sportController.getSeasonsByTournament);
 route.get(
   "/:id/featured-events",
-  sportController.getFeaturedEventsByTournament
+  sportController.getLeagueFeaturedEventsByTournament
 );
 route.get("/:id/media", sportController.getMediaByTournament);
 route.get(

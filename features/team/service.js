@@ -47,6 +47,11 @@ const getTeamMedia = async (id) => {
   return data ?? [];
 };
 
+const getTeamFeaturedEventsByTeams = async (id) => {
+  const { data } = await axiosInstance.get(`/api/v1/team/${id}/near-events`);
+  return data ?? [];
+};
+
 export default {
   getTeamPerformance,
   getTopPlayers,
@@ -54,5 +59,6 @@ export default {
   getTeamPLayers,
   getTeamMatchesByTeam,
   getTeamPlayerStatisticsSeasons,
-  getTeamMedia
+  getTeamMedia,
+  getTeamFeaturedEventsByTeams
 };
