@@ -115,6 +115,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         runsScored: "$$run.statistics.runsScored",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -142,6 +144,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         battingStrikeRate: "$$run.statistics.battingStrikeRate",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -166,6 +170,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         battingAverage: "$$run.statistics.battingAverage",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -190,6 +196,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         fifties: "$$run.statistics.fifties",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -214,6 +222,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         hundreds: "$$run.statistics.hundreds",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -238,6 +248,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         fours: "$$run.statistics.fours",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -262,6 +274,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         sixes: "$$run.statistics.sixes",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -286,6 +300,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         nineties: "$$run.statistics.nineties",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -310,6 +326,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         bowlingAverage: "$$run.statistics.bowlingAverage",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -334,6 +352,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         fiveWicketsHaul: "$$run.statistics.fiveWicketsHaul",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -358,6 +378,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         economy: "$$run.statistics.economy",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -385,6 +407,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         bowlingStrikeRate: "$$run.statistics.bowlingStrikeRate",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -447,7 +471,7 @@ const getTeamDetails = async (req, res, next) => {
         await teamDetailsEntry.save();
         // Set the data to be used for aggregation
         detailsTeam = teamDetailsEntry;
-      } 
+      }
 
       // Aggregate the data
       const aggregatedData = await TeamDetails.aggregate([
@@ -473,15 +497,21 @@ const getTeamDetails = async (req, res, next) => {
                 id: { $ifNull: ["$data.team.tournament.id", null] },
               },
               primaryUniqueTournament: {
-                name: { $ifNull: ["$data.team.primaryUniqueTournament.name", null] },
-                slug: { $ifNull: ["$data.team.primaryUniqueTournament.slug", null] },
-                id: { $ifNull: ["$data.team.primaryUniqueTournament.id", null] },
+                name: {
+                  $ifNull: ["$data.team.primaryUniqueTournament.name", null],
+                },
+                slug: {
+                  $ifNull: ["$data.team.primaryUniqueTournament.slug", null],
+                },
+                id: {
+                  $ifNull: ["$data.team.primaryUniqueTournament.id", null],
+                },
               },
               manager: {
-                    name: { $ifNull: ["$data.team.manager.name", null] },
-                    slug: { $ifNull: ["$data.team.manager.slug", null] },
-                    shortName: { $ifNull: ["$data.team.manager.shortName", null] },
-                    id: { $ifNull: ["$data.team.manager.id", null] },
+                name: { $ifNull: ["$data.team.manager.name", null] },
+                slug: { $ifNull: ["$data.team.manager.slug", null] },
+                shortName: { $ifNull: ["$data.team.manager.shortName", null] },
+                id: { $ifNull: ["$data.team.manager.id", null] },
               },
               venue: {
                 city: {
@@ -489,7 +519,9 @@ const getTeamDetails = async (req, res, next) => {
                 },
                 stadium: {
                   name: { $ifNull: ["$data.team.venue.stadium.name", null] },
-                  capacity: { $ifNull: ["$data.team.venue.stadium.capacity", null] },
+                  capacity: {
+                    $ifNull: ["$data.team.venue.stadium.capacity", null],
+                  },
                 },
                 id: { $ifNull: ["$data.team.venue.id", null] },
               },
