@@ -52,6 +52,30 @@ const getTeamFeaturedEventsByTeams = async (id) => {
   return data ?? [];
 };
 
+const getSeasonStandingsbyTeam = async (id, tournamentId) => {
+  const { data } = await axiosInstance.get(`/api/v1/team/${id}/standings/seasons`);
+
+  const seasonsArray = [];
+  
+  data.tournamentSeasons.forEach(item => {
+    if (item.tournament.uniqueTournament.id == tournamentId) {
+      seasonsArray.push(item);
+    }
+  });
+
+  const combinedSeasons = seasonsArray.reduce((acc, item) => {
+    acc.push(...item.seasons);
+    return acc;
+  }, []);
+
+  const uniqueSeasons = combinedSeasons.filter((season, index, self) =>
+    index === self.findIndex((t) => (
+      t.id === season.id
+    ))
+  );
+  return uniqueSeasons ?? [];
+};
+
 export default {
   getTeamPerformance,
   getTopPlayers,
@@ -60,5 +84,6 @@ export default {
   getTeamMatchesByTeam,
   getTeamPlayerStatisticsSeasons,
   getTeamMedia,
-  getTeamFeaturedEventsByTeams
+  getTeamFeaturedEventsByTeams,
+  getSeasonStandingsbyTeam
 };
