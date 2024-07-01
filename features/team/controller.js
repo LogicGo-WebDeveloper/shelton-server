@@ -114,6 +114,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         runsScored: "$$run.statistics.runsScored",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -141,6 +143,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         battingStrikeRate: "$$run.statistics.battingStrikeRate",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -165,6 +169,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         battingAverage: "$$run.statistics.battingAverage",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -189,6 +195,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         fifties: "$$run.statistics.fifties",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -213,6 +221,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         hundreds: "$$run.statistics.hundreds",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -237,6 +247,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         fours: "$$run.statistics.fours",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -261,6 +273,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         sixes: "$$run.statistics.sixes",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -285,6 +299,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         nineties: "$$run.statistics.nineties",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -309,6 +325,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         bowlingAverage: "$$run.statistics.bowlingAverage",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -333,6 +351,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         fiveWicketsHaul: "$$run.statistics.fiveWicketsHaul",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -357,6 +377,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         economy: "$$run.statistics.economy",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -384,6 +406,8 @@ const getTopPlayers = async (req, res, next) => {
                       in: {
                         bowlingStrikeRate: "$$run.statistics.bowlingStrikeRate",
                         player: "$$run.player.name",
+                        playerId: "$$run.player.id",
+                        position: "$$run.player.position",
                       },
                     },
                   },
@@ -446,7 +470,7 @@ const getTeamDetails = async (req, res, next) => {
         await teamDetailsEntry.save();
         // Set the data to be used for aggregation
         detailsTeam = teamDetailsEntry;
-      } 
+      }
 
       // Aggregate the data
       const aggregatedData = await TeamDetails.aggregate([
@@ -472,12 +496,16 @@ const getTeamDetails = async (req, res, next) => {
                 uniqueTournament: {
                   name: "$data.team.tournament.uniqueTournament.name",
                   slug: "$data.team.tournament.uniqueTournament.slug",
-                  primaryColorHex: "$data.team.tournament.uniqueTournament.primaryColorHex",
-                  secondaryColorHex: "$data.team.tournament.uniqueTournament.secondaryColorHex",
+                  primaryColorHex:
+                    "$data.team.tournament.uniqueTournament.primaryColorHex",
+                  secondaryColorHex:
+                    "$data.team.tournament.uniqueTournament.secondaryColorHex",
                   userCount: "$data.team.tournament.uniqueTournament.userCount",
                   id: "$data.team.tournament.uniqueTournament.id",
-                  hasPerformanceGraphFeature: "$data.team.tournament.uniqueTournament.hasPerformanceGraphFeature",
-                  displayInverseHomeAwayTeams: "$data.team.tournament.uniqueTournament.displayInverseHomeAwayTeams",
+                  hasPerformanceGraphFeature:
+                    "$data.team.tournament.uniqueTournament.hasPerformanceGraphFeature",
+                  displayInverseHomeAwayTeams:
+                    "$data.team.tournament.uniqueTournament.displayInverseHomeAwayTeams",
                 },
                 priority: "$data.team.tournament.priority",
                 isLive: "$data.team.tournament.isLive",
@@ -487,9 +515,11 @@ const getTeamDetails = async (req, res, next) => {
                 name: "$data.team.primaryUniqueTournament.name",
                 slug: "$data.team.primaryUniqueTournament.slug",
                 userCount: "$data.team.primaryUniqueTournament.userCount",
-                hasPerformanceGraphFeature: "$data.team.primaryUniqueTournament.hasPerformanceGraphFeature",
+                hasPerformanceGraphFeature:
+                  "$data.team.primaryUniqueTournament.hasPerformanceGraphFeature",
                 id: "$data.team.primaryUniqueTournament.id",
-                displayInverseHomeAwayTeams: "$data.team.primaryUniqueTournament.displayInverseHomeAwayTeams",
+                displayInverseHomeAwayTeams:
+                  "$data.team.primaryUniqueTournament.displayInverseHomeAwayTeams",
               },
               userCount: "$data.team.userCount",
               manager: {
@@ -506,8 +536,8 @@ const getTeamDetails = async (req, res, next) => {
                       alpha3: "$data.team.manager.country.alpha3",
                       name: "$data.team.manager.country.name",
                     },
-                  }
-                }
+                  },
+                },
               },
               venue: {
                 city: {
