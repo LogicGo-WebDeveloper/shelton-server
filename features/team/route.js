@@ -13,6 +13,7 @@ route.get("/:id/events/:span/:page", sportController.getTeamMatchesByTeam);
 route.get("/:id/player-statistics/seasons", sportController.getTeamPlayerStatisticsSeasons);
 route.get("/:id/media", sportController.getTeamMedia);
 route.get("/:id/near-events", sportController.getTeamFeaturedEventsByTeams);
+route.get("/:id/standings/tournament/:tournamentId/seasons", sportController.getSeasonStandingsbyTeam);
 route.get(
   "/:id/unique-tournament/:uniqueTournamentId/season/:seasonId/top-players/:type",
   sportController.getTopPlayers

@@ -10,6 +10,7 @@ import TeamMatches from "./models/teamMatchesSchema.js";
 import TeamTopPlayers from "./models/teamTopPlayer.js";
 import TeamSeasons from "./models/teamSeasons.js";
 import TeamFeaturedMatches from "./models/teamFeaturedMatchesSchema.js";
+import TeamSeasonsStanding from "./models/teamSeasonsStandingSchema.js";
 
 const getTeamPerformance = async (req, res, next) => {
   try {
@@ -1038,7 +1039,44 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
       });
     }
   }
+}
 
+const getSeasonStandingsbyTeam = async (req, res, next) => {
+  try {
+    const { id, tournamentId } = req.params;
+
+    const key = cacheService.getCacheKey(req);
+    let data = cacheService.getCache(key);
+
+    if (!data) {
+
+      const teamSeasons = await TeamSeasonsStanding.findOne({ teamId: id });
+      if(teamSeasons){
+        data = teamSeasons.data;
+      } else {
+        data = await service.getSeasonStandingsbyTeam(id, tournamentId);
+        cacheService.setCache(key, data, cacheTTL.ONE_DAY);
+         // Store the fetched data in the database
+         const teamSeasonsEntry = new TeamSeasonsStanding({ teamId: id, data });
+         await teamSeasonsEntry.save();
+      }
+    }
+
+    return apiResponse({
+      res,
+      data: data,
+      status: true,
+      message: "Team standings seasons fetched successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
 }
 
 export default {
@@ -1049,5 +1087,6 @@ export default {
   getTeamMatchesByTeam,
   getTeamPlayerStatisticsSeasons,
   getTeamMedia,
-  getTeamFeaturedEventsByTeams
+  getTeamFeaturedEventsByTeams,
+  getSeasonStandingsbyTeam,
 };
