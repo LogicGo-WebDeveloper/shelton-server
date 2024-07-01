@@ -159,7 +159,7 @@ const getFeaturedEventsByTournament = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: data,
+      data: data[0],
       status: true,
       message: "Featured events fetched successfully",
       statusCode: StatusCodes.OK,
@@ -282,7 +282,11 @@ const getSeasonStandingByTournament = async (req, res, next) => {
         if (season) {
           data = season.data;
         } else {
-          data = await service.getSeasonStandingByTournament(id, seasonId, type);
+          data = await service.getSeasonStandingByTournament(
+            id,
+            seasonId,
+            type
+          );
           cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
           seasonStanding.seasons.push({ seasonId, type, data: data });
           await seasonStanding.save();
@@ -323,11 +327,11 @@ const getSeasonStandingByTournament = async (req, res, next) => {
                 id: "$$rowObj.team.id",
                 shortName: "$$rowObj.team.shortName",
                 teamName: "$$rowObj.team.name",
-              }
-            }
-          }
-        }
-      }
+              },
+            },
+          },
+        },
+      },
     ]);
 
     return apiResponse({
@@ -993,7 +997,6 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
           data = leagueMatchesEntry;
         }
         cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
-
       }
     }
 
