@@ -3,8 +3,10 @@ import { StatusCodes } from "http-status-codes";
 import cacheService from "../cache/service.js";
 import service from "./service.js";
 import cacheTTL from "../cache/constants.js";
+import PlayerDetails from "./models/playerDetailsSchema.js";
 
 const getPlayerDetailsById = async (req, res, next) => {
+  console.log(11);
   try {
     const { id } = req.params;
 
@@ -14,13 +16,42 @@ const getPlayerDetailsById = async (req, res, next) => {
 
     if (!data) {
       data = await service.getPlayerById(id);
+      const players = await PlayerDetails.findOne({ PlayerId: id });
+
+      if (players) {
+        data = players.data;
+      } else {
+        const playerEntry = new PlayerDetails({ PlayerId: id, data });
+        await playerEntry.save();
+      }
 
       cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
     }
 
+    const teamPlayerData = await PlayerDetails.aggregate([
+      { $match: { PlayerId: id } },
+      {
+        $project: {
+          players: {
+            $map: {
+              input: "$data.player",
+              as: "playerObj",
+              in: {
+                position: "$$playerObj.position",
+                id: "$$playerObj.id",
+                country: "$$playerObj.country.name",
+                age: "$$playerObj.dateOfBirthTimestamp",
+                height: "$$playerObj.height",
+              },
+            },
+          },
+        },
+      },
+    ]);
+
     return apiResponse({
       res,
-      data: data,
+      data: teamPlayerData,
       status: true,
       message: "Player details fetched successfully",
       statusCode: StatusCodes.OK,

@@ -133,7 +133,7 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const key = cacheService.getCacheKey(req);  
+    const key = cacheService.getCacheKey(req);
 
     let data = cacheService.getCache(key);
 
@@ -213,7 +213,7 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: aggregatedData,
+      data: aggregatedData[0],
       status: true,
       message: "Featured events fetched successfully",
       statusCode: StatusCodes.OK,
