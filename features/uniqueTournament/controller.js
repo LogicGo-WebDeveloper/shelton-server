@@ -6,7 +6,7 @@ import cacheTTL from "../cache/constants.js";
 import Tournament from "./models/tournamentSchema.js";
 import Season from "./models/seasonsSchema.js";
 import TopPlayers from "./models/topPlayesSchema.js";
-import FeaturedMatches from "./models/topPlayesSchema.js";
+import FeaturedMatches from "./models/featuredMachesSchema.js";
 import SeasonStanding from "./models/standingSchema.js";
 import LeagueMatches from "./models/leagueMatchesSchema.js";
 
@@ -157,9 +157,63 @@ const getFeaturedEventsByTournament = async (req, res, next) => {
       }
     }
 
+    const aggregatedData = await FeaturedMatches.aggregate([
+      { $match: { tournamentId: req.params.id } },
+      { $unwind: "$data" },
+      {
+        $project: {
+          _id: 0,
+          tournament: {
+            name: { $ifNull: ["$data.tournament.name", null] },
+            slug: { $ifNull: ["$data.tournament.slug", null] },
+            category: {
+              name: { $ifNull: ["$data.tournament.category.name", null] },
+              slug: { $ifNull: ["$data.tournament.category.slug", null] },
+              id: { $ifNull: ["$data.tournament.category.id", null] },
+            },
+            id: { $ifNull: ["$data.tournament.id", null] },
+          },
+          homeTeam: {
+            name: { $ifNull: ["$data.homeTeam.name", null] },
+            slug: { $ifNull: ["$data.homeTeam.slug", null] },
+            shortName: { $ifNull: ["$data.homeTeam.shortName", null] },
+            nameCode: { $ifNull: ["$data.homeTeam.nameCode", null] },
+            id: { $ifNull: ["$data.homeTeam.id", null] },
+          },
+          awayTeam: {
+            name: { $ifNull: ["$data.awayTeam.name", null] },
+            slug: { $ifNull: ["$data.awayTeam.slug", null] },
+            shortName: { $ifNull: ["$data.awayTeam.shortName", null] },
+            nameCode: { $ifNull: ["$data.awayTeam.nameCode", null] },
+            id: { $ifNull: ["$data.awayTeam.id", null] },
+          },
+          status: {
+            code: { $ifNull: ["$data.status.code", null] },
+            description: { $ifNull: ["$data.status.description", null] },
+            type: { $ifNull: ["$data.status.type", null] },
+          },
+          homeScore: {
+            current: { $ifNull: ["$data.homeScore.current", null] },
+            display: { $ifNull: ["$data.homeScore.display", null] },
+            innings: { $ifNull: ["$data.homeScore.innings", null] },
+          },
+          awayScore: {
+            current: { $ifNull: ["$data.awayScore.current", null] },
+            display: { $ifNull: ["$data.awayScore.display", null] },
+            innings: { $ifNull: ["$data.awayScore.innings", null] },
+          },
+          endTimestamp: { $ifNull: ["$data.endTimestamp", null] },
+          startTimestamp: { $ifNull: ["$data.startTimestamp", null] },
+          note: { $ifNull: ["$data.note", null] },
+          slug: { $ifNull: ["$data.slug", null] },
+          id: { $ifNull: ["$data.id", null] },
+        },
+      },
+    ]);
+
     return apiResponse({
       res,
-      data: data[0],
+      data: aggregatedData[0],
       status: true,
       message: "Featured events fetched successfully",
       statusCode: StatusCodes.OK,
@@ -984,7 +1038,6 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
       if (leagueMatchesData) {
         if (findMatches) {
           if (page <= count) {
-            console.log("9999999999999999999");
             data = findMatches.data;
           } else {
             const newData = await service.getSeasonMatchesByTournament(
@@ -1077,8 +1130,9 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
             },
           },
           note: "$seasons.data.note",
-          endTimestamp: "$seasons.data.endTimestamp",
-          startTimestamp: "$seasons.data.startTimestamp",
+          // endTimestamp: "$seasons.data.endTimestamp",
+          endTimestamp: { $ifNull: ["$seasons.data.endTimestamp", null] },
+          startTimestamp: { $ifNull: ["$seasons.data.startTimestamp", null] },
           id: "$seasons.data.id",
         },
       },

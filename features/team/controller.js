@@ -480,92 +480,60 @@ const getTeamDetails = async (req, res, next) => {
             _id: 0,
             teamId: "$teamId",
             team: {
-              name: "$data.team.name",
-              slug: "$data.team.slug",
-              shortName: "$data.team.shortName",
-              gender: "$data.team.gender",
+              name: { $ifNull: ["$data.team.name", null] },
+              slug: { $ifNull: ["$data.team.slug", null] },
+              shortName: { $ifNull: ["$data.team.shortName", null] },
               category: {
-                name: "$data.team.category.name",
-                slug: "$data.team.category.slug",
-                id: "$data.team.category.id",
-                flag: "$data.team.category.flag",
+                name: { $ifNull: ["$data.team.category.name", null] },
+                slug: { $ifNull: ["$data.team.category.slug", null] },
+                id: { $ifNull: ["$data.team.category.id", null] },
+                flag: { $ifNull: ["$data.team.category.flag", null] },
               },
               tournament: {
                 name: "$data.team.tournament.name",
                 slug: "$data.team.tournament.slug",
-                uniqueTournament: {
-                  name: "$data.team.tournament.uniqueTournament.name",
-                  slug: "$data.team.tournament.uniqueTournament.slug",
-                  primaryColorHex:
-                    "$data.team.tournament.uniqueTournament.primaryColorHex",
-                  secondaryColorHex:
-                    "$data.team.tournament.uniqueTournament.secondaryColorHex",
-                  userCount: "$data.team.tournament.uniqueTournament.userCount",
-                  id: "$data.team.tournament.uniqueTournament.id",
-                  hasPerformanceGraphFeature:
-                    "$data.team.tournament.uniqueTournament.hasPerformanceGraphFeature",
-                  displayInverseHomeAwayTeams:
-                    "$data.team.tournament.uniqueTournament.displayInverseHomeAwayTeams",
-                },
-                priority: "$data.team.tournament.priority",
-                isLive: "$data.team.tournament.isLive",
-                id: "$data.team.tournament.id",
+                isLive: { $ifNull: ["$data.team.tournament.isLive", null] },
+                id: { $ifNull: ["$data.team.tournament.id", null] },
               },
               primaryUniqueTournament: {
-                name: "$data.team.primaryUniqueTournament.name",
-                slug: "$data.team.primaryUniqueTournament.slug",
-                userCount: "$data.team.primaryUniqueTournament.userCount",
-                hasPerformanceGraphFeature:
-                  "$data.team.primaryUniqueTournament.hasPerformanceGraphFeature",
-                id: "$data.team.primaryUniqueTournament.id",
-                displayInverseHomeAwayTeams:
-                  "$data.team.primaryUniqueTournament.displayInverseHomeAwayTeams",
-              },
-              userCount: "$data.team.userCount",
-              manager: {
-                $cond: {
-                  if: { $eq: ["$data.team.manager", null] },
-                  then: null,
-                  else: {
-                    name: "$data.team.manager.name",
-                    slug: "$data.team.manager.slug",
-                    shortName: "$data.team.manager.shortName",
-                    id: "$data.team.manager.id",
-                    country: {
-                      alpha2: "$data.team.manager.country.alpha2",
-                      alpha3: "$data.team.manager.country.alpha3",
-                      name: "$data.team.manager.country.name",
-                    },
-                  },
+                name: {
+                  $ifNull: ["$data.team.primaryUniqueTournament.name", null],
                 },
+                slug: {
+                  $ifNull: ["$data.team.primaryUniqueTournament.slug", null],
+                },
+                id: {
+                  $ifNull: ["$data.team.primaryUniqueTournament.id", null],
+                },
+              },
+              manager: {
+                name: { $ifNull: ["$data.team.manager.name", null] },
+                slug: { $ifNull: ["$data.team.manager.slug", null] },
+                shortName: { $ifNull: ["$data.team.manager.shortName", null] },
+                id: { $ifNull: ["$data.team.manager.id", null] },
               },
               venue: {
                 city: {
-                  name: "$data.team.venue.city.name",
+                  name: { $ifNull: ["$data.team.venue.city.name", null] },
                 },
                 stadium: {
-                  name: "$data.team.venue.stadium.name",
-                  capacity: "$data.team.venue.stadium.capacity",
+                  name: { $ifNull: ["$data.team.venue.stadium.name", null] },
+                  capacity: {
+                    $ifNull: ["$data.team.venue.stadium.capacity", null],
+                  },
                 },
-                id: "$data.team.venue.id",
-                country: {
-                  alpha2: "$data.team.venue.country.alpha2",
-                  alpha3: "$data.team.venue.country.alpha3",
-                  name: "$data.team.venue.country.name",
-                },
+                id: { $ifNull: ["$data.team.venue.id", null] },
               },
-              nameCode: "$data.team.nameCode",
-              class: "$data.team.class",
-              disabled: "$data.team.disabled",
-              national: "$data.team.national",
-              type: "$data.team.type",
-              id: "$data.team.id",
+              nameCode: { $ifNull: ["$data.team.nameCode", null] },
+              national: { $ifNull: ["$data.team.national", null] },
+              type: { $ifNull: ["$data.team.type", null] },
+              id: { $ifNull: ["$data.team.id", null] },
               country: {
-                alpha2: "$data.team.country.alpha2",
-                alpha3: "$data.team.country.alpha3",
-                name: "$data.team.country.name",
+                alpha2: { $ifNull: ["$data.team.country.alpha2", null] },
+                alpha3: { $ifNull: ["$data.team.country.alpha3", null] },
+                name: { $ifNull: ["$data.team.country.name", null] },
               },
-              fullName: "$data.team.fullName",
+              fullName: { $ifNull: ["$data.team.fullName", null] },
             },
           },
         },
