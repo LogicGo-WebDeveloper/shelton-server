@@ -6,7 +6,6 @@ import cacheTTL from "../cache/constants.js";
 import PlayerDetails from "./models/playerDetailsSchema.js";
 
 const getPlayerDetailsById = async (req, res, next) => {
-  console.log(11);
   try {
     const { id } = req.params;
 
@@ -48,15 +47,17 @@ const getPlayerDetailsById = async (req, res, next) => {
         },
       },
     ]);
+    console.log(teamPlayerData);
 
     return apiResponse({
       res,
-      data: teamPlayerData,
+      data: teamPlayerData[0],
       status: true,
       message: "Player details fetched successfully",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
