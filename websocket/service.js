@@ -8,9 +8,21 @@ const getAllLiveMatches = async (sport) => {
 const getSportList = async (timezoneOffset = 0) => {
     const { data } = await axiosInstance.get(`/api/v1/sport/${timezoneOffset}/event-count`);
     return data;
-  };
+};
+
+const getLiveMatch = async (matchId) => {
+    const { data } = await axiosInstance.get(`/api/v1/event/${matchId}`);
+    return data;
+};
+
+const getScorecard = async (matchId) => {
+    const { data } = await axiosInstance.get(`/api/v1/event/${matchId}/innings`);
+    return data;
+};
 
 export default {
     getAllLiveMatches,
     getSportList,
+    getLiveMatch,
+    getScorecard,
 };
