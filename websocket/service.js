@@ -25,10 +25,34 @@ const getSquad = async (matchId) => {
     return data;
 };
 
+const getOvers = async (matchId) => {
+    const { data } = await axiosInstance.get(`/api/v1/event/${matchId}/incidents`);
+    return data;
+};
+
+const getMatches = async (customId) => {
+    const { data } = await axiosInstance.get(`/api/v1/event/${customId}/h2h/events`);
+    return data;
+};
+
+const getVotes = async (matchId) => {
+    const { data } = await axiosInstance.get(`/api/v1/event/${matchId}/votes`);
+    return data;
+};
+
+const getStandings = async (matchId) => {
+    const { data } = await axiosInstance.get(`/api/v1/event/${matchId}/standings`);
+    return data;
+};
+
 export default {
     getAllLiveMatches,
     getSportList,
     getLiveMatch,
     getScorecard,
-    getSquad
+    getSquad,
+    getOvers,
+    getMatches,
+    getVotes,
+    getStandings
 };
