@@ -45,6 +45,7 @@ const getPlayerDetailsById = async (req, res, next) => {
                 height: "$$playerObj.height",
                 shirtNumber: "$$playerObj.shirtNumber",
                 playerQuality: "$$playerObj.cricketPlayerInfo.bowling",
+                battingQuality: "$$playerObj.cricketPlayerInfo.batting",
                 nationality: "$$playerObj.country.alpha3",
               },
             },
