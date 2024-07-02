@@ -1110,6 +1110,9 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
       { $limit: pageSize },
       {
         $project: {
+          tournament: {
+            tournamentId: "$seasons.data.tournament.id",
+          },
           homeTeam: {
             name: "$seasons.data.homeTeam.name",
             score: "$seasons.data.homeScore.current",
