@@ -20,9 +20,15 @@ const getScorecard = async (matchId) => {
     return data;
 };
 
+const getSquad = async (matchId) => {
+    const { data } = await axiosInstance.get(`/api/v1/event/${matchId}/lineups`);
+    return data;
+};
+
 export default {
     getAllLiveMatches,
     getSportList,
     getLiveMatch,
     getScorecard,
+    getSquad
 };

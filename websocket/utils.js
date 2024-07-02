@@ -1,57 +1,84 @@
 export const convertSportListToArray = (sportList) => {
-    return Object.keys(sportList).map(key => ({
-      id: key,
-      name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, ' '),
-      live: sportList[key].live,
-      total: sportList[key].total
-    }));
+  return Object.keys(sportList).map(key => ({
+    id: key,
+    name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, ' '),
+    live: sportList[key].live,
+    total: sportList[key].total
+  }));
 };
 
 export const filterLiveMatchData = (match) => {
-    return {
-      tournament: {
-        name: match?.tournament?.name,
-        slug: match?.tournament?.slug,
-        category: {
-          name: match?.tournament?.category?.name,
-          slug: match?.tournament?.category?.slug,
-          id: match?.tournament?.category?.id,
-        },
-        id: match?.tournament?.id,
+  return {
+    tournament: {
+      name: match?.tournament?.name || null,
+      slug: match?.tournament?.slug || null,
+      category: {
+        name: match?.tournament?.category?.name || null,
+        slug: match?.tournament?.category?.slug || null,
+        id: match?.tournament?.category?.id || null,
       },
-      season: {
-        name: match?.season?.name,
-        year: match?.season?.year,
-        id: match?.season?.id,
-      },
-      status: {
-        code: match?.status?.code,
-        description: match?.status?.description,
-        type: match?.status?.type,
-      },
-      homeTeam: {
-        name: match?.homeTeam?.name,
-        slug: match?.homeTeam?.slug,
-        shortName: match?.homeTeam?.shortName,
-        nameCode: match?.homeTeam?.nameCode,
-        id: match?.homeTeam?.id,
-      },
-      awayTeam: {
-        name: match?.awayTeam?.name,
-        slug: match?.awayTeam?.slug,
-        shortName: match?.awayTeam?.shortName,
-        nameCode: match?.awayTeam?.nameCode,
-        id: match?.awayTeam?.id,
-      },
-      homeScore: match?.homeScore,
-      awayScore: match?.awayScore,
-      id: match?.id,
-      currentBattingTeamId: match?.currentBattingTeamId,
-      endTimestamp: match?.endTimestamp,
-      startTimestamp: match?.startTimestamp,
-      slug: match?.slug,
-      periods: match?.periods,
-      lastPeriod: match?.lastPeriod,
-      finalResultOnly: match?.finalResultOnly,
-    };
+      id: match?.tournament?.id || null,
+    },
+    season: {
+      name: match?.season?.name || null,
+      year: match?.season?.year || null,
+      id: match?.season?.id || null,
+    },
+    status: {
+      code: match?.status?.code || null,
+      description: match?.status?.description || null,
+      type: match?.status?.type || null,
+    },
+    homeTeam: {
+      name: match?.homeTeam?.name || null,
+      slug: match?.homeTeam?.slug || null,
+      shortName: match?.homeTeam?.shortName || null,
+      nameCode: match?.homeTeam?.nameCode || null,
+      id: match?.homeTeam?.id || null,
+    },
+    awayTeam: {
+      name: match?.awayTeam?.name || null,
+      slug: match?.awayTeam?.slug || null,
+      shortName: match?.awayTeam?.shortName || null,
+      nameCode: match?.awayTeam?.nameCode || null,
+      id: match?.awayTeam?.id || null,
+    },
+    homeScore: {
+      current: match?.homeScore?.current || null,
+      display: match?.homeScore?.display || null,
+      innings: match?.homeScore?.innings || null,
+    },
+    awayScore: {
+      current: match?.awayScore?.current || null,
+      display: match?.awayScore?.display || null,
+      innings: match?.awayScore?.innings || null,
+    },
+    id: match?.id || null,
+    currentBattingTeamId: match?.currentBattingTeamId || null,
+    endTimestamp: match?.endTimestamp || null,
+    startTimestamp: match?.startTimestamp || null,
+    slug: match?.slug || null,
+    periods: match?.periods || null,
+    lastPeriod: match?.lastPeriod || null,
+    finalResultOnly: match?.finalResultOnly || null,
   };
+};
+
+ export const filterPlayerData = (players) => {
+  return players.map(player => ({
+    name: player.player.name || null,
+    shortName: player.player.shortName || null,
+    id: player.player.id || null,
+    batting: player.player.cricketPlayerInfo.batting || null,
+    bowling: player.player.cricketPlayerInfo.bowling || null,
+    position: player.position || null,
+    substitute: player.substitute || null
+  }));
+};
+
+export const filterScorecardData = (scorecard) => {
+  return {
+    home: filterPlayerData(scorecard.home.players),
+    away: filterPlayerData(scorecard.away.players)
+  }
+}

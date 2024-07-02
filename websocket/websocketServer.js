@@ -1,6 +1,6 @@
 import { WebSocketServer } from 'ws';
 import sportWebsocketService from './service.js';
-import { convertSportListToArray, filterLiveMatchData } from './utils.js';
+import { convertSportListToArray, filterLiveMatchData, filterPlayerData } from './utils.js';
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
@@ -18,20 +18,36 @@ const setupWebSocket = (server) => {
         case "liveMatches":
           const liveMatches = await sportWebsocketService.getAllLiveMatches(data.sport);
           const filteredLiveMatches = liveMatches.events.map(filterLiveMatchData);
-          ws.send(JSON.stringify({ "message": "Live matches fetched successfully", body: filteredLiveMatches, status: true }));
+          ws.send(JSON.stringify({ "message": "Live matches fetched successfully", body: { actionType: data.action, data: filteredLiveMatches }, status: true }));
         break;
         case "sportList":
           const sportList = await sportWebsocketService.getSportList(19800);
           let filteredSportList = convertSportListToArray(sportList);
-          ws.send(JSON.stringify({ "message": "Sport list fetched successfully", body: filteredSportList, status: true }));
+          ws.send(JSON.stringify({ "message": "Sport list fetched successfully", body: { actionType: data.action, data: filteredSportList }, status: true }));
         break;
         case "liveMatch":
           const liveMatch = await sportWebsocketService.getLiveMatch(data.matchId);
-          ws.send(JSON.stringify({ "message": "Live match fetched successfully", body: liveMatch.event, status: true }));
+          const filteredLiveMatch = filterLiveMatchData(liveMatch.event);
+
+          ws.send(JSON.stringify({ "message": "Live match fetched successfully", body: {actionType: data.action, data: filteredLiveMatch}, status: true }));
         break;
-      case "scorecard":
+        case "scorecard":
           const scorecard = await sportWebsocketService.getScorecard(data.matchId);
-          ws.send(JSON.stringify({ "message": "Scorecard fetched successfully", body: scorecard, status: true }));
+          ws.send(JSON.stringify({ "message": "Scorecard fetched successfully", body: { actionType: data.action, data: scorecard.innings}, status: true }));
+        break;
+        case "squad":
+          const squad = await sportWebsocketService.getSquad(data.matchId);
+          const filteredSquad = {
+            home: {
+              players: filterPlayerData(squad.home.players),
+              supportStaff: squad.home.supportStaff
+            },
+            away: {
+              players: filterPlayerData(squad.away.players),
+              supportStaff: squad.away.supportStaff
+            }
+          };
+          ws.send(JSON.stringify({ "message": "Squad fetched successfully", body: { actionType: data.action, data: filteredSquad }, status: true }));
         break;
       }
     });
