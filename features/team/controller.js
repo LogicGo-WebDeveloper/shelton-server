@@ -886,11 +886,10 @@ const getTeamMedia = async (req, res, next) => {
 };
 
 const getTeamFeaturedEventsByTeams = async (req, res, next) => {
-
   try {
     const { id } = req.params;
 
-    const key = cacheService.getCacheKey(req);  
+    const key = cacheService.getCacheKey(req);
 
     let data = cacheService.getCache(key);
 
@@ -898,7 +897,9 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
       data = await service.getTeamFeaturedEventsByTeams(id);
 
       cacheService.setCache(key, data, cacheTTL.ONE_MINUTE);
-      const teamFeaturedData = await TeamFeaturedMatches.findOne({ teamId: id });
+      const teamFeaturedData = await TeamFeaturedMatches.findOne({
+        teamId: id,
+      });
 
       if (teamFeaturedData) {
         data = teamFeaturedData;
@@ -923,92 +924,174 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
               name: { $ifNull: ["$data.previousEvent.tournament.name", null] },
               slug: { $ifNull: ["$data.previousEvent.tournament.slug", null] },
               category: {
-                name: { $ifNull: ["$data.previousEvent.tournament.category.name", null] },
-                slug: { $ifNull: ["$data.previousEvent.tournament.category.slug", null] },
-                id: { $ifNull: ["$data.previousEvent.tournament.category.id", null] },
+                name: {
+                  $ifNull: [
+                    "$data.previousEvent.tournament.category.name",
+                    null,
+                  ],
+                },
+                slug: {
+                  $ifNull: [
+                    "$data.previousEvent.tournament.category.slug",
+                    null,
+                  ],
+                },
+                id: {
+                  $ifNull: ["$data.previousEvent.tournament.category.id", null],
+                },
               },
               id: { $ifNull: ["$data.previousEvent.tournament.id", null] },
             },
             homeTeam: {
               name: { $ifNull: ["$data.previousEvent.homeTeam.name", null] },
               slug: { $ifNull: ["$data.previousEvent.homeTeam.slug", null] },
-              shortName: { $ifNull: ["$data.previousEvent.homeTeam.shortName", null] },
-              nameCode: { $ifNull: ["$data.previousEvent.homeTeam.nameCode", null] },
+              shortName: {
+                $ifNull: ["$data.previousEvent.homeTeam.shortName", null],
+              },
+              nameCode: {
+                $ifNull: ["$data.previousEvent.homeTeam.nameCode", null],
+              },
               id: { $ifNull: ["$data.previousEvent.homeTeam.id", null] },
             },
             awayTeam: {
               name: { $ifNull: ["$data.previousEvent.awayTeam.name", null] },
               slug: { $ifNull: ["$data.previousEvent.awayTeam.slug", null] },
-              shortName: { $ifNull: ["$data.previousEvent.awayTeam.shortName", null] },
-              nameCode: { $ifNull: ["$data.previousEvent.awayTeam.nameCode", null] },
+              shortName: {
+                $ifNull: ["$data.previousEvent.awayTeam.shortName", null],
+              },
+              nameCode: {
+                $ifNull: ["$data.previousEvent.awayTeam.nameCode", null],
+              },
               id: { $ifNull: ["$data.previousEvent.awayTeam.id", null] },
             },
             status: {
               code: { $ifNull: ["$data.previousEvent.status.code", null] },
-              description: { $ifNull: ["$data.previousEvent.status.description", null] },
+              description: {
+                $ifNull: ["$data.previousEvent.status.description", null],
+              },
               type: { $ifNull: ["$data.previousEvent.status.type", null] },
             },
             homeScore: {
-              current: { $ifNull: ["$data.previousEvent.homeScore.current", null] },
-              display: { $ifNull: ["$data.previousEvent.homeScore.display", null] },
-              innings: { $ifNull: ["$data.previousEvent.homeScore.innings", null] },
+              current: {
+                $ifNull: ["$data.previousEvent.homeScore.current", null],
+              },
+              display: {
+                $ifNull: ["$data.previousEvent.homeScore.display", null],
+              },
+              innings: {
+                $ifNull: ["$data.previousEvent.homeScore.innings", null],
+              },
             },
             awayScore: {
-              current: { $ifNull: ["$data.previousEvent.awayScore.current", null] },
-              display: { $ifNull: ["$data.previousEvent.awayScore.display", null] },
-              innings: { $ifNull: ["$data.previousEvent.awayScore.innings", null] },
+              current: {
+                $ifNull: ["$data.previousEvent.awayScore.current", null],
+              },
+              display: {
+                $ifNull: ["$data.previousEvent.awayScore.display", null],
+              },
+              innings: {
+                $ifNull: ["$data.previousEvent.awayScore.innings", null],
+              },
             },
-            endTimestamp: { $ifNull: ["$data.previousEvent.endTimestamp", null] },
-            startTimestamp: { $ifNull: ["$data.previousEvent.startTimestamp", null] },
+            endTimestamp: {
+              $ifNull: ["$data.previousEvent.endTimestamp", null],
+            },
+            startTimestamp: {
+              $ifNull: ["$data.previousEvent.startTimestamp", null],
+            },
             note: { $ifNull: ["$data.previousEvent.note", null] },
             slug: { $ifNull: ["$data.previousEvent.slug", null] },
             id: { $ifNull: ["$data.previousEvent.id", null] },
           },
-          nextEvent: { 
-            tournament: {
-              name: { $ifNull: ["$data.nextEvent.tournament.name", null] },
-              slug: { $ifNull: ["$data.nextEvent.tournament.slug", null] },
-              category: {
-                name: { $ifNull: ["$data.nextEvent.tournament.category.name", null] },
-                slug: { $ifNull: ["$data.nextEvent.tournament.category.slug", null] },
-                id: { $ifNull: ["$data.nextEvent.tournament.category.id", null] },
+          nextEvent: {
+            $cond: {
+              if: { $eq: [{ $ifNull: ["$data.nextEvent", null] }, null] },
+              then: null, // or {} if you want an empty object
+              else: {
+                tournament: {
+                  name: { $ifNull: ["$data.nextEvent.tournament.name", null] },
+                  slug: { $ifNull: ["$data.nextEvent.tournament.slug", null] },
+                  category: {
+                    name: {
+                      $ifNull: [
+                        "$data.nextEvent.tournament.category.name",
+                        null,
+                      ],
+                    },
+                    slug: {
+                      $ifNull: [
+                        "$data.nextEvent.tournament.category.slug",
+                        null,
+                      ],
+                    },
+                    id: {
+                      $ifNull: ["$data.nextEvent.tournament.category.id", null],
+                    },
+                  },
+                  id: { $ifNull: ["$data.nextEvent.tournament.id", null] },
+                },
+                homeTeam: {
+                  name: { $ifNull: ["$data.nextEvent.homeTeam.name", null] },
+                  slug: { $ifNull: ["$data.nextEvent.homeTeam.slug", null] },
+                  shortName: {
+                    $ifNull: ["$data.nextEvent.homeTeam.shortName", null],
+                  },
+                  nameCode: {
+                    $ifNull: ["$data.nextEvent.homeTeam.nameCode", null],
+                  },
+                  id: { $ifNull: ["$data.nextEvent.homeTeam.id", null] },
+                },
+                awayTeam: {
+                  name: { $ifNull: ["$data.nextEvent.awayTeam.name", null] },
+                  slug: { $ifNull: ["$data.nextEvent.awayTeam.slug", null] },
+                  shortName: {
+                    $ifNull: ["$data.nextEvent.awayTeam.shortName", null],
+                  },
+                  nameCode: {
+                    $ifNull: ["$data.nextEvent.awayTeam.nameCode", null],
+                  },
+                  id: { $ifNull: ["$data.nextEvent.awayTeam.id", null] },
+                },
+                status: {
+                  code: { $ifNull: ["$data.nextEvent.status.code", null] },
+                  description: {
+                    $ifNull: ["$data.nextEvent.status.description", null],
+                  },
+                  type: { $ifNull: ["$data.nextEvent.status.type", null] },
+                },
+                homeScore: {
+                  current: {
+                    $ifNull: ["$data.nextEvent.homeScore.current", null],
+                  },
+                  display: {
+                    $ifNull: ["$data.nextEvent.homeScore.display", null],
+                  },
+                  innings: {
+                    $ifNull: ["$data.nextEvent.homeScore.innings", null],
+                  },
+                },
+                awayScore: {
+                  current: {
+                    $ifNull: ["$data.nextEvent.awayScore.current", null],
+                  },
+                  display: {
+                    $ifNull: ["$data.nextEvent.awayScore.display", null],
+                  },
+                  innings: {
+                    $ifNull: ["$data.nextEvent.awayScore.innings", null],
+                  },
+                },
+                endTimestamp: {
+                  $ifNull: ["$data.nextEvent.endTimestamp", null],
+                },
+                startTimestamp: {
+                  $ifNull: ["$data.nextEvent.startTimestamp", null],
+                },
+                note: { $ifNull: ["$data.nextEvent.note", null] },
+                slug: { $ifNull: ["$data.nextEvent.slug", null] },
+                id: { $ifNull: ["$data.nextEvent.id", null] },
               },
-              id: { $ifNull: ["$data.nextEvent.tournament.id", null] },
             },
-            homeTeam: {
-              name: { $ifNull: ["$data.nextEvent.homeTeam.name", null] },
-              slug: { $ifNull: ["$data.nextEvent.homeTeam.slug", null] },
-              shortName: { $ifNull: ["$data.nextEvent.homeTeam.shortName", null] },
-              nameCode: { $ifNull: ["$data.nextEvent.homeTeam.nameCode", null] },
-              id: { $ifNull: ["$data.nextEvent.homeTeam.id", null] },
-            },
-            awayTeam: {
-              name: { $ifNull: ["$data.nextEvent.awayTeam.name", null] },
-              slug: { $ifNull: ["$data.nextEvent.awayTeam.slug", null] },
-              shortName: { $ifNull: ["$data.nextEvent.awayTeam.shortName", null] },
-              nameCode: { $ifNull: ["$data.nextEvent.awayTeam.nameCode", null] },
-              id: { $ifNull: ["$data.nextEvent.awayTeam.id", null] },
-            },
-            status: {
-              code: { $ifNull: ["$data.nextEvent.status.code", null] },
-              description: { $ifNull: ["$data.nextEvent.status.description", null] },
-              type: { $ifNull: ["$data.nextEvent.status.type", null] },
-            },
-            homeScore: {
-              current: { $ifNull: ["$data.nextEvent.homeScore.current", null] },
-              display: { $ifNull: ["$data.nextEvent.homeScore.display", null] },
-              innings: { $ifNull: ["$data.nextEvent.homeScore.innings", null] },
-            },
-            awayScore: {
-              current: { $ifNull: ["$data.nextEvent.awayScore.current", null] },
-              display: { $ifNull: ["$data.nextEvent.awayScore.display", null] },
-              innings: { $ifNull: ["$data.nextEvent.awayScore.innings", null] },
-            },
-            endTimestamp: { $ifNull: ["$data.nextEvent.endTimestamp", null] },
-            startTimestamp: { $ifNull: ["$data.nextEvent.startTimestamp", null] },
-            note: { $ifNull: ["$data.nextEvent.note", null] },
-            slug: { $ifNull: ["$data.nextEvent.slug", null] },
-            id: { $ifNull: ["$data.nextEvent.id", null] },
           },
         },
       },
@@ -1039,7 +1122,7 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
       });
     }
   }
-}
+};
 
 const getSeasonStandingsbyTeam = async (req, res, next) => {
   try {
@@ -1049,16 +1132,15 @@ const getSeasonStandingsbyTeam = async (req, res, next) => {
     let data = cacheService.getCache(key);
 
     if (!data) {
-
       const teamSeasons = await TeamSeasonsStanding.findOne({ teamId: id });
-      if(teamSeasons){
+      if (teamSeasons) {
         data = teamSeasons.data;
       } else {
         data = await service.getSeasonStandingsbyTeam(id, tournamentId);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
-         // Store the fetched data in the database
-         const teamSeasonsEntry = new TeamSeasonsStanding({ teamId: id, data });
-         await teamSeasonsEntry.save();
+        // Store the fetched data in the database
+        const teamSeasonsEntry = new TeamSeasonsStanding({ teamId: id, data });
+        await teamSeasonsEntry.save();
       }
     }
 
@@ -1077,7 +1159,7 @@ const getSeasonStandingsbyTeam = async (req, res, next) => {
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
     });
   }
-}
+};
 
 export default {
   getTeamPerformance,
