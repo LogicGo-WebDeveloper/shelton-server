@@ -1,5 +1,6 @@
 import { WebSocketServer } from 'ws';
-import sportService from '../features/sport/service.js';
+import sportWebsocketService from './service.js';
+import { convertSportListToArray, filterLiveMatchData } from './utils.js';
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
@@ -8,15 +9,15 @@ const setupWebSocket = (server) => {
       let messageObj = JSON.parse(message);
       switch (messageObj.action) {
         case "liveMatches":
-            const liveMatches = await sportService.getAllLiveMatches(messageObj.sport);
-            ws.send(JSON.stringify({ "action": messageObj.action, "data": liveMatches }));
-            break;
-        case "getAllMatches":
-            const allMatches = await sportService.getAllMatches(messageObj.sport);
-            ws.send(JSON.stringify({ "action": messageObj.action, "data": allMatches }));
-            break;
-        default:
-          break;
+          const liveMatches = await sportWebsocketService.getAllLiveMatches(messageObj.sport);
+          const filteredLiveMatches = liveMatches.events.map(filterLiveMatchData);
+          ws.send(JSON.stringify({ "action": messageObj.action, "data": filteredLiveMatches }));
+        break;
+        case "sportList":
+          const sportList = await sportWebsocketService.getSportList(19800);
+          let filteredSportList = convertSportListToArray(sportList);
+          ws.send(JSON.stringify({ "action": messageObj.action, "data": filteredSportList }));
+        break;
       }
     });
   });

@@ -14,11 +14,6 @@ const getSportList = async (timezoneOffset = 0) => {
   return data;
 };
 
-const getAllLiveMatches = async (sport) => {
-  const { data } = await axiosInstance.get(`/api/v1/sport/${sport}/events/live`);
-  return data;
-};
-
 const getAllMatches = async (sport, date) => {
   const { data } = await axiosInstance.get(`/api/v1/sport/${sport}/scheduled-events/2024-06-22`);
   return data;
@@ -27,6 +22,5 @@ const getAllMatches = async (sport, date) => {
 export default {
   getCountryLeagueList,
   getSportList,
-  getAllLiveMatches,
-  getAllMatches
+  getAllMatches,
 };
