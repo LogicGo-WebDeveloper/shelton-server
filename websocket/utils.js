@@ -16,9 +16,11 @@ export const filterLiveMatchData = (match) => {
         name: match?.tournament?.category?.name || null,
         slug: match?.tournament?.category?.slug || null,
         id: match?.tournament?.category?.id || null,
+        country: match?.tournament?.category?.country || null,
       },
       id: match?.tournament?.id || null,
     },
+    customId: match?.customId || null,
     season: {
       name: match?.season?.name || null,
       year: match?.season?.year || null,
@@ -61,6 +63,10 @@ export const filterLiveMatchData = (match) => {
     periods: match?.periods || null,
     lastPeriod: match?.lastPeriod || null,
     finalResultOnly: match?.finalResultOnly || null,
+    tvUmpireName: match?.tvUmpireName || null,
+    venue: match?.venue || null,
+    umpire1Name: match?.umpire1Name || null,
+    umpire2Name: match?.umpire2Name || null,
   };
 };
 
