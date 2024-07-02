@@ -37,6 +37,7 @@ const getPlayerDetailsById = async (req, res, next) => {
               input: "$data.player",
               as: "playerObj",
               in: {
+                playerName: "$$playerObj.name",
                 position: "$$playerObj.position",
                 id: "$$playerObj.id",
                 country: "$$playerObj.country.name",
