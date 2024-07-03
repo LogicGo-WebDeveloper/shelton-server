@@ -48,12 +48,17 @@ export const filterLiveMatchData = (match) => {
     homeScore: {
       current: match?.homeScore?.current || null,
       display: match?.homeScore?.display || null,
-      innings: match?.homeScore?.innings || null,
+      innings: match?.homeScore?.innings 
+      ? Object.entries(match.homeScore.innings).map(([key, value]) => ({ key, ...value })) 
+      : null,
     },
     awayScore: {
       current: match?.awayScore?.current || null,
       display: match?.awayScore?.display || null,
-      innings: match?.awayScore?.innings || null,
+      innings: match?.awayScore?.innings 
+      ? Object.entries(match.awayScore.innings).map(([key, value]) => ({ key, ...value })) 
+      : null,
+      
     },
     id: match?.id || null,
     currentBattingTeamId: match?.currentBattingTeamId || null,

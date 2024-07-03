@@ -40,10 +40,12 @@ const getVotes = async (matchId) => {
     return data;
 };
 
-const getStandings = async (matchId) => {
-    const { data } = await axiosInstance.get(`/api/v1/event/${matchId}/standings`);
+const getStandings = async (tournamentId, seasonId) => {
+    const { data } = await axiosInstance.get(`/api/v1/tournament/${tournamentId}/season/${seasonId}/standings/total`);
     return data;
 };
+
+// https://www.sofascore.com/api/v1/tournament/132848/season/61838/standings/total
 
 export default {
     getAllLiveMatches,
