@@ -720,6 +720,9 @@ const getTeamMatchesByTeam = async (req, res, next) => {
 
       {
         $project: {
+          tournament: {
+            tournamentId: "$matches.tournament.id",
+          },
           homeTeam: {
             name: "$matches.homeTeam.name",
             score: "$matches.homeScore.current",
