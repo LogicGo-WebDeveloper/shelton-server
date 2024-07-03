@@ -1,7 +1,7 @@
 import { WebSocketServer } from 'ws';
 import sportWebsocketService from './service.js';
 import service from "../features/tournament/service.js"
-import { convertSportListToArray, filterLiveMatchData, filterPlayerData, filterStandingsData } from './utils.js';
+import { convertSportListToArray, filterLiveMatchData, filterPlayerData, filterStandingsData, fractionalOddsToDecimal } from './utils.js';
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
@@ -142,32 +142,32 @@ const setupWebSocket = (server) => {
           try {
             const standingsData = await service.getSeasonStandingsByTeams(data.tournamentId, data.seasonId);
             const filteredStandings = filterStandingsData(standingsData.standings[0]);
-
-            // const filteredStandings = standingsData.standings[0].rows.map(row => ({
-            //   team: {
-            //     name: row.team.name,
-            //     slug: row.team.slug,
-            //     shortName: row.team.shortName,
-            //     userCount: row.team.userCount,
-            //     nameCode: row.team.nameCode,
-            //     national: row.team.national,
-            //     type: row.team.type,
-            //     id: row.team.id
-            //   },
-            //   position: row.position,
-            //   matches: row.matches,
-            //   wins: row.wins,
-            //   noResult: row.noResult,
-            //   netRunRate: row.netRunRate,
-            //   id: row.id,
-            //   losses: row.losses,
-            //   draws: row.draws,
-            //   points: row.points
-            // }));
             ws.send(JSON.stringify({ "message": "Standings fetched successfully", actionType: data.action, body: filteredStandings, status: true }));
           } catch (error) {
             if(error?.response?.status === 404){
               ws.send(JSON.stringify({ "message": "Standings not found", actionType: data.action, body: null, status: false }));
+            } else {
+              ws.send(JSON.stringify({ "message": "Something went wrong", actionType: data.action, body: null, status: false }));
+            }
+            return;
+          }
+        break;
+        case "matchOdds":
+          try {
+            const matchOdds = await sportWebsocketService.getMatchOdds(data.matchId);
+            const filteredMatchOdds = matchOdds.markets.map(market => ({
+              marketName: market.marketName,
+              isLive: market.isLive,
+              id: market.id,
+              choices: market.choices.map(choice => ({
+                name: choice.name,
+                odds: fractionalOddsToDecimal(choice.fractionalValue).toFixed(2)
+              }))
+            }));
+            ws.send(JSON.stringify({ "message": "Match odds fetched successfully", actionType: data.action, body: filteredMatchOdds, status: true }));
+          } catch (error) {
+            if(error?.response?.status === 404){
+              ws.send(JSON.stringify({ "message": "Match odds not found", actionType: data.action, body: null, status: false }));
             } else {
               ws.send(JSON.stringify({ "message": "Something went wrong", actionType: data.action, body: null, status: false }));
             }

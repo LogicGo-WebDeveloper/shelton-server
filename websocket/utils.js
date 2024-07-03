@@ -130,3 +130,8 @@ export const filterStandingsData = (standings) => {
     }))
   }
 }
+
+export const fractionalOddsToDecimal = (fractionalOdds) => {
+  const [numerator, denominator] = fractionalOdds.split('/').map(Number);
+  return (numerator / denominator) + 1;
+}
