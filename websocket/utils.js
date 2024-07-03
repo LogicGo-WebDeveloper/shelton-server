@@ -56,7 +56,7 @@ export const filterLiveMatchData = (match) => {
       current: match?.awayScore?.current || null,
       display: match?.awayScore?.display || null,
       innings: match?.awayScore?.innings 
-      ? Object.entries(match.awayScore.innings).map(([key, value]) => ({ key, ...value })) 
+      ? Object.entries(match.awayScore.innings).map(([key, value]) => ({ key, ...value }))
       : null,
       
     },
@@ -75,7 +75,7 @@ export const filterLiveMatchData = (match) => {
   };
 };
 
- export const filterPlayerData = (players) => {
+export const filterPlayerData = (players) => {
   return players.map(player => ({
     name: player.player.name || null,
     shortName: player.player.shortName || null,
@@ -91,5 +91,42 @@ export const filterScorecardData = (scorecard) => {
   return {
     home: filterPlayerData(scorecard.home.players),
     away: filterPlayerData(scorecard.away.players)
+  }
+}
+
+export const filterStandingsData = (standings) => {
+  return  {
+    tournament: {
+      name: standings.tournament.name,
+      slug: standings.tournament.slug,
+      category: {
+        name: standings.tournament.category.name,
+        slug: standings.tournament.category.slug,
+        id: standings.tournament.category.id,
+        flag: standings.tournament.category.flag
+      },
+      id: standings.tournament.id
+    },
+    rows: standings.rows.map(row => ({
+      team: {
+        name: row.team.name,
+        slug: row.team.slug,
+        shortName: row.team.shortName,
+        userCount: row.team.userCount,
+        nameCode: row.team.nameCode,
+        national: row.team.national,
+        type: row.team.type,
+        id: row.team.id
+      },
+      position: row.position,
+      matches: row.matches,
+      wins: row.wins,
+      noResult: row.noResult,
+      netRunRate: row.netRunRate,
+      id: row.id,
+      losses: row.losses,
+      draws: row.draws,
+      points: row.points
+    }))
   }
 }

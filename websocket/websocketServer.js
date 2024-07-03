@@ -1,7 +1,7 @@
 import { WebSocketServer } from 'ws';
 import sportWebsocketService from './service.js';
 import service from "../features/tournament/service.js"
-import { convertSportListToArray, filterLiveMatchData, filterPlayerData } from './utils.js';
+import { convertSportListToArray, filterLiveMatchData, filterPlayerData, filterStandingsData } from './utils.js';
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
@@ -114,7 +114,8 @@ const setupWebSocket = (server) => {
         case "matches":
           try {
             const matches = await sportWebsocketService.getMatches(data.customId);
-            ws.send(JSON.stringify({ "message": "Matches fetched successfully", actionType: data.action, body: matches?.events, status: true }));
+            const filteredMatches = matches.events.map(filterLiveMatchData);
+            ws.send(JSON.stringify({ "message": "Matches fetched successfully", actionType: data.action, body: filteredMatches, status: true }));
           } catch (error) {
             if(error?.response?.status === 404){
               ws.send(JSON.stringify({ "message": "Matches not found", actionType: data.action, body: null, status: false }));
@@ -140,7 +141,30 @@ const setupWebSocket = (server) => {
         case "standings":
           try {
             const standingsData = await service.getSeasonStandingsByTeams(data.tournamentId, data.seasonId);
-            ws.send(JSON.stringify({ "message": "Standings fetched successfully", actionType: data.action, body: standingsData.standings, status: true }));
+            const filteredStandings = filterStandingsData(standingsData.standings[0]);
+
+            // const filteredStandings = standingsData.standings[0].rows.map(row => ({
+            //   team: {
+            //     name: row.team.name,
+            //     slug: row.team.slug,
+            //     shortName: row.team.shortName,
+            //     userCount: row.team.userCount,
+            //     nameCode: row.team.nameCode,
+            //     national: row.team.national,
+            //     type: row.team.type,
+            //     id: row.team.id
+            //   },
+            //   position: row.position,
+            //   matches: row.matches,
+            //   wins: row.wins,
+            //   noResult: row.noResult,
+            //   netRunRate: row.netRunRate,
+            //   id: row.id,
+            //   losses: row.losses,
+            //   draws: row.draws,
+            //   points: row.points
+            // }));
+            ws.send(JSON.stringify({ "message": "Standings fetched successfully", actionType: data.action, body: filteredStandings, status: true }));
           } catch (error) {
             if(error?.response?.status === 404){
               ws.send(JSON.stringify({ "message": "Standings not found", actionType: data.action, body: null, status: false }));
