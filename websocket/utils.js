@@ -78,7 +78,8 @@ export const filterLiveMatchData = (match) => {
     umpire1Name: match?.umpire1Name || null,
     umpire2Name: match?.umpire2Name || null,
     winnerCode: match.winnerCode || null,
-    winnerTeamName: match.winnerCode == 1 ? match?.homeTeam?.name : null,
+    notes: match.note || null,
+    winnerTeamName: match.note ? match?.homeTeam?.name : null,
   };
 };
 
