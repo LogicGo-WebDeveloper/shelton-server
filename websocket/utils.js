@@ -1,9 +1,9 @@
 export const convertSportListToArray = (sportList) => {
-  return Object.keys(sportList).map(key => ({
+  return Object.keys(sportList).map((key) => ({
     id: key,
-    name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, ' '),
+    name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
     live: sportList[key].live,
-    total: sportList[key].total
+    total: sportList[key].total,
   }));
 };
 
@@ -48,17 +48,22 @@ export const filterLiveMatchData = (match) => {
     homeScore: {
       current: match?.homeScore?.current || null,
       display: match?.homeScore?.display || null,
-      innings: match?.homeScore?.innings 
-      ? Object.entries(match.homeScore.innings).map(([key, value]) => ({ key, ...value })) 
-      : null,
+      innings: match?.homeScore?.innings
+        ? Object.entries(match.homeScore.innings).map(([key, value]) => ({
+            key,
+            ...value,
+          }))
+        : null,
     },
     awayScore: {
       current: match?.awayScore?.current || null,
       display: match?.awayScore?.display || null,
-      innings: match?.awayScore?.innings 
-      ? Object.entries(match.awayScore.innings).map(([key, value]) => ({ key, ...value }))
-      : null,
-      
+      innings: match?.awayScore?.innings
+        ? Object.entries(match.awayScore.innings).map(([key, value]) => ({
+            key,
+            ...value,
+          }))
+        : null,
     },
     id: match?.id || null,
     currentBattingTeamId: match?.currentBattingTeamId || null,
@@ -72,30 +77,33 @@ export const filterLiveMatchData = (match) => {
     venue: match?.venue || null,
     umpire1Name: match?.umpire1Name || null,
     umpire2Name: match?.umpire2Name || null,
+    winnerCode: match.winnerCode || null,
+    notes: match.note || null,
+    winnerTeamName: match.note ? match?.homeTeam?.name : null,
   };
 };
 
 export const filterPlayerData = (players) => {
-  return players.map(player => ({
+  return players.map((player) => ({
     name: player.player.name || null,
     shortName: player.player.shortName || null,
     id: player.player.id || null,
     batting: player.player.cricketPlayerInfo.batting || null,
     bowling: player.player.cricketPlayerInfo.bowling || null,
     position: player.position || null,
-    substitute: player.substitute || null
+    substitute: player.substitute || null,
   }));
 };
 
 export const filterScorecardData = (scorecard) => {
   return {
     home: filterPlayerData(scorecard.home.players),
-    away: filterPlayerData(scorecard.away.players)
-  }
-}
+    away: filterPlayerData(scorecard.away.players),
+  };
+};
 
 export const filterStandingsData = (standings) => {
-  return  {
+  return {
     tournament: {
       name: standings.tournament.name,
       slug: standings.tournament.slug,
@@ -103,11 +111,11 @@ export const filterStandingsData = (standings) => {
         name: standings.tournament.category.name,
         slug: standings.tournament.category.slug,
         id: standings.tournament.category.id,
-        flag: standings.tournament.category.flag
+        flag: standings.tournament.category.flag,
       },
-      id: standings.tournament.id
+      id: standings.tournament.id,
     },
-    rows: standings.rows.map(row => ({
+    rows: standings.rows.map((row) => ({
       team: {
         name: row.team.name,
         slug: row.team.slug,
@@ -116,7 +124,7 @@ export const filterStandingsData = (standings) => {
         nameCode: row.team.nameCode,
         national: row.team.national,
         type: row.team.type,
-        id: row.team.id
+        id: row.team.id,
       },
       position: row.position,
       matches: row.matches,
@@ -126,12 +134,12 @@ export const filterStandingsData = (standings) => {
       id: row.id,
       losses: row.losses,
       draws: row.draws,
-      points: row.points
-    }))
-  }
-}
+      points: row.points,
+    })),
+  };
+};
 
 export const fractionalOddsToDecimal = (fractionalOdds) => {
-  const [numerator, denominator] = fractionalOdds.split('/').map(Number);
-  return (numerator / denominator) + 1;
-}
+  const [numerator, denominator] = fractionalOdds.split("/").map(Number);
+  return numerator / denominator + 1;
+};
