@@ -50,6 +50,11 @@ const getMatchOdds = async (matchId) => {
     return data;
 };
 
+const getPregameForm = async (matchId) => {
+    const { data } = await axiosInstance.get(`/api/v1/event/${matchId}/pregame-form`);
+    return data;
+};
+
 export default {
     getAllLiveMatches,
     getSportList,
@@ -60,5 +65,6 @@ export default {
     getMatches,
     getVotes,
     getStandings,
-    getMatchOdds
+    getMatchOdds,
+    getPregameForm
 };

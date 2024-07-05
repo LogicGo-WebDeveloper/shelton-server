@@ -174,6 +174,19 @@ const setupWebSocket = (server) => {
             return;
           }
         break;
+        case "pregameForm":
+          try {
+            const pregameForm = await sportWebsocketService.getPregameForm(data.matchId);
+            ws.send(JSON.stringify({ "message": "Pregame form fetched successfully", actionType: data.action, body: pregameForm, status: true }));
+          } catch (error) {
+            if(error?.response?.status === 404){
+              ws.send(JSON.stringify({ "message": "Pregame form not found", actionType: data.action, body: null, status: false }));
+            } else {
+              ws.send(JSON.stringify({ "message": "Something went wrong", actionType: data.action, body: null, status: false }));
+            }
+            return;
+          }
+        break;
       }
     });
   });
