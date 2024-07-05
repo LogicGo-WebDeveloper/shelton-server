@@ -6,6 +6,7 @@ import {
   filterLiveMatchData,
   filterPlayerData,
   filterStandingsData,
+  filteredOversData,
   fractionalOddsToDecimal,
 } from "./utils.js";
 
@@ -232,11 +233,12 @@ const setupWebSocket = (server) => {
         case "overs":
           try {
             const overs = await sportWebsocketService.getOvers(data.matchId);
+            const filteredOvers = filteredOversData(overs?.incidents);
             ws.send(
               JSON.stringify({
                 message: "Overs fetched successfully",
                 actionType: data.action,
-                body: overs?.incidents,
+                body: filteredOvers,
                 status: true,
               })
             );

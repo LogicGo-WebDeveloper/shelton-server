@@ -143,3 +143,43 @@ export const fractionalOddsToDecimal = (fractionalOdds) => {
   const [numerator, denominator] = fractionalOdds.split("/").map(Number);
   return numerator / denominator + 1;
 };
+
+
+export const filteredOversData = (data) => {
+  const result = [];
+  const overMap = {};
+
+  data.forEach(item => {
+      const over = item.over;
+      if (!overMap[over]) {
+          overMap[over] = {
+              over: over.toString(),
+              total_runs_in_this_over: 0,
+              balls: []
+          };
+          result.push(overMap[over]);
+      }
+
+      // Check if the ball already exists in the balls array
+      const existingBall = overMap[over].balls.find(ball => ball.ball === item.ball.toString());
+      if (!existingBall) {
+          overMap[over].total_runs_in_this_over += item.runs ? parseInt(item.runs) : 0;
+          overMap[over].balls.push({
+              id: item.id,
+              ball: item.ball.toString(),
+              runs: item.runs !== null ? item.runs.toString() : null,
+              commentary: item.commentary ? item.commentary : null,
+              batsmanName: item.batsman?.name ? item.batsman?.name : null,
+              bowlerName: item.bowler?.name ? item.bowler?.name : null,
+              fielderName: item.fielder?.name ? item.fielder?.name : null
+          });
+      }
+  });
+
+  // Ensure only 6 balls per over
+  result.forEach(over => {
+      over.balls = over.balls.slice(0, 6);
+  });
+
+  return result;
+}
