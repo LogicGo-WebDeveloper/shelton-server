@@ -236,8 +236,14 @@ const setupWebSocket = (server) => {
             const filterHomeTeam = overs.incidents?.filter(incident => incident.battingTeamId == data.homeTeamId);
             const filterAwayTeam = overs.incidents?.filter(incident => incident.battingTeamId == data.awayTeamId);
             const filteredOvers = {
-              homeTeam : filteredOversData(filterHomeTeam),
-              awayTeam : filteredOversData(filterAwayTeam)
+              homeTeam : {
+                data : filteredOversData(filterHomeTeam),
+                teamId : data.homeTeamId
+              },
+              awayTeam : {
+                data : filteredOversData(filterAwayTeam),
+                teamId : data.awayTeamId
+              }
             }
             ws.send(
               JSON.stringify({
