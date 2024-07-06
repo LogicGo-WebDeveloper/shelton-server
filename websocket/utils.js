@@ -159,11 +159,12 @@ export const filteredOversData = (data) => {
           result.push(overMap[over]);
       }
 
-      overMap[over].total_runs_in_this_over += item.runs;
+      overMap[over].total_runs_in_this_over += item.totalRuns;
       overMap[over].balls.push({
           id: item.id,
           ball: item.ball.toString(),
           runs: item.runs !== null ? item.runs.toString() : null,
+          totalRuns: item.totalRuns,
           commentary: item.commentary,
           score: item.score,
           wicket: item.wicket,
@@ -172,6 +173,7 @@ export const filteredOversData = (data) => {
           batsmanName: item.batsman?.name || null,
           bowlerName: item.bowler?.name || null,
           fielderName: item.fielder?.name || null,
+          incidentClassLabel: item?.incidentClassLabel || null,
       });
   });
 
