@@ -233,7 +233,12 @@ const setupWebSocket = (server) => {
         case "overs":
           try {
             const overs = await sportWebsocketService.getOvers(data.matchId);
-            const filteredOvers = filteredOversData(overs?.incidents);
+            const filterHomeTeam = overs.incidents?.filter(incident => incident.battingTeamId == data.homeTeamId);
+            const filterAwayTeam = overs.incidents?.filter(incident => incident.battingTeamId == data.awayTeamId);
+            const filteredOvers = {
+              homeTeam : filteredOversData(filterHomeTeam),
+              awayTeam : filteredOversData(filterAwayTeam)
+            }
             ws.send(
               JSON.stringify({
                 message: "Overs fetched successfully",
