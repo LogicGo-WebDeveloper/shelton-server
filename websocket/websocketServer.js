@@ -320,7 +320,7 @@ const setupWebSocket = (server) => {
               JSON.stringify({
                 message: "Votes fetched successfully",
                 actionType: data.action,
-                body: votes,
+                body: votes?.vote,
                 status: true,
               })
             );
