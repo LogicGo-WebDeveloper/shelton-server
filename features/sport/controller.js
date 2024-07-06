@@ -20,20 +20,22 @@ const getCountryLeagueList = async (req, res, next) => {
       } else {
         data = await sportService.getCountryLeagueList(sport);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
-        
+
         const fetchAllCategories = async () => {
           const promises = data.map(async (item) => {
-            const response = await sportService.getLeagueTournamentList(item.id);
+            const response = await sportService.getLeagueTournamentList(
+              item.id
+            );
             item.tournamentlist = response;
             return item;
           });
-        
+
           const results = await Promise.all(promises);
           return results;
         };
         data = await fetchAllCategories();
         const newCountryLeagueListEntry = new CountryLeagueList({
-          sport,  
+          sport,
           data,
         });
         await newCountryLeagueListEntry.save();
@@ -63,23 +65,23 @@ const getCountryLeagueList = async (req, res, next) => {
                         name: "$$tournament.category.name",
                         slug: "$$tournament.category.slug",
                         id: "$$tournament.category.id",
-                        flag: "$$tournament.category.flag"
+                        flag: "$$tournament.category.flag",
                       },
                       userCount: "$$tournament.userCount",
-                      id: "$$tournament.id"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                      id: "$$tournament.id",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     ]);
 
     return apiResponse({
       res,
-      data: modifyData,
+      data: modifyData[0],
       status: true,
       message: "Tournament leagues fetched successfully",
       statusCode: StatusCodes.OK,
