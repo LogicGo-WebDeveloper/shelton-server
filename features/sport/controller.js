@@ -18,14 +18,22 @@ const getCountryLeagueList = async (req, res, next) => {
       if (countryLeagueListEntry) {
         data = countryLeagueListEntry.data;
       } else {
-        console.log(22);
-        // Fetch data from the API
         data = await sportService.getCountryLeagueList(sport);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
-
-        // Store the fetched data in the database
+        
+        const fetchAllCategories = async () => {
+          const promises = data.map(async (item) => {
+            const response = await sportService.getLeagueTournamentList(item.id);
+            item.tournamentlist = response;
+            return item;
+          });
+        
+          const results = await Promise.all(promises);
+          return results;
+        };
+        data = await fetchAllCategories();
         const newCountryLeagueListEntry = new CountryLeagueList({
-          sport,
+          sport,  
           data,
         });
         await newCountryLeagueListEntry.save();
@@ -44,11 +52,29 @@ const getCountryLeagueList = async (req, res, next) => {
                 name: "$$dataObj.name",
                 slug: "$$dataObj.slug",
                 id: "$$dataObj.id",
-              },
-            },
-          },
-        },
-      },
+                tournamentlist: {
+                  $map: {
+                    input: "$$dataObj.tournamentlist",
+                    as: "tournament",
+                    in: {
+                      name: "$$tournament.name",
+                      slug: "$$tournament.slug",
+                      category: {
+                        name: "$$tournament.category.name",
+                        slug: "$$tournament.category.slug",
+                        id: "$$tournament.category.id",
+                        flag: "$$tournament.category.flag"
+                      },
+                      userCount: "$$tournament.userCount",
+                      id: "$$tournament.id"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     ]);
 
     return apiResponse({

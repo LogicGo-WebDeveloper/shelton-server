@@ -19,8 +19,16 @@ const getAllMatches = async (sport, date) => {
   return data;
 };
 
+
+const getLeagueTournamentList = async (id) => {
+  const { data } = await axiosInstance.get(`/api/v1/category/${id}/unique-tournaments`);
+
+  return data.groups?.[0]?.uniqueTournaments ?? [];
+};
+
 export default {
   getCountryLeagueList,
   getSportList,
   getAllMatches,
+  getLeagueTournamentList
 };
