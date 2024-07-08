@@ -4,12 +4,14 @@ import cacheService from "../cache/service.js";
 import service from "./service.js";
 import cacheTTL from "../cache/constants.js";
 import MatcheDetailsByMatchScreen from "./models/matchDetailsSchema.js";
-import { filterLiveMatchData } from "../../websocket/utils.js";
+import { filterLiveMatchData, fractionalOddsToDecimal } from "../../websocket/utils.js";
 import MatchVotes from "./models/matchVotesSchema.js";
 import { filteredOversData, filterPlayerData } from "../../websocket/utils.js";
 import MatchesOvers from "./models/matchesOvers.js";
 import MatchesScoreCard from "./models/matchesScoreCard.js";
 import MatchesSquad from "./models/matchesSquad.js";
+import PregameForm from "./models/pregameFormSchema.js";
+import MatchOdds from "./models/matchOddsSchema.js";
 
 const getOverDetailsById = async (req, res, next) => {
   try {
@@ -269,10 +271,95 @@ const getMatchVotes = async (req, res, next) => {
   }
 };
 
+
+const getPregameForm = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const key = cacheService.getCacheKey(req);
+    let data = cacheService.getCache(key);
+
+    if (!data) {
+      let pregameForm = await PregameForm.findOne({ matchId: id });
+      if (pregameForm) {
+        data = pregameForm.data;
+      } else {
+        const apiData = await service.getPregameForm(id);
+        const pregameFormEntry = new PregameForm({ matchId: id, data: apiData });
+        await pregameFormEntry.save();
+        data = pregameFormEntry.data;
+        cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
+      }
+    }
+    return apiResponse({
+      res,
+      data: data,
+      status: true,
+      message: "pregame form fetched successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
+
+const getMatchOdds = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const key = cacheService.getCacheKey(req);
+    let data = cacheService.getCache(key);
+
+    if (!data) {
+      let matchOdds = await MatchOdds.findOne({ matchId: id });
+      if (matchOdds) {
+        data = matchOdds.data;
+      } else {
+        const apiData = await service.getMatchOdds(id);
+        const matchOddsEntry = new MatchOdds({ matchId: id, data: apiData });
+        await matchOddsEntry.save();
+        data = matchOddsEntry.data;
+        cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
+      }
+    }
+
+    const filteredMatchOdds = data[0].markets.map((market) => ({
+      marketName: market.marketName,
+      isLive: market.isLive,
+      id: market.id,
+      choices: market.choices.map((choice) => ({
+        name: choice.name,
+        odds: fractionalOddsToDecimal(choice.fractionalValue).toFixed(
+          2
+        ),
+      })),
+    }));
+    return apiResponse({
+      res,
+      data: filteredMatchOdds,
+      status: true,
+      message: "match odds fetched successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
+
 export default {
   getOverDetailsById,
   getSingleMatchDetail,
   getMatchVotes,
   getScoreCardDetailsById,
   getSquadDetailsById,
+  getPregameForm,
+  getMatchOdds
 };

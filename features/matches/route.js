@@ -12,5 +12,7 @@ route.get("/squad/:matchId", matchesController.getSquadDetailsById);
 // ----------------
 route.get("/:id", matchesController.getSingleMatchDetail);
 route.get("/:id/votes", matchesController.getMatchVotes);
+route.get("/:id/pregame-form", matchesController.getPregameForm);
+route.get("/:id/odds", matchesController.getMatchOdds);
 
 export default route;
