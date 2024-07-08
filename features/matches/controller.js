@@ -114,7 +114,7 @@ const getScoreCardDetailsById = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: data,
+      data: data?.data?.innings,
       status: true,
       message: "Score Card details fetched successfully",
       statusCode: StatusCodes.OK,
