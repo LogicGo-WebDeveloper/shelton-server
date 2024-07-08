@@ -173,7 +173,7 @@ export const filteredOversData = (data) => {
           batsmanName: item.batsman?.name || null,
           bowlerName: item.bowler?.name || null,
           fielderName: item.fielder?.name || null,
-          incidentClassLabel: item?.incidentClassLabel || null,
+          incidentClassLabel:  item?.incidentClassLabel || null,
       });
   });
 

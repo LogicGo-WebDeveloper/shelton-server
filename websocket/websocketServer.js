@@ -327,7 +327,7 @@ const setupWebSocket = (server) => {
           } catch (error) {
             if (error?.response?.status === 404) {
               ws.send(
-                JSON.stringify({
+                JSON.stringify({  
                   message: "Votes not found",
                   actionType: data.action,
                   body: null,
