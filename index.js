@@ -5,14 +5,14 @@ import config from "./config/config.js";
 import connectDB from "./config/db.config.js";
 import morgan from "morgan";
 import errorHandler from "./middleware/errorHandler.js";
-import http from 'http';
+import http from "http";
 import setupWebSocket from "./websocket/websocketServer.js";
 
 const app = express();
 const server = http.createServer(app);
 
 // WebSocket server setup
-setupWebSocket(server)
+setupWebSocket(server);
 
 app.disable("x-powered-by");
 
@@ -27,7 +27,7 @@ app.use(
     origin: config.frontendUrl.split(","),
   })
 );
-  
+
 app.use("/api/auth", route.authRoute);
 app.use("/api/v1/sport", route.sportRoute);
 app.use("/api/v1/unique-tournament", route.uniqueTournamentRoute);

@@ -48,6 +48,14 @@ const getPregameForm = async (matchId) => {
   return data;
 };
 
+const getSeasonStandingsByTeams = async (id, seasonId) => {
+  const { data } = await axiosInstance.get(
+    `/api/v1/tournament/${id}/season/${seasonId}/standings/total`
+  );
+
+  return data ?? [];
+};
+
 export default {
   getSingleMatchDetail,
   getScorecard,
@@ -57,4 +65,5 @@ export default {
   getVotes,
   getMatchOdds,
   getPregameForm,
+  getSeasonStandingsByTeams,
 };
