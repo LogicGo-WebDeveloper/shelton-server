@@ -3,9 +3,9 @@ import { StatusCodes } from "http-status-codes";
 import cacheService from "../cache/service.js";
 import service from "./service.js";
 import cacheTTL from "../cache/constants.js";
-import MatcheDetailsByMatchScreen from "./model/matchDetailsSchema.js";
+import MatcheDetailsByMatchScreen from "./models/matchDetailsSchema.js";
 import { filterLiveMatchData } from "../../websocket/utils.js";
-import MatchVotes from "./model/matchVotesSchema.js";
+import MatchVotes from "./models/matchVotesSchema.js";
 import { filteredOversData, filterPlayerData } from "../../websocket/utils.js";
 import MatchesOvers from "./models/matchesOvers.js";
 import MatchesScoreCard from "./models/matchesScoreCard.js";
@@ -197,15 +197,20 @@ const getSingleMatchDetail = async (req, res, next) => {
     let data = cacheService.getCache(key);
 
     if (!data) {
-      let matchDetails = await MatcheDetailsByMatchScreen.findOne({ matchId: id });
+      let matchDetails = await MatcheDetailsByMatchScreen.findOne({
+        matchId: id,
+      });
 
       if (matchDetails) {
         data = matchDetails.data;
       } else {
         const apiData = await service.getSingleMatchDetail(id);
-        const matchEntry = new MatcheDetailsByMatchScreen({ matchId: id, data: apiData });
+        const matchEntry = new MatcheDetailsByMatchScreen({
+          matchId: id,
+          data: apiData,
+        });
         await matchEntry.save();
-        data = matchEntry.data; 
+        data = matchEntry.data;
         cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
       }
     }
@@ -243,10 +248,10 @@ const getMatchVotes = async (req, res, next) => {
         const apiData = await service.getVotes(id);
         const matchEntry = new MatchVotes({ matchId: id, data: apiData });
         await matchEntry.save();
-        data = matchEntry.data; 
+        data = matchEntry.data;
         cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
       }
-    } 
+    }
     return apiResponse({
       res,
       data: data?.vote,

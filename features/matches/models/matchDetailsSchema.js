@@ -16,6 +16,9 @@ const matchDetailsSchema = new mongoose.Schema(
   }
 );
 
-const MatcheDetailsByMatchScreen = mongoose.model("MatcheDetailsByMatchScreen", matchDetailsSchema);
+const MatcheDetailsByMatchScreen = mongoose.model(
+  "MatcheDetailsByMatchScreen",
+  matchDetailsSchema
+);
 
 export default MatcheDetailsByMatchScreen;
