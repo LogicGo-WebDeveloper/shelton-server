@@ -4,9 +4,9 @@ import cacheService from "../cache/service.js";
 import service from "./service.js";
 import cacheTTL from "../cache/constants.js";
 import MatcheDetailsByMatchScreen from "./models/matchDetailsSchema.js";
-import { filterLiveMatchData, fractionalOddsToDecimal } from "../../websocket/utils.js";
 import {
   filterLiveMatchData,
+  fractionalOddsToDecimal,
   filterStandingsData,
 } from "../../websocket/utils.js";
 import MatchVotes from "./models/matchVotesSchema.js";
@@ -288,7 +288,10 @@ const getPregameForm = async (req, res, next) => {
         data = pregameForm.data;
       } else {
         const apiData = await service.getPregameForm(id);
-        const pregameFormEntry = new PregameForm({ matchId: id, data: apiData });
+        const pregameFormEntry = new PregameForm({
+          matchId: id,
+          data: apiData,
+        });
         await pregameFormEntry.save();
         data = pregameFormEntry.data;
         cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
@@ -336,9 +339,7 @@ const getMatchOdds = async (req, res, next) => {
       id: market.id,
       choices: market.choices.map((choice) => ({
         name: choice.name,
-        odds: fractionalOddsToDecimal(choice.fractionalValue).toFixed(
-          2
-        ),
+        odds: fractionalOddsToDecimal(choice.fractionalValue).toFixed(2),
       })),
     }));
     return apiResponse({
