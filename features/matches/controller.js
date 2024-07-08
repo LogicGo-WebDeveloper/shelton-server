@@ -17,6 +17,7 @@ import MatchesSquad from "./models/matchesSquad.js";
 import PregameForm from "./models/pregameFormSchema.js";
 import MatchOdds from "./models/matchOddsSchema.js";
 import MatchesStanding from "./models/matchesStandings.js";
+import matchesScreenMatches from "./models/matchesDetails.js";
 
 const getOverDetailsById = async (req, res, next) => {
   try {
@@ -360,7 +361,6 @@ const getMatchOdds = async (req, res, next) => {
 };
 
 const getStandingsDetailsById = async (req, res, next) => {
-  console.log(11);
   try {
     const { tournamentId, seasonId } = req.query;
     console.log(req.query);
@@ -414,6 +414,58 @@ const getStandingsDetailsById = async (req, res, next) => {
   }
 };
 
+const getMatchesScreenDetailsById = async (req, res, next) => {
+  try {
+    const { customId } = req.params;
+    let data;
+
+    const matchesData = await matchesScreenMatches.findOne({
+      customId: customId,
+    });
+
+    if (matchesData) {
+      data = matchesData;
+    } else {
+      data = await service.getMatches(customId);
+
+      const matchesEntry = new matchesScreenMatches({
+        customId: customId,
+        data,
+      });
+      await matchesEntry.save();
+    }
+    console.log(data.data.events);
+
+    const filteredMatches = data.data.events.map(filterLiveMatchData);
+
+    return apiResponse({
+      res,
+      data: filteredMatches,
+      status: true,
+      message: "Standings details fetched successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    console.log(error);
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No standings found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
+  }
+};
+
 export default {
   getOverDetailsById,
   getSingleMatchDetail,
@@ -423,4 +475,5 @@ export default {
   getPregameForm,
   getMatchOdds,
   getStandingsDetailsById,
+  getMatchesScreenDetailsById,
 };

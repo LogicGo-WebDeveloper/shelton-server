@@ -12,6 +12,7 @@ route.get("/:id/votes", matchesController.getMatchVotes);
 route.get("/overs/:matchId", matchesController.getOverDetailsById);
 route.get("/scorecard/:matchId", matchesController.getScoreCardDetailsById);
 route.get("/squad/:matchId", matchesController.getSquadDetailsById);
+route.get("/matches/:customId", matchesController.getMatchesScreenDetailsById);
 
 // ----------------
 // GET routes
