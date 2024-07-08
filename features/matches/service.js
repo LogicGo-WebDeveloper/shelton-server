@@ -56,6 +56,11 @@ const getSeasonStandingsByTeams = async (id, seasonId) => {
   return data ?? [];
 };
 
+const getMatchH2H = async (matchId) => {
+  const { data } = await axiosInstance.get(`/api/v1/event/${matchId}/h2h`);
+  return data;
+};
+
 export default {
   getSingleMatchDetail,
   getScorecard,
@@ -66,4 +71,5 @@ export default {
   getMatchOdds,
   getPregameForm,
   getSeasonStandingsByTeams,
+  getMatchH2H
 };

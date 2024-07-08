@@ -474,6 +474,40 @@ const setupWebSocket = (server) => {
             return;
           }
           break;
+        case "h2h":
+          try {
+            const h2h = await sportWebsocketService.getMatchH2H(data.matchId);
+            ws.send(
+              JSON.stringify({
+                message: "h2h fetched successfully",
+                actionType: data.action,
+                body: h2h?.teamDuel,
+                status: true,
+              })
+            );
+          } catch (error) {
+            if (error?.response?.status === 404) {
+              ws.send(
+                JSON.stringify({
+                  message: "h2h not found",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
+            } else {
+              ws.send(
+                JSON.stringify({
+                  message: "Something went wrong",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
+            }
+            return;
+          }
+          break;
       }
     });
   });

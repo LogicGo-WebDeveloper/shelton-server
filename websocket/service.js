@@ -55,6 +55,11 @@ const getPregameForm = async (matchId) => {
     return data;
 };
 
+const getMatchH2H = async (matchId) => {
+    const { data } = await axiosInstance.get(`/api/v1/event/${matchId}/h2h`);
+    return data;
+};
+
 export default {
     getAllLiveMatches,
     getSportList,
@@ -66,5 +71,6 @@ export default {
     getVotes,
     getStandings,
     getMatchOdds,
-    getPregameForm
+    getPregameForm,
+    getMatchH2H
 };

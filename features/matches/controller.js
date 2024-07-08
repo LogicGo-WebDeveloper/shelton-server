@@ -18,6 +18,7 @@ import PregameForm from "./models/pregameFormSchema.js";
 import MatchOdds from "./models/matchOddsSchema.js";
 import MatchesStanding from "./models/matchesStandings.js";
 import matchesScreenMatches from "./models/matchesDetails.js";
+import MatchH2H from "./models/matchH2HSchema.js";
 
 const getOverDetailsById = async (req, res, next) => {
   try {
@@ -466,6 +467,42 @@ const getMatchesScreenDetailsById = async (req, res, next) => {
   }
 };
 
+const getMatchH2H = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const key = cacheService.getCacheKey(req);
+    let data = cacheService.getCache(key);
+
+    if (!data) {
+      let matchH2H = await MatchH2H.findOne({ matchId: id });
+      if (matchH2H) {
+        data = matchH2H.data;
+      } else {
+        const apiData = await service.getMatchH2H(id);
+        const matchH2HEntry = new MatchH2H({ matchId: id, data: apiData });
+        await matchH2HEntry.save();
+        data = matchH2HEntry.data;
+        cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
+      }
+    }
+
+    return apiResponse({
+      res,
+      data: data?.teamDuel,
+      status: true,
+      message: "h2h fetched successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
+
 export default {
   getOverDetailsById,
   getSingleMatchDetail,
@@ -476,4 +513,5 @@ export default {
   getMatchOdds,
   getStandingsDetailsById,
   getMatchesScreenDetailsById,
+  getMatchH2H
 };
