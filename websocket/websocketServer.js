@@ -233,18 +233,22 @@ const setupWebSocket = (server) => {
         case "overs":
           try {
             const overs = await sportWebsocketService.getOvers(data.matchId);
-            const filterHomeTeam = overs.incidents?.filter(incident => incident.battingTeamId == data.homeTeamId);
-            const filterAwayTeam = overs.incidents?.filter(incident => incident.battingTeamId == data.awayTeamId);
+            const filterHomeTeam = overs.incidents?.filter(
+              (incident) => incident.battingTeamId == data.homeTeamId
+            );
+            const filterAwayTeam = overs.incidents?.filter(
+              (incident) => incident.battingTeamId == data.awayTeamId
+            );
             const filteredOvers = {
-              homeTeam : {
-                data : filteredOversData(filterHomeTeam),
-                teamId : data.homeTeamId
+              homeTeam: {
+                data: filteredOversData(filterHomeTeam),
+                teamId: data.homeTeamId,
               },
-              awayTeam : {
-                data : filteredOversData(filterAwayTeam),
-                teamId : data.awayTeamId
-              }
-            }
+              awayTeam: {
+                data: filteredOversData(filterAwayTeam),
+                teamId: data.awayTeamId,
+              },
+            };
             ws.send(
               JSON.stringify({
                 message: "Overs fetched successfully",
@@ -327,7 +331,7 @@ const setupWebSocket = (server) => {
           } catch (error) {
             if (error?.response?.status === 404) {
               ws.send(
-                JSON.stringify({  
+                JSON.stringify({
                   message: "Votes not found",
                   actionType: data.action,
                   body: null,
@@ -433,20 +437,43 @@ const setupWebSocket = (server) => {
             }
             return;
           }
-        break;
+          break;
         case "pregameForm":
           try {
-            const pregameForm = await sportWebsocketService.getPregameForm(data.matchId);
-            ws.send(JSON.stringify({ "message": "Pregame form fetched successfully", actionType: data.action, body: pregameForm, status: true }));
+            const pregameForm = await sportWebsocketService.getPregameForm(
+              data.matchId
+            );
+            ws.send(
+              JSON.stringify({
+                message: "Pregame form fetched successfully",
+                actionType: data.action,
+                body: pregameForm,
+                status: true,
+              })
+            );
           } catch (error) {
-            if(error?.response?.status === 404){
-              ws.send(JSON.stringify({ "message": "Pregame form not found", actionType: data.action, body: null, status: false }));
+            if (error?.response?.status === 404) {
+              ws.send(
+                JSON.stringify({
+                  message: "Pregame form not found",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
             } else {
-              ws.send(JSON.stringify({ "message": "Something went wrong", actionType: data.action, body: null, status: false }));
+              ws.send(
+                JSON.stringify({
+                  message: "Something went wrong",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
             }
             return;
           }
-        break;
+          break;
       }
     });
   });

@@ -4,12 +4,16 @@ import cacheService from "../cache/service.js";
 import service from "./service.js";
 import cacheTTL from "../cache/constants.js";
 import MatcheDetailsByMatchScreen from "./models/matchDetailsSchema.js";
-import { filterLiveMatchData } from "../../websocket/utils.js";
+import {
+  filterLiveMatchData,
+  filterStandingsData,
+} from "../../websocket/utils.js";
 import MatchVotes from "./models/matchVotesSchema.js";
 import { filteredOversData, filterPlayerData } from "../../websocket/utils.js";
 import MatchesOvers from "./models/matchesOvers.js";
 import MatchesScoreCard from "./models/matchesScoreCard.js";
 import MatchesSquad from "./models/matchesSquad.js";
+import MatchesStanding from "./models/matchesStandings.js";
 
 const getOverDetailsById = async (req, res, next) => {
   try {
@@ -104,7 +108,7 @@ const getScoreCardDetailsById = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: data.innings,
+      data: data,
       status: true,
       message: "Score Card details fetched successfully",
       statusCode: StatusCodes.OK,
@@ -269,10 +273,66 @@ const getMatchVotes = async (req, res, next) => {
   }
 };
 
+const getStandingsDetailsById = async (req, res, next) => {
+  console.log(11);
+  try {
+    const { tournamentId, seasonId } = req.query;
+    console.log(req.query);
+    let data;
+
+    const Standings = await MatchesStanding.findOne({
+      tournamentId: tournamentId,
+      seasonId: seasonId,
+    });
+
+    if (Standings) {
+      data = Standings;
+    } else {
+      data = await service.getSeasonStandingsByTeams(tournamentId, seasonId);
+
+      const standingEntry = new MatchesStanding({
+        tournamentId: tournamentId,
+        seasonId: seasonId,
+        data: data,
+      });
+      await standingEntry.save();
+    }
+
+    const filteredStandings = filterStandingsData(data.data.standings[0]);
+
+    return apiResponse({
+      res,
+      data: filteredStandings,
+      status: true,
+      message: "Standings details fetched successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    console.log(error);
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No standings found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
+  }
+};
+
 export default {
   getOverDetailsById,
   getSingleMatchDetail,
   getMatchVotes,
   getScoreCardDetailsById,
   getSquadDetailsById,
+  getStandingsDetailsById,
 };
