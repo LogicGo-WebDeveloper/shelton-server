@@ -36,6 +36,7 @@ app.use("/api/v1/setting", route.settingRoute);
 app.use("/api/v1/category", route.categoryRoute);
 app.use("/api/v1/tournament", route.tournamentRoute);
 app.use("/api/v1/player", route.playerRoute);
+app.use("/api/v1/event", route.matchesRoute);
 
 app.use(errorHandler);
 
