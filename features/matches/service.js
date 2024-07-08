@@ -1,6 +1,6 @@
 import axiosInstance from "../../config/axios.config.js";
 
-const getLiveMatch = async (matchId) => {
+const getSingleMatchDetail = async (matchId) => {
   const { data } = await axiosInstance.get(`/api/v1/event/${matchId}`);
   return data;
 };
@@ -49,7 +49,7 @@ const getPregameForm = async (matchId) => {
 };
 
 export default {
-  getLiveMatch,
+  getSingleMatchDetail,
   getScorecard,
   getSquad,
   getOvers,
