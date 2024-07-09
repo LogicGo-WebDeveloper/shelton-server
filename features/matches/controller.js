@@ -23,6 +23,7 @@ import MatchH2H from "./models/matchH2HSchema.js";
 const getOverDetailsById = async (req, res, next) => {
   try {
     const { matchId, homeTeamId, awayTeamId } = req.query;
+    console.log(req.query);
     let data;
 
     const teamTopPlayers = await MatchesOvers.findOne({
@@ -513,5 +514,5 @@ export default {
   getMatchOdds,
   getStandingsDetailsById,
   getMatchesScreenDetailsById,
-  getMatchH2H
+  getMatchH2H,
 };
