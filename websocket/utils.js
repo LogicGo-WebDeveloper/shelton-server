@@ -70,16 +70,12 @@ export const filterLiveMatchData = (match) => {
     endTimestamp: match?.endTimestamp || null,
     startTimestamp: match?.startTimestamp || null,
     slug: match?.slug || null,
-    periods: match?.periods || null,
-    lastPeriod: match?.lastPeriod || null,
-    finalResultOnly: match?.finalResultOnly || null,
     tvUmpireName: match?.tvUmpireName || null,
     venue: match?.venue || null,
     umpire1Name: match?.umpire1Name || null,
     umpire2Name: match?.umpire2Name || null,
     winnerCode: match.winnerCode || null,
     notes: match.note || null,
-    winnerTeamName: match.note ? match?.homeTeam?.name : null,
   };
 };
 
