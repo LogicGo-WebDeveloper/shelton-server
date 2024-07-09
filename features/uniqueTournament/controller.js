@@ -1140,19 +1140,16 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
             current: { $ifNull: ["$seasons.data.homeScore.current", null] },
             display: { $ifNull: ["$seasons.data.homeScore.display", null] },
             innings: {
-              $cond: {
-                if: { $isArray: "$seasons.data.homeScore.innings" },
-                then: {
-                  $map: {
-                    input: { $objectToArray: "$seasons.data.homeScore.innings" },
-                    as: "inning",
-                    in: {
-                      key: "$$inning.k",
-                      value: "$$inning.v"
-                    }
-                  }
-                },
-                else: null
+              $map: {
+                input: { $objectToArray: "$seasons.data.homeScore.innings" },
+                as: "inning",
+                in: {
+                  key: "$$inning.k",
+                  score: "$$inning.v.score",
+                  wickets: "$$inning.v.wickets",
+                  overs: "$$inning.v.overs",
+                  runRate: "$$inning.v.runRate"
+                }
               }
             }
           },
@@ -1160,19 +1157,16 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
             current: { $ifNull: ["$seasons.data.awayScore.current", null] },
             display: { $ifNull: ["$seasons.data.awayScore.display", null] },
             innings: {
-              $cond: {
-                if: { $isArray: "$seasons.data.awayScore.innings" },
-                then: {
-                  $map: {
-                    input: { $objectToArray: "$seasons.data.awayScore.innings" },
-                    as: "inning",
-                    in: {
-                      key: "$$inning.k",
-                      value: "$$inning.v"
-                    }
-                  }
-                },
-                else: null
+              $map: {
+                input: { $objectToArray: "$seasons.data.awayScore.innings" },
+                as: "inning",
+                in: {
+                  key: "$$inning.k",
+                  score: "$$inning.v.score",
+                  wickets: "$$inning.v.wickets",
+                  overs: "$$inning.v.overs",
+                  runRate: "$$inning.v.runRate"
+                }
               }
             }
           },
