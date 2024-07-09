@@ -117,29 +117,87 @@ const getPlayerMatchesById = async (req, res, next) => {
 
       {
         $project: {
-          homeTeam: {
-            name: "$matches.homeTeam.name",
-            score: "$matches.homeScore.current",
-            wickets: "$matches.homeScore.innings.inning1.wickets",
-            overs: "$matches.homeScore.innings.inning1.overs",
-          },
-          awayTeam: {
-            name: "$matches.awayTeam.name",
-            score: "$matches.awayScore.current",
-            wickets: "$matches.awayScore.innings.inning1.wickets",
-            overs: "$matches.awayScore.innings.inning1.overs",
-          },
-          winner: {
-            $cond: {
-              if: { $eq: ["$matches.winnerCode", 1] },
-              then: "$matches.homeTeam.name",
-              else: "$matches.awayTeam.name",
+          tournament: {
+            name: { $ifNull: ["$matches.tournament.name", null] },
+            slug: { $ifNull: ["$matches.tournament.slug", null] },
+            id: { $ifNull: ["$matches.tournament.id", null] },
+            category: {
+              name: { $ifNull: ["$matches.tournament.category.name", null]},
+              slug: { $ifNull: ["$matches.tournament.category.slug", null]},
+              id: { $ifNull: ["$matches.tournament.category.id", null]},
+              country: { $ifNull: ["$matches.tournament.category.country", null]},
             },
           },
-          note: "$matches.note",
-          id: "$matches.id",
-          endTimestamp: "$matches.endTimestamp",
-          startTimestamp: "$matches.endTimestamp",
+          customId: { $ifNull: ["$matches.customId", null] },
+          homeTeam: {
+            name: { $ifNull: ["$matches.homeTeam.name", null] },
+            slug: { $ifNull: ["$matches.homeTeam.slug", null] },
+            shortName: { $ifNull: ["$matches.homeTeam.shortName", null] },
+            nameCode: { $ifNull: ["$matches.homeTeam.nameCode", null] },
+            id: { $ifNull: ["$matches.homeTeam.id", null] },
+          },
+          awayTeam: {
+            name: { $ifNull: ["$matches.awayTeam.name", null] },
+            slug: { $ifNull: ["$matches.awayTeam.slug", null] },
+            shortName: { $ifNull: ["$matches.awayTeam.shortName", null] },
+            nameCode: { $ifNull: ["$matches.awayTeam.nameCode", null] },
+            id: { $ifNull: ["$matches.awayTeam.id", null] },
+          },
+          homeScore: {
+            current: { $ifNull: ["$matches.homeScore.current", null] },
+            display: { $ifNull: ["$matches.homeScore.display", null] },
+            innings: {
+              $map: {
+                input: { $objectToArray: "$matches.homeScore.innings" },
+                as: "inning",
+                in: {
+                  key: "$$inning.k",
+                  score: "$$inning.v.score",
+                  wickets: "$$inning.v.wickets",
+                  overs: "$$inning.v.overs",
+                  runRate: "$$inning.v.runRate"
+                }
+              }
+            }
+          },
+          awayScore: {
+            current: { $ifNull: ["$matches.awayScore.current", null] },
+            display: { $ifNull: ["$matches.awayScore.display", null] },
+            innings: {
+              $map: {
+                input: { $objectToArray: "$matches.awayScore.innings" },
+                as: "inning",
+                in: {
+                  key: "$$inning.k",
+                  score: "$$inning.v.score",
+                  wickets: "$$inning.v.wickets",
+                  overs: "$$inning.v.overs",
+                  runRate: "$$inning.v.runRate"
+                }
+              }
+            }
+          },
+          status: {
+            code: { $ifNull: ["$matches.status.code", null] },
+            description: { $ifNull: ["$matches.status.description", null]},
+            type: { $ifNull: ["$matches.status.type", null] },
+          },
+          season: {
+            name: { $ifNull: ["$matches.season.name", null] },
+            year: { $ifNull: ["$matches.season.year", null] },
+            id: { $ifNull: ["$matches.season.id", null] },
+          },
+          notes: { $ifNull: ["$matches.note", null] },
+          currentBattingTeamId: { $ifNull: ["$matches.currentBattingTeamId", null]},
+          endTimestamp: { $ifNull: ["$matches.endTimestamp", null] },
+          startTimestamp: { $ifNull: ["$matches.startTimestamp", null] },
+          slug: { $ifNull: ["$matches.slug", null] },
+          tvUmpireName: { $ifNull: ["$matches.tvUmpireName", null] },
+          venue: { $ifNull: ["$matches.venue", null] },
+          umpire1Name: { $ifNull: ["$matches.umpire1Name", null] },
+          umpire2Name: { $ifNull: ["$matches.umpire2Name", null] },
+          winnerCode: { $ifNull: ["$matches.winnerCode", null] },
+          id: { $ifNull: ["$matches.id", null] },
         },
       },
     ]);

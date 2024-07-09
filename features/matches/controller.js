@@ -235,12 +235,21 @@ const getSingleMatchDetail = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    if (error.response.status === 404) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "match details not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 
@@ -270,12 +279,21 @@ const getMatchVotes = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    if (error.response.status === 404) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "match votes not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 
@@ -308,12 +326,21 @@ const getPregameForm = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    if (error.response.status === 404) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "pregame form not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 
