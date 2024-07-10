@@ -7,7 +7,7 @@ import settingRoute from "./features/setting/route.js";
 import tournamentRoute from "./features/tournament/route.js";
 import playerRoute from "./features/player/route.js";
 import matchesRoute from "./features/matches/route.js";
-
+import customCricketRoute from "./cricket-custom-module/route.js";
 
 export default {
   authRoute,
@@ -18,5 +18,6 @@ export default {
   settingRoute,
   tournamentRoute,
   playerRoute,
-  matchesRoute
+  matchesRoute,
+  customCricketRoute
 };

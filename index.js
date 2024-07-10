@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import route from "./router.js";
+import customRoute from "./cricket-custom-module/route.js";
 import config from "./config/config.js";
 import connectDB from "./config/db.config.js";
 import morgan from "morgan";
@@ -37,6 +38,7 @@ app.use("/api/v1/category", route.categoryRoute);
 app.use("/api/v1/tournament", route.tournamentRoute);
 app.use("/api/v1/player", route.playerRoute);
 app.use("/api/v1/event", route.matchesRoute);
+app.use("/api/v1/custom", route.customCricketRoute);
 
 app.use(errorHandler);
 

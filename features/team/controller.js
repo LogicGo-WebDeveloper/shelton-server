@@ -801,6 +801,18 @@ const getTeamMatchesByTeam = async (req, res, next) => {
           umpire2Name: { $ifNull: ["$matches.umpire2Name", null] },
           winnerCode: { $ifNull: ["$matches.winnerCode", null] },
           id: { $ifNull: ["$matches.id", null] },
+          isWin: {
+            $cond: {
+              if: {
+                $or: [
+                  { $and: [{ $eq: ["$matches.winnerCode", 1] }, { $eq: ["$matches.homeTeam.id", id] }] },
+                  { $and: [{ $eq: ["$matches.winnerCode", 2] }, { $eq: ["$matches.awayTeam.id", id] }] }
+                ]
+              },
+              then: true,
+              else: false
+            }
+          }
         },
       },
     ]);
