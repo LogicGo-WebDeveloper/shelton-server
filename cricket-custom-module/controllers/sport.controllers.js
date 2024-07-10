@@ -8,7 +8,7 @@ const getSportList = async (req, res, next) => {
 
     var fullUrl = req.protocol + '://' + req.get('host') + '/images/';
     sportList.forEach((sport)=>{
-      sport.image = sport.image ? '/images/' + sport.image : "";
+      sport.image = sport.image ? fullUrl + sport.image : "";
     })
     
     return apiResponse({
