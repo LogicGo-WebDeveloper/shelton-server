@@ -1,11 +1,14 @@
 [
     {
-        "sportName": "Cricket"
+        "sportName": "Cricket",
+        "image": "cricket.png"
     },
     {
-        "sportName": "Football"
+        "sportName": "Football",
+        "image": "football.png"
     },
     {
-        "sportName": "Basketball"
+        "sportName": "Basketball",
+        "image": "basketball.png"
     }
 ]

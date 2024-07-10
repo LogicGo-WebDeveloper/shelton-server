@@ -29,6 +29,7 @@ app.use(
     origin: config.frontendUrl.split(","),
   })
 );
+app.use("/images",express.static('cricket-custom-module/public'));
 InsertSportList();
 
 app.use("/api/auth", route.authRoute);

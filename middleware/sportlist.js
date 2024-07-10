@@ -3,13 +3,20 @@ import sportList from "../helper/sportList.json" assert { type: "json" };
 
 export const InsertSportList = async() => {
     const sportNamesInJson = sportList.map(sport => sport.sportName);
+
     // Insert new sports
     for (const sport of sportList) {
         const exists = await CustomSportList.findOne({ sportName: sport.sportName });
         if (!exists) {
-            await CustomSportList.insertMany(sport);
+            const newSport = new CustomSportList(sport);
+            await newSport.save();
+        } else {
+            // Update the existing sport with the new data
+            exists.image = sport.image;
+            await exists.save();
         }
     }
+
     // Delete sports not in JSON
     await CustomSportList.deleteMany({ sportName: { $nin: sportNamesInJson } });
 }
