@@ -8,6 +8,7 @@ import morgan from "morgan";
 import errorHandler from "./middleware/errorHandler.js";
 import http from "http";
 import setupWebSocket from "./websocket/websocketServer.js";
+import { InsertSportList } from "./middleware/sportlist.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -28,6 +29,7 @@ app.use(
     origin: config.frontendUrl.split(","),
   })
 );
+InsertSportList();
 
 app.use("/api/auth", route.authRoute);
 app.use("/api/v1/sport", route.sportRoute);
