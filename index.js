@@ -1,14 +1,13 @@
 import express from "express";
 import cors from "cors";
 import route from "./router.js";
-import customRoute from "./cricket-custom-module/route.js";
 import config from "./config/config.js";
 import connectDB from "./config/db.config.js";
 import morgan from "morgan";
 import errorHandler from "./middleware/errorHandler.js";
 import http from "http";
 import setupWebSocket from "./websocket/websocketServer.js";
-import { InsertSportList } from "./middleware/sportlist.js";
+import { InsertCityList, InsertMatchOn, InsertMatchType, InsertSportList, InsertTournamentCategory, InsertTournamentWinningPrize } from "./middleware/common.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -31,6 +30,11 @@ app.use(
 );
 app.use("/images",express.static('cricket-custom-module/public'));
 InsertSportList();
+InsertCityList();
+InsertTournamentCategory();
+InsertMatchType();
+InsertMatchOn();
+InsertTournamentWinningPrize();
 
 app.use("/api/auth", route.authRoute);
 app.use("/api/v1/sport", route.sportRoute);
