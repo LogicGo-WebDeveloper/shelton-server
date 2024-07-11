@@ -16,7 +16,7 @@ route.get("/tournament/match-types", commonController.getMatchTypes);
 route.get("/tournament/match-on", commonController.getMatchOn);
 
 // ============================== For Tournament List ===========================================
-route.post("/tournament-add", tournamentController.createTournament);
+route.post("/tournament/add", tournamentController.createTournament);
 route.get("/tournament/list", tournamentController.listTournament);
 route.put("/tournament/update/:id", tournamentController.tournamentupdate);
 

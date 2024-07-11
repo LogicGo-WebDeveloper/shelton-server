@@ -16,9 +16,9 @@ const matchesScreenMatchesSchema = new mongoose.Schema(
   }
 );
 
-const matchesScreenMatches = mongoose.model(
-  "matchesScreenMatches",
+const MatchesScreenMatches = mongoose.model(
+  "MatchesScreenMatches",
   matchesScreenMatchesSchema
 );
 
-export default matchesScreenMatches;
+export default MatchesScreenMatches;

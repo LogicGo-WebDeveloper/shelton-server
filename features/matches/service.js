@@ -23,9 +23,8 @@ const getOvers = async (matchId) => {
 };
 
 const getMatches = async (customId) => {
-  const { data } = await axiosInstance.get(
-    `/api/v1/event/${customId}/h2h/events`
-  );
+  const { data } = await axiosInstance.get(`/api/v1/event/${customId}/h2h/events`);
+  console.log("______________>>>>>>>>", data)
   return data;
 };
 

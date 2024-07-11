@@ -132,28 +132,20 @@ const getSeasonsByTournament = async (req, res, next) => {
 const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
   try {
     const { id } = req.params;
-
     const key = cacheService.getCacheKey(req);
 
     let data = cacheService.getCache(key);
 
     if (!data) {
-      data = await service.getLeagueFeaturedEventsByTournament(id);
+      const featuredMatches = await FeaturedMatches.findOne({ tournamentId: id });
 
-      cacheService.setCache(key, data, cacheTTL.ONE_MINUTE);
-
-      const featuredData = await FeaturedMatches.findOne({ tournamentId: id });
-
-      if (featuredData) {
-        data = featuredData;
-      } else {
-        // Fetch data from the API
+      if(featuredMatches){
+        data = featuredMatches.data;
+      }else{
         data = await service.getLeagueFeaturedEventsByTournament(id);
-        cacheService.setCache(key, data, cacheTTL.ONE_DAY);
-
-        // Store the fetched data in the database
-        const seasonEntry = new FeaturedMatches({ tournamentId: id, data });
-        await seasonEntry.save();
+        cacheService.setCache(key, data, cacheTTL.ONE_MINUTE);
+        const featuredMatches = new FeaturedMatches({ tournamentId: id, data });
+        await featuredMatches.save();
       }
     }
 

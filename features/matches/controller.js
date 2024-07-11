@@ -19,6 +19,7 @@ import MatchOdds from "./models/matchOddsSchema.js";
 import MatchesStanding from "./models/matchesStandings.js";
 import matchesScreenMatches from "./models/matchesDetails.js";
 import MatchH2H from "./models/matchH2HSchema.js";
+import MatchesScreenMatches from "./models/matchesDetails.js";
 
 const getOverDetailsById = async (req, res, next) => {
   try {
@@ -446,32 +447,28 @@ const getStandingsDetailsById = async (req, res, next) => {
 const getMatchesScreenDetailsById = async (req, res, next) => {
   try {
     const { customId } = req.params;
-    let data;
-
-    const matchesData = await matchesScreenMatches.findOne({
-      customId: customId,
-    });
-
-    if (matchesData) {
-      data = matchesData;
-    } else {
-      data = await service.getMatches(customId);
-
-      const matchesEntry = new matchesScreenMatches({
-        customId: customId,
-        data,
-      });
-      await matchesEntry.save();
+    const key = cacheService.getCacheKey(req);
+    let data = cacheService.getCache(key);
+    if (!data) {
+      const matchesData = await MatchesScreenMatches.findOne({customId: customId});
+      if (matchesData) {
+        data = matchesData?.data;
+      } else {
+        const apiData = await service.getMatches(customId);
+        const matchesEntry = new MatchesScreenMatches({ customId, data: apiData});
+        await matchesEntry.save();
+        data = matchesEntry.data;
+        cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
+      }
     }
-    console.log(data.data.events);
 
-    const filteredMatches = data.data.events.map(filterLiveMatchData);
+    const filteredMatches = data.events.map(filterLiveMatchData);
 
     return apiResponse({
       res,
       data: filteredMatches,
       status: true,
-      message: "Standings details fetched successfully",
+      message: "matches fetched successfully",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
@@ -481,7 +478,7 @@ const getMatchesScreenDetailsById = async (req, res, next) => {
         res,
         data: null,
         status: true,
-        message: "No standings found",
+        message: "No matches found",
         statusCode: StatusCodes.OK,
       });
     } else {
