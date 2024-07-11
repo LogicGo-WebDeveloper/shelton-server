@@ -4,7 +4,7 @@ import config from "./config.js";
 let apiUrl;
 let headers = {};
 
-if ((config.sofascore.apiMode = "free")) {
+if (config.sofascore.apiMode === "free") {
   apiUrl = config.sofascore.freeUrl;
 } else {
   apiUrl = config.sofascore.paidUrl;

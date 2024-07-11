@@ -143,7 +143,7 @@ export const fractionalOddsToDecimal = (fractionalOdds) => {
 export const filteredOversData = (data) => {
   const result = [];
   const overMap = {};
-
+  console.log(data[0], "input_data_in_filter----------");
   data.forEach((item) => {
     const over = item.over;
     if (!overMap[over]) {
@@ -163,15 +163,16 @@ export const filteredOversData = (data) => {
       totalRuns: item.totalRuns,
       commentary: item.commentary,
       score: item.score,
-      wicket: item.wicket,
-      missed: item.missed,
-      scored: item.scored,
+      wicket: item.wicket ? true : false,
+      missed: item.missed ? true : false,
+      scored: item.scored ? true : false,
       batsmanName: item.batsman?.name || null,
       bowlerName: item.bowler?.name || null,
       fielderName: item.fielder?.name || null,
       incidentClassLabel: item?.incidentClassLabel || null,
     });
   });
+  console.log(result[0], "final_result========");
 
   return result;
 };

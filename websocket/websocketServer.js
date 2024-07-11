@@ -233,11 +233,14 @@ const setupWebSocket = (server) => {
         case "overs":
           try {
             const overs = await sportWebsocketService.getOvers(data.matchId);
+            console.log(overs.incidents[0], "getted_data______________");
             const filterHomeTeam = overs.incidents?.filter(
-              (incident) => incident.battingTeamId == data.homeTeamId
+              (incident) =>
+                Number(incident.battingTeamId) === Number(data.homeTeamId)
             );
             const filterAwayTeam = overs.incidents?.filter(
-              (incident) => incident.battingTeamId == data.awayTeamId
+              (incident) =>
+                Number(incident.battingTeamId) === Number(data.awayTeamId)
             );
             const filteredOvers = {
               homeTeam: {
