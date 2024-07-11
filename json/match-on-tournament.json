@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Weekends",
+        "value": 1
+    },
+    {
+        "name": "Weekdays",
+        "value": 2
+    },
+    {
+        "name": "All Days",
+        "value": 3
+    }
+]

@@ -1,0 +1,22 @@
+[
+    {
+        "name": "Limited Overs",
+        "value": 1
+    },
+    {
+        "name": "Test Match",
+        "value": 2
+    },
+    {
+        "name": "Box Cricket",
+        "value": 3
+    },
+    {
+        "name": "Pair Cricket",
+        "value": 4
+    },
+    {
+        "name": "The Hundred",
+        "value": 5
+    }
+]

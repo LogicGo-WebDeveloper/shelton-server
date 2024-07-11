@@ -1,0 +1,34 @@
+[
+    {
+        "name": "Open",
+        "value": 1
+    },
+    {
+        "name": "Corporate",
+        "value": 2
+    },
+    {
+        "name": "Community",
+        "value": 3
+    },
+    {
+        "name": "School",
+        "value": 4
+    },
+    {
+        "name": "Others",
+        "value": 5
+    },
+    {
+        "name": "College",
+        "value": 6
+    },
+    {
+        "name": "Series",
+        "value": 7
+    },
+    {
+        "name": "University",
+        "value": 8
+    }
+]
