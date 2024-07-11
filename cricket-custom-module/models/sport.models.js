@@ -1,11 +1,14 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const customSportListSchema = new mongoose.Schema({
-    sportId: String,
-    sportName: String,
-    image: String
+  sportId: String,
+  sportName: String,
+  image: String,
 });
 
-const CustomSportList = mongoose.model('CustomSportList', customSportListSchema);
+const CustomSportList = mongoose.model(
+  "CustomSportList",
+  customSportListSchema
+);
 
 export default CustomSportList;

@@ -10,5 +10,7 @@ route.get("/sports", sportController.getSportList);
 // ============================== For Tournament List =================================================
 
 route.post("/tournament-add", tournamentController.createTournament);
+route.get("/tournament/list", tournamentController.listTournament);
+route.put("/tournament/update/:id", tournamentController.tournamentupdate);
 
 export default route;
