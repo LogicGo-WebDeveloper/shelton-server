@@ -5,6 +5,10 @@ import service from "./service.js";
 import cacheTTL from "../cache/constants.js";
 import PlayerDetails from "./models/playerDetailsSchema.js";
 import PlayerMatches from "./models/playerMatchesSchema.js";
+import { v4 as uuidv4 } from "uuid";
+import config from "../../config/config.js";
+import { uploadFile } from "../../helper/aws_s3.js";
+const folderName = "player";
 
 const getPlayerDetailsById = async (req, res, next) => {
   try {
@@ -13,15 +17,31 @@ const getPlayerDetailsById = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
 
     let data = cacheService.getCache(key);
+    let image = cacheService.getCache(key);
 
     if (!data) {
       data = await service.getPlayerById(id);
+      image = await service.getPlayerImage(id);
       const players = await PlayerDetails.findOne({ PlayerId: id });
 
       if (players) {
         data = players.data;
+        image = players.image;
       } else {
-        const playerEntry = new PlayerDetails({ PlayerId: id, data });
+        const name = `${uuidv4()}`;
+        await uploadFile({
+          filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+          file: image,
+          ACL: "public-read",
+        });
+
+        const filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+        const playerEntry = new PlayerDetails({
+          PlayerId: id,
+          image: filename,
+          data,
+        });
         await playerEntry.save();
       }
 
@@ -47,6 +67,7 @@ const getPlayerDetailsById = async (req, res, next) => {
                 playerQuality: "$$playerObj.cricketPlayerInfo.bowling",
                 battingQuality: "$$playerObj.cricketPlayerInfo.batting",
                 nationality: "$$playerObj.country.alpha3",
+                image: "$image",
               },
             },
           },
@@ -62,6 +83,7 @@ const getPlayerDetailsById = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
@@ -122,10 +144,12 @@ const getPlayerMatchesById = async (req, res, next) => {
             slug: { $ifNull: ["$matches.tournament.slug", null] },
             id: { $ifNull: ["$matches.tournament.id", null] },
             category: {
-              name: { $ifNull: ["$matches.tournament.category.name", null]},
-              slug: { $ifNull: ["$matches.tournament.category.slug", null]},
-              id: { $ifNull: ["$matches.tournament.category.id", null]},
-              country: { $ifNull: ["$matches.tournament.category.country", null]},
+              name: { $ifNull: ["$matches.tournament.category.name", null] },
+              slug: { $ifNull: ["$matches.tournament.category.slug", null] },
+              id: { $ifNull: ["$matches.tournament.category.id", null] },
+              country: {
+                $ifNull: ["$matches.tournament.category.country", null],
+              },
             },
           },
           customId: { $ifNull: ["$matches.customId", null] },
@@ -155,10 +179,10 @@ const getPlayerMatchesById = async (req, res, next) => {
                   score: "$$inning.v.score",
                   wickets: "$$inning.v.wickets",
                   overs: "$$inning.v.overs",
-                  runRate: "$$inning.v.runRate"
-                }
-              }
-            }
+                  runRate: "$$inning.v.runRate",
+                },
+              },
+            },
           },
           awayScore: {
             current: { $ifNull: ["$matches.awayScore.current", null] },
@@ -172,14 +196,14 @@ const getPlayerMatchesById = async (req, res, next) => {
                   score: "$$inning.v.score",
                   wickets: "$$inning.v.wickets",
                   overs: "$$inning.v.overs",
-                  runRate: "$$inning.v.runRate"
-                }
-              }
-            }
+                  runRate: "$$inning.v.runRate",
+                },
+              },
+            },
           },
           status: {
             code: { $ifNull: ["$matches.status.code", null] },
-            description: { $ifNull: ["$matches.status.description", null]},
+            description: { $ifNull: ["$matches.status.description", null] },
             type: { $ifNull: ["$matches.status.type", null] },
           },
           season: {
@@ -188,7 +212,9 @@ const getPlayerMatchesById = async (req, res, next) => {
             id: { $ifNull: ["$matches.season.id", null] },
           },
           notes: { $ifNull: ["$matches.note", null] },
-          currentBattingTeamId: { $ifNull: ["$matches.currentBattingTeamId", null]},
+          currentBattingTeamId: {
+            $ifNull: ["$matches.currentBattingTeamId", null],
+          },
           endTimestamp: { $ifNull: ["$matches.endTimestamp", null] },
           startTimestamp: { $ifNull: ["$matches.startTimestamp", null] },
           slug: { $ifNull: ["$matches.slug", null] },
