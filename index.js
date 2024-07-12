@@ -7,7 +7,14 @@ import morgan from "morgan";
 import errorHandler from "./middleware/errorHandler.js";
 import http from "http";
 import setupWebSocket from "./websocket/websocketServer.js";
-import { InsertCityList, InsertMatchOn, InsertMatchType, InsertSportList, InsertTournamentCategory, InsertTournamentWinningPrize } from "./middleware/common.js";
+import {
+  InsertCityList,
+  InsertMatchOn,
+  InsertMatchType,
+  InsertSportList,
+  InsertTournamentCategory,
+  InsertTournamentWinningPrize,
+} from "./middleware/common.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -28,7 +35,7 @@ app.use(
     origin: config.frontendUrl.split(","),
   })
 );
-app.use("/images",express.static('cricket-custom-module/public'));
+app.use("/images", express.static("cricket-custom-module/public"));
 InsertSportList();
 InsertCityList();
 InsertTournamentCategory();

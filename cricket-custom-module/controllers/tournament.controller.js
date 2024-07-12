@@ -9,11 +9,11 @@ import { apiResponse } from "../../helper/apiResponse.js";
 
 const createTournament = async (req, res, next) => {
   let fileSuffix = Date.now().toString();
+  // const __dirname = path.resolve();
 
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      // Specify the destination directory where files will be uploaded.
-      const uploadDir = path.join("../public/tournament");
+      const uploadDir = path.join("cricket-custom-module/public/tournament"); // Use absolute path
       fs.mkdir(uploadDir, { recursive: true }, (err) => {
         if (err) {
           console.error("Error creating upload directory:", err);
@@ -24,11 +24,14 @@ const createTournament = async (req, res, next) => {
       });
     },
     filename: function (req, file, cb) {
+      const fileSuffix = Date.now().toString();
       cb(null, `${fileSuffix}-${file.originalname}`);
     },
   });
-
-  const upload = multer({ storage: storage }).single("tournamentImage");
+  const upload = multer({ storage: storage }).fields([
+    { name: "tournamentImages", maxCount: 1 }, // Allow up to 5 tournament images
+    { name: "tournamentBackgroundImage", maxCount: 1 }, // Allow only 1 background image
+  ]);
 
   upload(req, res, async function (err, file, cb) {
     var sportId = req.body.sportId;
@@ -45,8 +48,11 @@ const createTournament = async (req, res, next) => {
     var winningPrizeId = req.body.winningPrizeId;
     var matchOnId = req.body.matchOnId;
     var description = req.body.description;
-    var tournamentImage = req.file
-      ? `${fileSuffix}-${req.file.originalname}`
+    var tournamentBackgroundImage = req.files
+      ? `${fileSuffix}-${req.files.tournamentBackgroundImage[0].originalname}`
+      : "";
+    var tournamentImage = req.files
+      ? `${fileSuffix}-${req.files.tournamentImages[0].originalname}`
       : "";
 
     const result = validate.createTournament.validate({
@@ -63,7 +69,6 @@ const createTournament = async (req, res, next) => {
       moreTeams: moreTeams,
       winningPrizeId: winningPrizeId,
       matchOnId: matchOnId,
-      description: description,
     });
     if (result.error) {
       return res.status(400).json({
@@ -90,6 +95,7 @@ const createTournament = async (req, res, next) => {
         matchOnId: matchOnId,
         description: description,
         tournamentImage: tournamentImage,
+        tournamentBackgroundImage: tournamentBackgroundImage,
       })
         .then(function (resp) {
           return apiResponse({
@@ -145,6 +151,15 @@ const listTournament = async (req, res) => {
     const totalItems = await CustomTournament.countDocuments(condition);
 
     const response = await getPagingData(totalItems, data, page, limit);
+    var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
+    data.forEach((element) => {
+      element.tournamentImage = element.tournamentImage
+        ? fullUrl + "tournament/" + element.tournamentImage
+        : "";
+      element.tournamentBackgroundImage = element.tournamentBackgroundImage
+        ? fullUrl + "tournament/" + element.tournamentBackgroundImage
+        : "";
+    });
 
     return apiResponse({
       res,
@@ -154,6 +169,7 @@ const listTournament = async (req, res) => {
       statusCode: StatusCodes.OK,
     });
   } catch (err) {
+    console.log(err);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -170,7 +186,7 @@ const tournamentupdate = async (req, res, next) => {
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       // Specify the destination directory where files will be uploaded.
-      const uploadDir = path.join("../public/tournament");
+      const uploadDir = path.join("cricket-custom-module/public/tournament"); // Use absolute path
       fs.mkdir(uploadDir, { recursive: true }, (err) => {
         if (err) {
           console.error("Error creating upload directory:", err);
