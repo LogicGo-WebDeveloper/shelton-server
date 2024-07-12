@@ -16,6 +16,7 @@ const customTournamentSchema = new mongoose.Schema({
   winningPrizeId: String,
   matchOnId: String,
   description: String,
+  tournamentBackgroundImage: String,
 });
 
 const CustomTournament = mongoose.model(

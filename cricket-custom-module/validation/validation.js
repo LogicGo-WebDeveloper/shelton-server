@@ -14,7 +14,6 @@ const createTournament = Joi.object().keys({
   moreTeams: Joi.string().required(),
   winningPrizeId: Joi.string().required(),
   matchOnId: Joi.string().required(),
-  description: Joi.string().required(),
 });
 
 const createTeam = Joi.object().keys({
