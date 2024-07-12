@@ -18,7 +18,6 @@ const getLeagueFeaturedEventsByTournament = async (id) => {
   const { data } = await axiosInstance.get(
     `/api/v1/unique-tournament/${id}/featured-events`
   );
-  console.log("data____________", data);
 
   return data.featuredEvents ?? [];
 };

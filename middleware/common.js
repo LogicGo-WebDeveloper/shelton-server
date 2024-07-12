@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { CustomCityList, CustomTournamentCategory, CustomMatchType, CustomMatchOn, CustomTournamentWinningPrize } from "../cricket-custom-module/models/common.models.js";
+import { CustomCityList, CustomTournamentCategory, CustomMatchType, CustomMatchOn, CustomTournamentWinningPrize, CustomPitchType, CustomBallType } from "../cricket-custom-module/models/common.models.js";
 import CustomSportList from "../cricket-custom-module/models/sport.models.js";
 
 // Function to read JSON file
@@ -16,8 +16,10 @@ const categoryList = await readJsonFile(path.resolve('json/category.tournament.j
 const matchTypeList = await readJsonFile(path.resolve('json/match-type.tournament.json'));
 const matchOnList = await readJsonFile(path.resolve('json/match-on-tournament.json'));
 const winningPrizeList = await readJsonFile(path.resolve('json/winning-prize.tournament.json'));
+const pitchTypeList = await readJsonFile(path.resolve('json/pitch-types.match.json'));
+const ballTypeList = await readJsonFile(path.resolve('json/ball-types.match.json'));
 
-// ... existing code ...
+
 export const InsertSportList = async() => {
     const sportNamesInJson = sportList.map(sport => sport.sportName);
     for (const sport of sportList) {
@@ -34,7 +36,6 @@ export const InsertSportList = async() => {
     await CustomSportList.deleteMany({ sportName: { $nin: sportNamesInJson } });
 }
 
-// ... existing code ...
 export const InsertCityList = async() => {
     const cityNamesInJson = cityList.map(city => city.city);
     for (const city of cityList) {
@@ -48,7 +49,6 @@ export const InsertCityList = async() => {
     await CustomCityList.deleteMany({ city: { $nin: cityNamesInJson } });
 }
 
-// ... existing code ...
 export const InsertTournamentCategory = async() => {
     const categoryNamesInJson = categoryList.map(category => category.name);
     for (const category of categoryList) {
@@ -62,7 +62,6 @@ export const InsertTournamentCategory = async() => {
     await CustomTournamentCategory.deleteMany({ name: { $nin: categoryNamesInJson } });
 }
 
-// ... existing code ...
 export const InsertMatchType = async() => {
     const matchTypeNamesInJson = matchTypeList.map(matchType => matchType.name);
     for (const matchType of matchTypeList) {
@@ -76,7 +75,6 @@ export const InsertMatchType = async() => {
     await CustomMatchType.deleteMany({ name: { $nin: matchTypeNamesInJson } });
 }
 
-// ... existing code ...
 export const InsertMatchOn = async() => {
     const matchOnNamesInJson = matchOnList.map(matchOn => matchOn.name);
     for (const matchOn of matchOnList) {
@@ -90,7 +88,6 @@ export const InsertMatchOn = async() => {
     await CustomMatchOn.deleteMany({ name: { $nin: matchOnNamesInJson } });
 }
 
-// ... existing code ...
 export const InsertTournamentWinningPrize = async() => {
     const winningPrizeNamesInJson = winningPrizeList.map(prize => prize.name);
     
@@ -103,4 +100,32 @@ export const InsertTournamentWinningPrize = async() => {
     }
     // Delete winning prizes not in JSON
     await CustomTournamentWinningPrize.deleteMany({ name: { $nin: winningPrizeNamesInJson } });
+}
+
+export const InsertPitchType = async() => {
+    const pitchTypeNamesInJson = pitchTypeList.map(pitchType => pitchType.pitchType);
+    
+    for (const pitchType of pitchTypeList) {
+        const exists = await CustomPitchType.findOne({ pitchType: pitchType.pitchType });
+        if (!exists) {
+            const newPitchType = new CustomPitchType(pitchType);
+            await newPitchType.save();
+        } 
+    }
+    // Delete pitch types not in JSON
+    await CustomPitchType.deleteMany({ pitchType: { $nin: pitchTypeNamesInJson } });
+}
+
+export const InsertBallType = async() => {
+    const ballTypeNamesInJson = ballTypeList.map(ballType => ballType.ballType);
+    
+    for (const ballType of ballTypeList) {
+        const exists = await CustomBallType.findOne({ ballType: ballType.ballType });
+        if (!exists) {
+            const newBallType = new CustomBallType(ballType);
+            await newBallType.save();
+        } 
+    }
+    // Delete ball types not in JSON
+    await CustomBallType.deleteMany({ ballType: { $nin: ballTypeNamesInJson } });
 }

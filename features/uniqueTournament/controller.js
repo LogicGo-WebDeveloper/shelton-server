@@ -45,6 +45,10 @@ const getTournamentById = async (req, res, next) => {
                 name: "$$dataObj.name",
                 slug: "$$dataObj.slug",
                 id: "$$dataObj.id",
+                titleHolder: "$$dataObj.titleHolder",
+                titleHolderTitles: "$$dataObj.titleHolderTitles",
+                mostTitles: "$$dataObj.mostTitles",
+                mostTitlesTeams: "$$dataObj.mostTitlesTeams",
               },
             },
           },
@@ -146,6 +150,7 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
         cacheService.setCache(key, data, cacheTTL.ONE_MINUTE);
         const featuredMatches = new FeaturedMatches({ tournamentId: id, data });
         await featuredMatches.save();
+        
       }
     }
 
@@ -158,13 +163,15 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
           tournament: {
             name: { $ifNull: ["$data.tournament.name", null] },
             slug: { $ifNull: ["$data.tournament.slug", null] },
+            id: { $ifNull: ["$data.tournament.id", null] },
             category: {
               name: { $ifNull: ["$data.tournament.category.name", null] },
               slug: { $ifNull: ["$data.tournament.category.slug", null] },
               id: { $ifNull: ["$data.tournament.category.id", null] },
+              country: { $ifNull: ["$data.tournament.category.country", null] },
             },
-            id: { $ifNull: ["$data.tournament.id", null] },
           },
+          customId: { $ifNull: ["$data.customId", null] },
           homeTeam: {
             name: { $ifNull: ["$data.homeTeam.name", null] },
             slug: { $ifNull: ["$data.homeTeam.slug", null] },
@@ -187,18 +194,53 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
           homeScore: {
             current: { $ifNull: ["$data.homeScore.current", null] },
             display: { $ifNull: ["$data.homeScore.display", null] },
-            innings: { $ifNull: ["$data.homeScore.innings", null] },
+            innings: {
+              $map: {
+                input: { $objectToArray: "$data.homeScore.innings" },
+                as: "inning",
+                in: {
+                  key: "$$inning.k",
+                  score: "$$inning.v.score",
+                  wickets: "$$inning.v.wickets",
+                  overs: "$$inning.v.overs",
+                  runRate: "$$inning.v.runRate"
+                }
+              }
+            }
           },
           awayScore: {
             current: { $ifNull: ["$data.awayScore.current", null] },
             display: { $ifNull: ["$data.awayScore.display", null] },
-            innings: { $ifNull: ["$data.awayScore.innings", null] },
+            innings: {
+              $map: {
+                input: { $objectToArray: "$data.awayScore.innings" },
+                as: "inning",
+                in: {
+                  key: "$$inning.k",
+                  score: "$$inning.v.score",
+                  wickets: "$$inning.v.wickets",
+                  overs: "$$inning.v.overs",
+                  runRate: "$$inning.v.runRate"
+                }
+              }
+            }
+          },
+          season: {
+            name: { $ifNull: ["$data.season.name", null] },
+            year: { $ifNull: ["$data.season.year", null] },
+            id: { $ifNull: ["$data.season.id", null] },
           },
           endTimestamp: { $ifNull: ["$data.endTimestamp", null] },
           startTimestamp: { $ifNull: ["$data.startTimestamp", null] },
-          note: { $ifNull: ["$data.note", null] },
+          notes: { $ifNull: ["$data.note", null] },
           slug: { $ifNull: ["$data.slug", null] },
           id: { $ifNull: ["$data.id", null] },
+          currentBattingTeamId: { $ifNull: ["$data.currentBattingTeamId", null]},
+          tvUmpireName: { $ifNull: ["$data.tvUmpireName", null] },
+          venue: { $ifNull: ["$data.venue", null] },
+          umpire1Name: { $ifNull: ["$data.umpire1Name", null] },
+          umpire2Name: { $ifNull: ["$data.umpire2Name", null] },
+          winnerCode: { $ifNull: ["$data.winnerCode", null] },
         },
       },
     ]);

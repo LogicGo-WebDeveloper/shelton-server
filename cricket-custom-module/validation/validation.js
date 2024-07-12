@@ -17,6 +17,27 @@ const createTournament = Joi.object().keys({
   description: Joi.string().required(),
 });
 
+const createTeam = Joi.object().keys({
+  teamName: Joi.string().required(),
+  city: Joi.string().required(),
+  addMySelfInTeam: Joi.boolean().required(),
+  teamImage: Joi.string().optional(),
+});
+
+const createMatch = Joi.object().keys({
+  homeTeamId: Joi.string().required(),
+  awayTeamId: Joi.string().required(),
+  noOfOvers: Joi.number().required(),
+  overPerBowler: Joi.number().required(),
+  city: Joi.string().required(),
+  ground: Joi.string().required(),
+  dateTime: Joi.date().required(),
+  pitchType: Joi.string().required(),
+  ballType: Joi.string().required(),
+});
+
 export default {
   createTournament,
+  createTeam,
+  createMatch
 };

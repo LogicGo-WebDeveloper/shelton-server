@@ -1,6 +1,6 @@
 import { apiResponse } from "../../helper/apiResponse.js";
 import { StatusCodes } from "http-status-codes";
-import { CustomCityList, CustomMatchOn, CustomMatchType, CustomTournamentCategory, CustomTournamentWinningPrize } from "../models/common.models.js";
+import { CustomBallType, CustomCityList, CustomMatchOn, CustomMatchType, CustomPitchType, CustomTournamentCategory, CustomTournamentWinningPrize } from "../models/common.models.js";
 
 const getCityList = async (req, res, next) => {
   const { page = 1, city } = req.query;
@@ -125,10 +125,52 @@ const getMatchOn = async (req, res, next) => {
   }
 };
 
+const getBallTypes = async (req, res, next) => {
+  try {
+    const ballTypes = await CustomBallType.find();
+    return apiResponse({ 
+      res, 
+      statusCode: StatusCodes.OK, 
+      message: "Ball types fetched successfully", 
+      status: true, 
+      data: ballTypes 
+    });
+  } catch (error) {
+    return apiResponse({ 
+      res, 
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR, 
+      message: "Internal server error", 
+      status: false 
+    });
+  }
+};
+
+const getPitchTypes = async (req, res, next) => {
+  try {
+    const pitchTypes = await CustomPitchType.find();
+    return apiResponse({ 
+      res, 
+      statusCode: StatusCodes.OK, 
+      message: "Pitch types fetched successfully", 
+      status: true, 
+      data: pitchTypes 
+    });
+  } catch (error) {
+    return apiResponse({ 
+      res, 
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR, 
+      message: "Internal server error", 
+      status: false 
+    });
+    }
+};
+
 export default {
   getCityList,
   getTournamentCategory,
   getTournamentWinningPrize,
   getMatchTypes,
-  getMatchOn
+  getMatchOn,
+  getBallTypes,
+  getPitchTypes
 };

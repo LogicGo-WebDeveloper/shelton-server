@@ -166,7 +166,7 @@ const listTournament = async (req, res) => {
 const tournamentupdate = async (req, res, next) => {
   const id = req.params.id;
   let fileSuffix = Date.now().toString();
-
+  
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       // Specify the destination directory where files will be uploaded.
@@ -184,7 +184,7 @@ const tournamentupdate = async (req, res, next) => {
       cb(null, `${fileSuffix}-${file.originalname}`);
     },
   });
-
+  
   const upload = multer({ storage: storage }).single("tournamentImage");
 
   upload(req, res, async function (err, file, cb) {
@@ -206,13 +206,9 @@ const tournamentupdate = async (req, res, next) => {
       ? `${fileSuffix}-${req.file.originalname}`
       : "";
 
-    const tournamentData = await CustomTournament.findOne({
-      where: {
-        _id: id,
-      },
-    });
+    const tournamentData = await CustomTournament.findById(id);
     if (tournamentData) {
-      const updatedTournament = await CustomTournament.findByIdAndUpdate(
+      await CustomTournament.findByIdAndUpdate(
         id,
         {
           sportId,
@@ -252,9 +248,13 @@ const tournamentupdate = async (req, res, next) => {
           });
         });
     } else {
+      return apiResponse({
+        res,
+        statusCode: StatusCodes.NOT_FOUND,
+        status: false,
+        message: "Tournament not found",
+      });
     }
-
-    // }
   });
 };
 

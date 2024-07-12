@@ -1,0 +1,22 @@
+[
+    {
+        "id": 1,
+        "pitchType": "Rough"
+    },
+    {
+        "id": 2,
+        "pitchType": "Cement"
+    },
+    {
+        "id": 3,
+        "pitchType": "Turf"
+    },
+    {
+        "id": 4,
+        "pitchType": "Matting"
+    },
+    {
+        "id": 5,
+        "pitchType": "Astroturf"
+    }
+]

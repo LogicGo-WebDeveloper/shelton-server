@@ -1,0 +1,14 @@
+[
+    {
+        "ballType": "Tennis",
+        "id": 1
+    },
+    {
+        "ballType": "Leather",
+        "id": 2
+    },
+    {
+        "ballType": "Other",
+        "id": 3
+    }
+]
