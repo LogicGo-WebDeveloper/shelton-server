@@ -1,34 +1,13 @@
 import { apiResponse } from "../../helper/apiResponse.js";
 import { StatusCodes } from "http-status-codes";
 import validate from "../validation/validation.js";
-import CustomMatch from "../models/match.models.js";
+import Player from "../models/player.models.js";
 import mongoose from "mongoose";
 
-const createMatch = async (req, res, next) => {
-  const {
-    homeTeamId,
-    awayTeamId,
-    noOfOvers,
-    overPerBowler,
-    city,
-    ground,
-    dateTime,
-    pitchType,
-    ballType,
-    matchOfficial,
-  } = req.body;
+const createPlayer = async (req, res, next) => {
+  const { playerName, phoneNumber, role } = req.body;
 
-  const result = validate.createMatch.validate({
-    homeTeamId,
-    awayTeamId,
-    noOfOvers,
-    overPerBowler,
-    city,
-    ground,
-    dateTime,
-    pitchType,
-    ballType,
-  });
+  const result = validate.createPlayer.validate({ playerName, phoneNumber, role });
 
   if (result.error) {
     return res.status(400).json({
@@ -36,24 +15,13 @@ const createMatch = async (req, res, next) => {
     });
   } else {
     try {
-      const match = await CustomMatch.create({
-        homeTeamId,
-        awayTeamId,
-        noOfOvers,
-        overPerBowler,
-        city,
-        ground,
-        dateTime,
-        pitchType,
-        ballType,
-        matchOfficial,
-      });
+      const player = await Player.create({ playerName, phoneNumber, role });
 
       return apiResponse({
         res,
         status: true,
-        data: match,
-        message: "Match created successfully!",
+        data: player,
+        message: "Player created successfully!",
         statusCode: StatusCodes.OK,
       });
     } catch (err) {
@@ -68,14 +36,14 @@ const createMatch = async (req, res, next) => {
   }
 };
 
-const listMatches = async (req, res) => {
+const listPlayers = async (req, res) => {
   try {
-    const matches = await CustomMatch.find();
+    const players = await Player.find();
     return apiResponse({
       res,
       status: true,
-      data: matches,
-      message: "Matches fetched successfully!",
+      data: players,
+      message: "Players fetched successfully!",
       statusCode: StatusCodes.OK,
     });
   } catch (err) {
@@ -88,40 +56,20 @@ const listMatches = async (req, res) => {
   }
 };
 
-const updateMatch = async (req, res, next) => {
+const updatePlayer = async (req, res, next) => {
   const id = req.params.id;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return apiResponse({
       res,
       status: false,
-      message: "Invalid Match ID",
+      message: "Invalid player ID",
       statusCode: StatusCodes.BAD_REQUEST,
     });
   }
-  const {
-    homeTeamId,
-    awayTeamId,
-    noOfOvers,
-    overPerBowler,
-    city,
-    ground,
-    dateTime,
-    pitchType,
-    ballType,
-    matchOfficial,
-  } = req.body;
 
-  const result = validate.createMatch.validate({
-    homeTeamId,
-    awayTeamId,
-    noOfOvers,
-    overPerBowler,
-    city,
-    ground,
-    dateTime,
-    pitchType,
-    ballType,
-  });
+  const { playerName, phoneNumber, role } = req.body;
+
+  const result = validate.createPlayer.validate({ playerName, phoneNumber, role });
 
   if (result.error) {
     return res.status(400).json({
@@ -129,28 +77,17 @@ const updateMatch = async (req, res, next) => {
     });
   } else {
     try {
-      const match = await CustomMatch.findByIdAndUpdate(
+      const player = await Player.findByIdAndUpdate(
         id,
-        {
-          homeTeamId,
-          awayTeamId,
-          noOfOvers,
-          overPerBowler,
-          city,
-          ground,
-          dateTime,
-          pitchType,
-          ballType,
-          matchOfficial,
-        },
+        { playerName, phoneNumber, role },
         { new: true }
       );
 
       return apiResponse({
         res,
         status: true,
-        data: match,
-        message: "Match updated successfully!",
+        data: player,
+        message: "Player updated successfully!",
         statusCode: StatusCodes.OK,
       });
     } catch (err) {
@@ -165,31 +102,33 @@ const updateMatch = async (req, res, next) => {
   }
 };
 
-const deleteMatch = async (req, res) => {
+const deletePlayer = async (req, res, next) => {
   const id = req.params.id;
+  // Validate ObjectId
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return apiResponse({
       res,
       status: false,
-      message: "Invalid Match ID",
+      message: "Invalid player ID",
       statusCode: StatusCodes.BAD_REQUEST,
     });
   }
+
   try {
-    const match = await CustomMatch.findById(id);
-    if (match) {
-      await CustomMatch.findByIdAndDelete(id);
+    const player = await Player.findById(id);
+    if (player) {
+      await Player.findByIdAndDelete(id);
       return apiResponse({
         res,
         status: true,
-        message: "Match deleted successfully!",
+        message: "Player deleted successfully!",
         statusCode: StatusCodes.OK,
       });
     } else {
       return apiResponse({
         res,
         status: false,
-        message: "Match not found",
+        message: "Player not found",
         statusCode: StatusCodes.NOT_FOUND,
       });
     }
@@ -204,8 +143,8 @@ const deleteMatch = async (req, res) => {
 };
 
 export default {
-  createMatch,
-  listMatches,
-  updateMatch,
-  deleteMatch,
-  };
+  createPlayer,
+  listPlayers,
+  updatePlayer,
+  deletePlayer,
+};

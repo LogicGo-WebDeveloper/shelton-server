@@ -4,6 +4,7 @@ import tournamentController from "./controllers/tournament.controller.js";
 import commonController from "./controllers/common.controllers.js";
 import teamController from "./controllers/team.controllers.js";
 import matchController from "./controllers/match.controllers.js";
+import playerController from "./controllers/player.controllers.js";
 
 const route = express.Router();
 
@@ -35,5 +36,11 @@ route.post("/match/add", matchController.createMatch);
 route.get("/match/list", matchController.listMatches);
 route.put("/match/update/:id", matchController.updateMatch);
 route.delete("/match/delete/:id", matchController.deleteMatch);
+
+// ============================== For Player List ===========================================
+route.post("/player/add", playerController.createPlayer);
+route.get("/player/list", playerController.listPlayers);
+route.put("/player/update/:id", playerController.updatePlayer);
+route.delete("/player/delete/:id", playerController.deletePlayer);
 
 export default route;

@@ -35,8 +35,16 @@ const createMatch = Joi.object().keys({
   ballType: Joi.string().required(),
 });
 
+const createPlayer = Joi.object().keys({
+  playerName: Joi.string().required(),
+  phoneNumber: Joi.string().required(),
+  role: Joi.string().required(),
+});
+
+
 export default {
   createTournament,
   createTeam,
-  createMatch
+  createMatch,
+  createPlayer
 };
