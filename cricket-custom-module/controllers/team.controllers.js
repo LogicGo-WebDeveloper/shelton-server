@@ -5,6 +5,7 @@ import CustomTeam from "../models/team.models.js";
 import multer from "multer";
 import * as path from "path";
 import fs from "fs";
+import { getHostUrl } from "../utils/utils.js";
 
 const createTeam = async (req, res, next) => {
   let fileSuffix = Date.now().toString();
@@ -79,6 +80,10 @@ const createTeam = async (req, res, next) => {
 const listTeams = async (req, res) => {
   try {
     const teams = await CustomTeam.find();
+    teams.forEach((element) => {
+      element.teamImage = element.teamImage ? getHostUrl(req, "team") + element.teamImage : "";
+    });
+
     return apiResponse({
       res,
       status: true,
@@ -170,6 +175,10 @@ const updateTeam = async (req, res, next) => {
     }
   });
 };
+
+// var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
+
+
 
 const deleteTeam = async (req, res) => {
   const id = req.params.id;

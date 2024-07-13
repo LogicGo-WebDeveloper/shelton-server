@@ -42,11 +42,6 @@ const getCountryLeagueList = async (req, res, next) => {
       }
     }
 
-
-
-
-    
-
     const modifyData = await CountryLeagueList.aggregate([
       { $match: { sport: sport } },
       {
