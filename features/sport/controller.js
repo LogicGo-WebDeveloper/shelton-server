@@ -81,9 +81,9 @@ const getCountryLeagueList = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: modifyData[0],
+      data:  modifyData[0].data.sort((a, b) => a.name.localeCompare(b.name)),
       status: true,
-      message: "Tournament leagues fetched successfully",
+      message: "Country league list fetched successfully",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
