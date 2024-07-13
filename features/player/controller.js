@@ -110,17 +110,30 @@ const getPlayerMatchesById = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
 
     let data = cacheService.getCache(key);
+    let image = cacheService.getCache(key);
 
     if (!data) {
       data = await service.getPlayerMatchesById(id, span, page);
+      image = await service.getPlayerImage(id);
 
       const players = await PlayerMatches.findOne({ playerId: id });
       if (players) {
         data = players.data;
+        image = players.image;
       } else {
+        const name = `${uuidv4()}`;
+        await uploadFile({
+          filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+          file: image,
+          ACL: "public-read",
+        });
+
+        const filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
         const playerEntry = new PlayerMatches({
           playerId: id,
           matches: data.events,
+          image: filename,
         });
         await playerEntry.save();
       }
@@ -139,6 +152,8 @@ const getPlayerMatchesById = async (req, res, next) => {
 
       {
         $project: {
+          image: 1,
+          playerId: 1,
           tournament: {
             name: { $ifNull: ["$matches.tournament.name", null] },
             slug: { $ifNull: ["$matches.tournament.slug", null] },
