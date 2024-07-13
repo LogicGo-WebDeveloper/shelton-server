@@ -48,7 +48,7 @@ const createTeam = async (req, res, next) => {
         console.log(err);
       }
 
-    await CustomTeam.create({
+      await CustomTeam.create({
         teamName,
         city,
         addMySelfInTeam,
@@ -139,7 +139,7 @@ const updateTeam = async (req, res, next) => {
         console.log(err);
       }
 
-    await CustomTeam.findByIdAndUpdate(
+      await CustomTeam.findByIdAndUpdate(
         id,
         {
           teamName,
@@ -183,10 +183,10 @@ const deleteTeam = async (req, res) => {
     });
   } catch (err) {
     return apiResponse({
-        res,
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        status: false,
-        message: "Internal server error",
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
     });
   }
 };

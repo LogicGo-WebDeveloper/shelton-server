@@ -9,7 +9,6 @@ import { apiResponse } from "../../helper/apiResponse.js";
 
 const createTournament = async (req, res, next) => {
   let fileSuffix = Date.now().toString();
-  // const __dirname = path.resolve();
 
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -24,7 +23,6 @@ const createTournament = async (req, res, next) => {
       });
     },
     filename: function (req, file, cb) {
-      const fileSuffix = Date.now().toString();
       cb(null, `${fileSuffix}-${file.originalname}`);
     },
   });
@@ -98,6 +96,14 @@ const createTournament = async (req, res, next) => {
         tournamentBackgroundImage: tournamentBackgroundImage,
       })
         .then(function (resp) {
+          var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
+          resp.tournamentImage = resp.tournamentImage
+            ? fullUrl + "tournament/" + resp.tournamentImage
+            : "";
+          resp.tournamentBackgroundImage = resp.tournamentBackgroundImage
+            ? fullUrl + "tournament/" + resp.tournamentBackgroundImage
+            : "";
+
           return apiResponse({
             res,
             status: true,
@@ -144,6 +150,31 @@ const listTournament = async (req, res) => {
     const { limit, offset } = getPagination(page, size);
 
     const data = await CustomTournament.find(condition)
+      .populate({
+        path: "cityId",
+        model: "CustomCityList",
+        select: "city",
+      })
+      .populate({
+        path: "winningPrizeId",
+        model: "CustomTournamentWinningPrize",
+        select: "name",
+      })
+      .populate({
+        path: "matchOnId",
+        model: "CustomMatchOn",
+        select: "name",
+      })
+      .populate({
+        path: "tournamentMatchTypeId",
+        model: "CustomMatchType",
+        select: "name",
+      })
+      .populate({
+        path: "tournamentCategoryId",
+        model: "CustomTournamentCategory",
+        select: "name",
+      })
       .skip(offset)
       .limit(limit)
       .exec();
@@ -153,6 +184,7 @@ const listTournament = async (req, res) => {
     const response = await getPagingData(totalItems, data, page, limit);
     var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
     data.forEach((element) => {
+      console.log(element.tournamentBackgroundImage);
       element.tournamentImage = element.tournamentImage
         ? fullUrl + "tournament/" + element.tournamentImage
         : "";
@@ -182,10 +214,8 @@ const listTournament = async (req, res) => {
 const tournamentupdate = async (req, res, next) => {
   const id = req.params.id;
   let fileSuffix = Date.now().toString();
-  
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      // Specify the destination directory where files will be uploaded.
       const uploadDir = path.join("cricket-custom-module/public/tournament"); // Use absolute path
       fs.mkdir(uploadDir, { recursive: true }, (err) => {
         if (err) {
@@ -200,8 +230,10 @@ const tournamentupdate = async (req, res, next) => {
       cb(null, `${fileSuffix}-${file.originalname}`);
     },
   });
-  
-  const upload = multer({ storage: storage }).single("tournamentImage");
+  const upload = multer({ storage: storage }).fields([
+    { name: "tournamentImages", maxCount: 1 }, // Allow up to 5 tournament images
+    { name: "tournamentBackgroundImage", maxCount: 1 }, // Allow only 1 background image
+  ]);
 
   upload(req, res, async function (err, file, cb) {
     var sportId = req.body.sportId;
@@ -218,8 +250,11 @@ const tournamentupdate = async (req, res, next) => {
     var winningPrizeId = req.body.winningPrizeId;
     var matchOnId = req.body.matchOnId;
     var description = req.body.description;
-    var tournamentImage = req.file
-      ? `${fileSuffix}-${req.file.originalname}`
+    var tournamentBackgroundImage = req.files
+      ? `${fileSuffix}-${req.files.tournamentBackgroundImage[0].originalname}`
+      : "";
+    var tournamentImage = req.files
+      ? `${fileSuffix}-${req.files.tournamentImages[0].originalname}`
       : "";
 
     const tournamentData = await CustomTournament.findById(id);
@@ -242,10 +277,18 @@ const tournamentupdate = async (req, res, next) => {
           matchOnId,
           description,
           tournamentImage,
+          tournamentBackgroundImage,
         },
         { new: true }
       )
         .then(function (resp) {
+          var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
+          resp.tournamentImage = resp.tournamentImage
+            ? fullUrl + "tournament/" + resp.tournamentImage
+            : "";
+          resp.tournamentBackgroundImage = resp.tournamentBackgroundImage
+            ? fullUrl + "tournament/" + resp.tournamentBackgroundImage
+            : "";
           return apiResponse({
             res,
             status: true,
