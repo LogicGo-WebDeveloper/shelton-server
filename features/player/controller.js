@@ -5,6 +5,7 @@ import service from "./service.js";
 import cacheTTL from "../cache/constants.js";
 import PlayerDetails from "./models/playerDetailsSchema.js";
 import PlayerMatches from "./models/playerMatchesSchema.js";
+import PlayerNationalTeamStatistics from "./models/playerNationalTeamStatisticsSchema.js";
 
 const getPlayerDetailsById = async (req, res, next) => {
   try {
@@ -230,7 +231,46 @@ const getPlayerMatchesById = async (req, res, next) => {
   }
 };
 
+const getNationalTeamStatistics = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const key = cacheService.getCacheKey(req);
+
+    let data = cacheService.getCache(key);
+
+    if (!data) {
+      const playerNationalTeamStatistics = await PlayerNationalTeamStatistics.findOne({ playerId: id });
+      if (playerNationalTeamStatistics) {
+        data = playerNationalTeamStatistics.data;
+      } else {
+        data = await service.getNationalTeamStatistics(id);
+        const playerNationalTeamStatisticsEntry = new PlayerNationalTeamStatistics({
+          playerId: id,
+          data: data
+        });
+        await playerNationalTeamStatisticsEntry.save();
+      }
+    }
+
+    return apiResponse({
+      res,
+      data: data?.statistics,
+      status: true,
+      message: "Player national team statistics fetched successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
+}
+
 export default {
   getPlayerDetailsById,
   getPlayerMatchesById,
+  getNationalTeamStatistics
 };
