@@ -60,7 +60,7 @@ const getTournamentById = async (req, res, next) => {
 
     return apiResponse({
       res,
-      body: modifyData,
+      body: modifyData[0]?.data[0],
       status: true,
       message: "unique tournament fetched successfully",
       statusCode: StatusCodes.OK,

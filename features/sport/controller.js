@@ -4,7 +4,7 @@ import cacheService from "../cache/service.js";
 import sportService from "./service.js";
 import cacheTTL from "../cache/constants.js";
 import SportList from "./models/sportListSchema.js";
-import CountryLeagueList from "./models/BannerList.js";
+import CountryLeagueList from "./models/countryLeagueListSchema.js";
 import BannerSportList from "./models/BannerList.js";
 
 const getCountryLeagueList = async (req, res, next) => {
@@ -15,7 +15,6 @@ const getCountryLeagueList = async (req, res, next) => {
     if (!data) {
       // Check if data exists in the database
       const countryLeagueListEntry = await CountryLeagueList.findOne({ sport });
-
       if (countryLeagueListEntry) {
         data = countryLeagueListEntry.data;
       } else {
@@ -142,12 +141,10 @@ const getSportList = async (req, res, next) => {
 
     let fildataaa = Object.keys(data).map((key) => {
       return {
-        sportList: {
           id: key,
           name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
           live: data[key].live,
           total: data[key].total,
-        },
       };
     });
 
