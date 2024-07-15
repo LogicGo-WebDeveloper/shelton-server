@@ -6,6 +6,7 @@ import multer from "multer";
 import * as path from "path";
 import fs from "fs";
 import { getHostUrl } from "../utils/utils.js";
+import mongoose from "mongoose";
 
 const createTeam = async (req, res, next) => {
   let fileSuffix = Date.now().toString();
@@ -103,8 +104,16 @@ const listTeams = async (req, res) => {
 
 const updateTeam = async (req, res, next) => {
   const id = req.params.id;
-  let fileSuffix = Date.now().toString();
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return apiResponse({
+      res,
+      status: false,
+      message: "Invalid Team ID",
+      statusCode: StatusCodes.BAD_REQUEST,
+    });
+  }
 
+  let fileSuffix = Date.now().toString();
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       const uploadDir = path.join("../public/team");
@@ -140,56 +149,78 @@ const updateTeam = async (req, res, next) => {
         msg: result.error.details[0].message,
       });
     } else {
-      if (err) {
-        console.log(err);
-      }
-
-      await CustomTeam.findByIdAndUpdate(
-        id,
-        {
-          teamName,
-          city,
-          addMySelfInTeam,
-          teamImage,
-        },
-        { new: true }
-      )
-        .then((resp) => {
-          return apiResponse({
-            res,
-            status: true,
-            data: resp,
-            message: "Team updated successfully!",
-            statusCode: StatusCodes.OK,
-          });
-        })
-        .catch((err) => {
-          console.log(err);
-          return apiResponse({
-            res,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-            status: false,
-            message: "Internal server error",
-          });
+      const team = await CustomTeam.findById(id);
+      if (team) {
+        await CustomTeam.findByIdAndUpdate(
+            id,
+            {
+              teamName,
+              city,
+              addMySelfInTeam,
+              teamImage,
+            },
+            { new: true }
+          )
+            .then((resp) => {
+              return apiResponse({
+                res,
+                status: true,
+                data: resp,
+                message: "Team updated successfully!",
+                statusCode: StatusCodes.OK,
+              });
+            })
+            .catch((err) => {
+              console.log(err);
+              return apiResponse({
+                res,
+                statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+                status: false,
+                message: "Internal server error",
+              });
+            });
+      
+      } else {
+        return apiResponse({
+          res,
+          status: false,
+          message: "Team not found",
+          statusCode: StatusCodes.NOT_FOUND,
         });
+      }
     }
   });
 };
 
-// var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
-
-
-
 const deleteTeam = async (req, res) => {
   const id = req.params.id;
-  try {
-    await CustomTeam.findByIdAndDelete(id);
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     return apiResponse({
       res,
-      status: true,
-      message: "Team deleted successfully!",
-      statusCode: StatusCodes.OK,
+      status: false,
+      message: "Invalid Team ID",
+      statusCode: StatusCodes.BAD_REQUEST,
     });
+  }
+
+  try {
+    const team = await CustomTeam.findById(id);
+    if (team) {
+      await CustomTeam.findByIdAndDelete(id);
+      return apiResponse({
+        res,
+        status: true,
+        message: "Team deleted successfully!",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Team not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
   } catch (err) {
     return apiResponse({
       res,
