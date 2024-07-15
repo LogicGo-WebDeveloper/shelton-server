@@ -49,6 +49,8 @@ const getTournamentById = async (req, res, next) => {
                 titleHolderTitles: "$$dataObj.titleHolderTitles",
                 mostTitles: "$$dataObj.mostTitles",
                 mostTitlesTeams: "$$dataObj.mostTitlesTeams",
+                startDateTimestamp: "$$dataObj.startDateTimestamp",
+                endDateTimestamp: "$$dataObj.endDateTimestamp",
               },
             },
           },

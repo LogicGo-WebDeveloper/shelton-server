@@ -166,7 +166,41 @@ const getSportList = async (req, res, next) => {
   }
 };
 
+const getSportNews = async (req, res, next) => {
+  try {
+    const { sport } = req.params;
+    console.log("________", sport)
+    const news = await sportService.getSportNews(sport);
+    return apiResponse({
+      res,
+      data: news,
+      status: true,
+      message: "Sport news fetched successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      // console.log("______________>>>>", error)
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No data found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
+  }
+};
+
 export default {
   getCountryLeagueList,
   getSportList,
+  getSportNews
 };

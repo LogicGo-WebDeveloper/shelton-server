@@ -8,5 +8,6 @@ const route = express.Router();
 // ----------------
 route.get("/:sport/categories", sportController.getCountryLeagueList);
 route.get("/:timezoneOffset/event-count", sportController.getSportList);
+route.get("/:sport/news", sportController.getSportNews);
 
 export default route;
