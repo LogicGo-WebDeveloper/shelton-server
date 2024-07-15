@@ -1,14 +1,11 @@
 [
     {
-        "name": "Cash",
-        "value": 1
+        "name": "Cash"
     },
     {
-        "name": "Trophy",
-        "value": 2
+        "name": "Trophy"
     },
     {
-        "name": "Both",
-        "value": 3
+        "name": "Both"
     }
 ]

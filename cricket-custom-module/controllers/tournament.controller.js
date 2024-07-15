@@ -149,7 +149,17 @@ const listTournament = async (req, res) => {
 
     const { limit, offset } = getPagination(page, size);
 
+    // const data = await CustomTournament.find(condition)
+    //   .skip(offset)
+    //   .limit(limit)
+    //   .exec();
+
     const data = await CustomTournament.find(condition)
+      .populate({
+        path: "sportId",
+        model: "CustomSportList",
+        select: "sportName",
+      })
       .populate({
         path: "cityId",
         model: "CustomCityList",
@@ -250,10 +260,10 @@ const tournamentupdate = async (req, res, next) => {
     var winningPrizeId = req.body.winningPrizeId;
     var matchOnId = req.body.matchOnId;
     var description = req.body.description;
-    var tournamentBackgroundImage = req.files
+    var tournamentBackgroundImage = req.files.tournamentBackgroundImage
       ? `${fileSuffix}-${req.files.tournamentBackgroundImage[0].originalname}`
       : "";
-    var tournamentImage = req.files
+    var tournamentImage = req.files.tournamentImages
       ? `${fileSuffix}-${req.files.tournamentImages[0].originalname}`
       : "";
 
@@ -282,6 +292,7 @@ const tournamentupdate = async (req, res, next) => {
         { new: true }
       )
         .then(function (resp) {
+          console.log(resp);
           var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
           resp.tournamentImage = resp.tournamentImage
             ? fullUrl + "tournament/" + resp.tournamentImage
