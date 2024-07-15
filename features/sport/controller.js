@@ -21,30 +21,6 @@ const getCountryLeagueList = async (req, res, next) => {
       const countryLeagueListEntry = await CountryLeagueList.findOne({ sport });
       if (countryLeagueListEntry) {
         data = countryLeagueListEntry.data;
-        await Promise.all(
-          data.map(async (item) => {
-            let alpha2 = item.alpha2 || undefined;
-            const flag = item.flag || undefined;
-            const identifier = (alpha2 || flag).toLowerCase();
-      
-            if (identifier) {
-              const response = await axiosInstance.get(`/static/images/flags/${identifier}.png`, {
-                responseType: 'arraybuffer',
-              });
-              const buffer = Buffer.from(response.data, 'binary');
-              
-              await uploadFile({
-                filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`,
-                file: buffer,
-                ACL: "public-read",
-              });
-      
-              item.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
-            }
-      
-            return item;
-          })
-        );
       } else {
         data = await service.getCountryLeagueList(sport);
         await Promise.all(
