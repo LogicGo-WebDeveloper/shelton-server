@@ -4,7 +4,8 @@ import cacheService from "../cache/service.js";
 import sportService from "./service.js";
 import cacheTTL from "../cache/constants.js";
 import SportList from "./models/sportListSchema.js";
-import CountryLeagueList from "./models/countryLeagueListSchema.js";
+import CountryLeagueList from "./models/BannerList.js";
+import BannerSportList from "./models/BannerList.js";
 
 const getCountryLeagueList = async (req, res, next) => {
   try {
@@ -81,7 +82,8 @@ const getCountryLeagueList = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data:  modifyData[0].data.sort((a, b) => a.name.localeCompare(b.name)),
+      data: modifyData[0],
+      // data:  modifyData[0].data.sort((a, b) => a.name.localeCompare(b.name)),
       status: true,
       message: "Country league list fetched successfully",
       statusCode: StatusCodes.OK,
@@ -130,14 +132,29 @@ const getSportList = async (req, res, next) => {
       }
     }
 
-    let formattedData = Object.keys(data).map((key) => {
+    const bannerData = await BannerSportList.find();
+    var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
+    bannerData.forEach((element) => {
+      element.bannerImage = element.bannerImage
+        ? fullUrl + element.bannerImage
+        : "";
+    });
+
+    let fildataaa = Object.keys(data).map((key) => {
       return {
-        id: key,
-        name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
-        live: data[key].live,
-        total: data[key].total,
+        sportList: {
+          id: key,
+          name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
+          live: data[key].live,
+          total: data[key].total,
+        },
       };
     });
+
+    const formattedData = {
+      sportobj: fildataaa,
+      bannerdata: bannerData || null,
+    };
 
     return apiResponse({
       res,

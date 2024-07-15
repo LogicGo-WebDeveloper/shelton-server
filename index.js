@@ -7,7 +7,17 @@ import morgan from "morgan";
 import errorHandler from "./middleware/errorHandler.js";
 import http from "http";
 import setupWebSocket from "./websocket/websocketServer.js";
-import { InsertBallType, InsertCityList, InsertMatchOn, InsertMatchType, InsertPitchType, InsertSportList, InsertTournamentCategory, InsertTournamentWinningPrize } from "./middleware/common.js";
+import {
+  InsertBallType,
+  InsertBannerList,
+  InsertCityList,
+  InsertMatchOn,
+  InsertMatchType,
+  InsertPitchType,
+  InsertSportList,
+  InsertTournamentCategory,
+  InsertTournamentWinningPrize,
+} from "./middleware/common.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -37,6 +47,7 @@ InsertMatchOn();
 InsertTournamentWinningPrize();
 InsertPitchType();
 InsertBallType();
+InsertBannerList();
 
 app.use("/api/auth", route.authRoute);
 app.use("/api/v1/sport", route.sportRoute);

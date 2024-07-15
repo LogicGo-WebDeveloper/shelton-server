@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const SportListSchema = new mongoose.Schema({
   data: {
@@ -11,6 +11,6 @@ const SportListSchema = new mongoose.Schema({
   },
 });
 
-const SportList = mongoose.model('SportList', SportListSchema);
+const SportList = mongoose.model("SportList", SportListSchema);
 
 export default SportList;
