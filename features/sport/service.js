@@ -15,12 +15,16 @@ const getSportList = async (timezoneOffset = 0) => {
 };
 
 const getAllMatches = async (sport, date) => {
-  const { data } = await axiosInstance.get(`/api/v1/sport/${sport}/scheduled-events/2024-06-22`);
+  const { data } = await axiosInstance.get(
+    `/api/v1/sport/${sport}/scheduled-events/2024-06-22`
+  );
   return data;
 };
 
 const getLeagueTournamentList = async (id) => {
-  const { data } = await axiosInstance.get(`/api/v1/category/${id}/unique-tournaments`);
+  const { data } = await axiosInstance.get(
+    `/api/v1/category/${id}/unique-tournaments`
+  );
 
   return data.groups?.[0]?.uniqueTournaments ?? [];
 };
@@ -29,5 +33,5 @@ export default {
   getCountryLeagueList,
   getSportList,
   getAllMatches,
-  getLeagueTournamentList
+  getLeagueTournamentList,
 };
