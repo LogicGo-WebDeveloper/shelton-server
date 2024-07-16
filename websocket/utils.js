@@ -166,10 +166,29 @@ export const filteredOversData = (data) => {
       wicket: item.wicket ? true : false,
       missed: item.missed ? true : false,
       scored: item.scored ? true : false,
-      batsmanName: item.batsman?.name || null,
-      bowlerName: item.bowler?.name || null,
-      fielderName: item.fielder?.name || null,
+      batsman: item.batsman ? {
+        name : item.batsman?.name || null,
+        shortName: item.batsman?.shortName || null,
+        position: item.batsman?.position || null,
+        id: item.batsman?.id || null,
+        cricketPlayerInfo: item.batsman?.cricketPlayerInfo || null,
+      }: null,
+      bowler: item.bowler ? {
+        name : item.bowler?.name || null,
+        shortName: item.bowler?.shortName || null,
+        position: item.bowler?.position || null,
+        id: item.bowler?.id || null,
+        cricketPlayerInfo: item.bowler?.cricketPlayerInfo || null,
+      }: null,
+      fielder: item.fielder ? {
+        name : item.fielder?.name || null,
+        shortName: item.fielder?.shortName || null,
+        position: item.fielder?.position || null,
+        id: item.fielder?.id || null,
+        cricketPlayerInfo: item.fielder?.cricketPlayerInfo || null,
+      } : null,
       incidentClassLabel: item?.incidentClassLabel || null,
+      zone: item?.zone || null
     });
   });
 
