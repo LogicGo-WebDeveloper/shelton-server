@@ -49,19 +49,27 @@ const getTournamentById = async (req, res, next) => {
                 slug: "$$dataObj.slug",
                 id: "$$dataObj.id",
                 titleHolder: "$$dataObj.titleHolder",
-                titleHolderTitles: {$ifNull: ["$$dataObj.titleHolderTitles", null]},
-                mostTitles: {$ifNull: ["$$dataObj.mostTitles", null]},
-                mostTitlesTeams: {$ifNull: ["$$dataObj.mostTitlesTeams", null]},
-                startDateTimestamp: {$ifNull: ["$$dataObj.startDateTimestamp", null]},
-                endDateTimestamp: {$ifNull: ["$$dataObj.endDateTimestamp", null]},
+                titleHolderTitles: {
+                  $ifNull: ["$$dataObj.titleHolderTitles", null],
+                },
+                mostTitles: { $ifNull: ["$$dataObj.mostTitles", null] },
+                mostTitlesTeams: {
+                  $ifNull: ["$$dataObj.mostTitlesTeams", null],
+                },
+                startDateTimestamp: {
+                  $ifNull: ["$$dataObj.startDateTimestamp", null],
+                },
+                endDateTimestamp: {
+                  $ifNull: ["$$dataObj.endDateTimestamp", null],
+                },
                 category: {
-                  name: {$ifNull: ["$$dataObj.category.name", null]},
-                  slug: {$ifNull: ["$$dataObj.category.slug", null]},
-                  flag: {$ifNull: ["$$dataObj.category.flag", null]},
-                  id: {$ifNull: ["$$dataObj.category.id", null]},
-                  sport: {$ifNull: ["$$dataObj.category.sport", null]},
+                  name: { $ifNull: ["$$dataObj.category.name", null] },
+                  slug: { $ifNull: ["$$dataObj.category.slug", null] },
+                  flag: { $ifNull: ["$$dataObj.category.flag", null] },
+                  id: { $ifNull: ["$$dataObj.category.id", null] },
+                  sport: { $ifNull: ["$$dataObj.category.sport", null] },
                   country: { $ifNull: ["$$dataObj.category.country", null] },
-                }
+                },
               },
             },
           },
@@ -166,7 +174,6 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
         cacheService.setCache(key, data, cacheTTL.ONE_MINUTE);
         const featuredMatches = new FeaturedMatches({ tournamentId: id, data });
         await featuredMatches.save();
-        
       }
     }
 
@@ -219,10 +226,10 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
                   score: "$$inning.v.score",
                   wickets: "$$inning.v.wickets",
                   overs: "$$inning.v.overs",
-                  runRate: "$$inning.v.runRate"
-                }
-              }
-            }
+                  runRate: "$$inning.v.runRate",
+                },
+              },
+            },
           },
           awayScore: {
             current: { $ifNull: ["$data.awayScore.current", null] },
@@ -236,10 +243,10 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
                   score: "$$inning.v.score",
                   wickets: "$$inning.v.wickets",
                   overs: "$$inning.v.overs",
-                  runRate: "$$inning.v.runRate"
-                }
-              }
-            }
+                  runRate: "$$inning.v.runRate",
+                },
+              },
+            },
           },
           season: {
             name: { $ifNull: ["$data.season.name", null] },
@@ -251,7 +258,9 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
           notes: { $ifNull: ["$data.note", null] },
           slug: { $ifNull: ["$data.slug", null] },
           id: { $ifNull: ["$data.id", null] },
-          currentBattingTeamId: { $ifNull: ["$data.currentBattingTeamId", null]},
+          currentBattingTeamId: {
+            $ifNull: ["$data.currentBattingTeamId", null],
+          },
           tvUmpireName: { $ifNull: ["$data.tvUmpireName", null] },
           venue: { $ifNull: ["$data.venue", null] },
           umpire1Name: { $ifNull: ["$data.umpire1Name", null] },
@@ -397,6 +406,7 @@ const getSeasonStandingByTournament = async (req, res, next) => {
         }
       } else {
         data = await service.getSeasonStandingByTournament(id, seasonId, type);
+
         cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
 
         const seasonStandingEntry = new SeasonStanding({
@@ -1801,7 +1811,6 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
               span,
               adjustedPage
             );
-            // console.log("findMatches", findMatches)
             const existingEvents = findMatches.data.map((event) => event.id);
             const uniqueEvents = newData.events.filter(
               (event) => !existingEvents.includes(event.id)
