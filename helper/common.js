@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import moment from "moment";
 import enums from "../config/enum.js";
 import WebSocket from "ws";
+import RecentMatch from "../features/sport/models/recentMatchesSchema.js";
 
 const paginationDetails = ({ page = 1, totalItems, limit }) => {
   const totalPages = Math.ceil(totalItems / limit);
@@ -93,6 +94,49 @@ const webSocketServer = (server) => {
   return wss;
 };
 
+const storeRecentMatch = async (userId, sport, matchData) => {
+  try {
+    // Find the user entry
+    let userEntry = await RecentMatch.findOne({ userId });
+    if (!userEntry) {
+      userEntry = new RecentMatch({
+        userId,
+        data: [{ sport, data: [matchData] }]
+      });
+    } else {
+      // If user entry exists, find the sport entry
+      const sportEntry = userEntry.data.find(entry => entry.sport === sport);
+
+      if (sportEntry) {
+          // Check for duplicate matchId
+          const isDuplicate = sportEntry.data.some(match => match.id === matchData.id);
+
+          if (!isDuplicate) {
+            // If not a duplicate, push the new match data
+            sportEntry.data.push(matchData);
+            // Ensure the sport data array does not exceed 10 entries
+            if (sportEntry.data.length > 10) {
+              sportEntry.data.shift();
+            }
+          }
+      } else {
+        // If sport entry does not exist, create a new one
+        userEntry.data.push({
+          sport,
+          data: [matchData]
+        });
+      }
+    }
+
+    // Save the user entry
+    await userEntry.save();
+  } catch (error) {
+    console.error('Error storing recent match:', error);
+  }
+};
+
+
+
 export default {
   generateOTP,
   verifyToken,
@@ -102,4 +146,5 @@ export default {
   calculatePrice,
   extractFileKey,
   webSocketServer,
+  storeRecentMatch
 };

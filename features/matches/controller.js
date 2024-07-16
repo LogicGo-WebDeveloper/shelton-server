@@ -17,9 +17,10 @@ import MatchesSquad from "./models/matchesSquad.js";
 import PregameForm from "./models/pregameFormSchema.js";
 import MatchOdds from "./models/matchOddsSchema.js";
 import MatchesStanding from "./models/matchesStandings.js";
-import matchesScreenMatches from "./models/matchesDetails.js";
 import MatchH2H from "./models/matchH2HSchema.js";
 import MatchesScreenMatches from "./models/matchesDetails.js";
+import helper from "../../helper/common.js";
+import { verifyToken } from "../../middleware/verifyToken.js";
 
 const getOverDetailsById = async (req, res, next) => {
   try {
@@ -206,6 +207,10 @@ const getSingleMatchDetail = async (req, res, next) => {
     const { id } = req.params;
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
+    const authHeader = req.headers?.authorization;
+    const token = authHeader?.split(' ')[1];
+    const decodedToken = await helper.verifyToken(token);
+    const userId = decodedToken?.userId;
 
     if (!data) {
       let matchDetails = await MatcheDetailsByMatchScreen.findOne({
@@ -227,10 +232,12 @@ const getSingleMatchDetail = async (req, res, next) => {
     }
 
     const filteredMatchDetails = filterLiveMatchData(data?.event);
-
+    if(userId){
+      await helper.storeRecentMatch(userId, data?.event?.tournament?.category?.sport?.slug, filteredMatchDetails);
+    }
     return apiResponse({
       res,
-      data: filteredMatchDetails,
+      data: data?.event,
       status: true,
       message: "match details fetched successfully",
       statusCode: StatusCodes.OK,
