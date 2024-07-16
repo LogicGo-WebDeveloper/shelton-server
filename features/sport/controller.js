@@ -30,13 +30,15 @@ const getCountryLeagueList = async (req, res, next) => {
             const identifier = (alpha2 || flag).toLowerCase();
 
             if (identifier) {
-              if (
-                `${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png` ===
-                `${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`
-              ) {
+              const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}${identifier}.png`;
+              try {
+                const response = await fetch(baseUrl);
+                if (response.status !== 200) {
+                  throw new Error("Image not found");
+                }
+                item.image = baseUrl;
                 console.log({ identifier }, "==>> free");
-                item.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
-              } else {
+              } catch (error) {
                 const response = await axiosInstance.get(
                   `/static/images/flags/${identifier}.png`,
                   {
@@ -51,8 +53,8 @@ const getCountryLeagueList = async (req, res, next) => {
                   file: buffer,
                   ACL: "public-read",
                 });
-
-                item.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
+                const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}${identifier}.png`;
+                item.image = imageUrl;
               }
             }
             return item;
