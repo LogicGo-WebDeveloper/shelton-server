@@ -28,47 +28,59 @@ const getCountryLeagueList = async (req, res, next) => {
             let alpha2 = item.alpha2 || undefined;
             const flag = item.flag || undefined;
             const identifier = (alpha2 || flag).toLowerCase();
-      
+
             if (identifier) {
-              const response = await axiosInstance.get(`/static/images/flags/${identifier}.png`, {
-                responseType: 'arraybuffer',
-              });
-              const buffer = Buffer.from(response.data, 'binary');
-      
-              await uploadFile({
-                filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`,
-                file: buffer,
-                ACL: "public-read",
-              });
-      
-              item.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
+              if (
+                `${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png` ===
+                `${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`
+              ) {
+                console.log({ identifier }, "==>> free");
+                item.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
+              } else {
+                const response = await axiosInstance.get(
+                  `/static/images/flags/${identifier}.png`,
+                  {
+                    responseType: "arraybuffer",
+                  }
+                );
+                console.log({ identifier }, "==>> paid");
+                const buffer = Buffer.from(response.data, "binary");
+
+                await uploadFile({
+                  filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`,
+                  file: buffer,
+                  ACL: "public-read",
+                });
+
+                item.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
+              }
             }
-      
             return item;
           })
         );
-      
+
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
-      
+
         const fetchAllCategories = async () => {
           const promises = data.map(async (item) => {
-            const response = await sportService.getLeagueTournamentList(item.id);
+            const response = await sportService.getLeagueTournamentList(
+              item.id
+            );
             item.tournamentlist = response;
             return item;
           });
-      
+
           const results = await Promise.all(promises);
           return results;
         };
         data = await fetchAllCategories();
-      
+
         const newCountryLeagueListEntry = new CountryLeagueList({
           sport,
           data,
         });
         await newCountryLeagueListEntry.save();
       }
-      
     }
 
     const modifyData = await CountryLeagueList.aggregate([

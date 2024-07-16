@@ -5,7 +5,6 @@ import service from "./service.js";
 import cacheTTL from "../cache/constants.js";
 import PlayerDetails from "./models/playerDetailsSchema.js";
 import PlayerMatches from "./models/playerMatchesSchema.js";
-import { v4 as uuidv4 } from "uuid";
 import config from "../../config/config.js";
 import { uploadFile } from "../../helper/aws_s3.js";
 const folderName = "player";
@@ -28,14 +27,22 @@ const getPlayerDetailsById = async (req, res, next) => {
         data = players.data;
         image = players.image;
       } else {
-        const name = `${uuidv4()}`;
-        await uploadFile({
-          filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-          file: image,
-          ACL: "public-read",
-        });
+        const name = id;
+        let filename;
+        if (
+          `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}` ===
+          `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`
+        ) {
+          filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+        } else {
+          await uploadFile({
+            filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+            file: image,
+            ACL: "public-read",
+          });
 
-        const filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+          filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+        }
 
         const playerEntry = new PlayerDetails({
           PlayerId: id,
@@ -121,21 +128,33 @@ const getPlayerMatchesById = async (req, res, next) => {
         data = players.data;
         image = players.image;
       } else {
-        const name = `${uuidv4()}`;
-        await uploadFile({
-          filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-          file: image,
-          ACL: "public-read",
-        });
+        const name = id;
+        if (
+          `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}` ===
+          `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`
+        ) {
+          const filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+          const playerEntry = new PlayerMatches({
+            playerId: id,
+            matches: data.events,
+            image: filename,
+          });
+          await playerEntry.save();
+        } else {
+          await uploadFile({
+            filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+            file: image,
+            ACL: "public-read",
+          });
 
-        const filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
-
-        const playerEntry = new PlayerMatches({
-          playerId: id,
-          matches: data.events,
-          image: filename,
-        });
-        await playerEntry.save();
+          const filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+          const playerEntry = new PlayerMatches({
+            playerId: id,
+            matches: data.events,
+            image: filename,
+          });
+          await playerEntry.save();
+        }
       }
 
       cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
