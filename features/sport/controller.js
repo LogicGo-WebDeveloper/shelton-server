@@ -7,18 +7,54 @@ import SportList from "./models/sportListSchema.js";
 import CountryLeagueList from "./models/countryLeagueListSchema.js";
 import BannerSportList from "./models/BannerList.js";
 import ScheduleMatches from "./models/sheduleMatchesSchema.js";
+import service from "./service.js";
+import { uploadFile } from "../../helper/aws_s3.js";
+import config from "../../config/config.js";
+import axiosInstance from "../../config/axios.config.js";
+const folderName = "country";
 
 const getCountryLeagueList = async (req, res, next) => {
+  console.log(11);
+
   try {
     const { sport } = req.params;
     const key = cacheService.getCacheKey(req);
+
     let data = cacheService.getCache(key);
     if (!data) {
       const countryLeagueListEntry = await CountryLeagueList.findOne({ sport });
       if (countryLeagueListEntry) {
         data = countryLeagueListEntry.data;
       } else {
-        data = await sportService.getCountryLeagueList(sport);
+        data = await service.getCountryLeagueList(sport);
+        await Promise.all(
+          data.map(async (item) => {
+            let alpha2 = item.alpha2 || undefined;
+            const flag = item.flag || undefined;
+            const identifier = (alpha2 || flag).toLowerCase();
+
+            if (identifier) {
+              const response = await axiosInstance.get(
+                `/static/images/flags/${identifier}.png`,
+                {
+                  responseType: "arraybuffer",
+                }
+              );
+              const buffer = Buffer.from(response.data, "binary");
+
+              await uploadFile({
+                filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`,
+                file: buffer,
+                ACL: "public-read",
+              });
+
+              item.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
+            }
+
+            return item;
+          })
+        );
+
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
         const fetchAllCategories = async () => {
@@ -34,6 +70,7 @@ const getCountryLeagueList = async (req, res, next) => {
           return results;
         };
         data = await fetchAllCategories();
+
         const newCountryLeagueListEntry = new CountryLeagueList({
           sport,
           data,
@@ -53,6 +90,7 @@ const getCountryLeagueList = async (req, res, next) => {
               in: {
                 name: "$$dataObj.name",
                 slug: "$$dataObj.slug",
+                image: "$$dataObj.image",
                 id: "$$dataObj.id",
                 tournamentlist: {
                   $map: {
@@ -88,6 +126,7 @@ const getCountryLeagueList = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
@@ -141,10 +180,10 @@ const getSportList = async (req, res, next) => {
 
     let fildataaa = Object.keys(data).map((key) => {
       return {
-          id: key,
-          name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
-          live: data[key].live,
-          total: data[key].total,
+        id: key,
+        name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
+        live: data[key].live,
+        total: data[key].total,
       };
     });
 
@@ -183,7 +222,7 @@ const getSportList = async (req, res, next) => {
 const getSportNews = async (req, res, next) => {
   try {
     const { sport } = req.params;
-    console.log("________", sport)
+    console.log("________", sport);
     const news = await sportService.getSportNews(sport);
     return apiResponse({
       res,
@@ -222,9 +261,9 @@ const getAllScheduleMatches = async (req, res, next) => {
       const matches = await ScheduleMatches.findOne({ sport: sport });
       if (matches) {
         const matchesData = matches.data.find((match) => match.date === date);
-        if(matchesData){
+        if (matchesData) {
           data = matchesData.matches;
-        }else{
+        } else {
           data = await sportService.getAllScheduleMatches(sport, date);
           cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
           matches.data.push({ date, matches: data });
@@ -241,7 +280,7 @@ const getAllScheduleMatches = async (req, res, next) => {
       }
     }
 
-    const formattedData = data?.events?.map(match => ({
+    const formattedData = data?.events?.map((match) => ({
       tournament: {
         name: match.tournament?.name || null,
         slug: match.tournament?.slug || null,
@@ -271,24 +310,28 @@ const getAllScheduleMatches = async (req, res, next) => {
       homeScore: {
         current: match.homeScore?.current || null,
         display: match.homeScore?.display || null,
-        innings: match.homeScore?.innings ? Object.entries(match.homeScore.innings).map(([key, value]) => ({
-          key,
-          score: value.score,
-          wickets: value.wickets,
-          overs: value.overs,
-          runRate: value.runRate,
-        })) : [],
+        innings: match.homeScore?.innings
+          ? Object.entries(match.homeScore.innings).map(([key, value]) => ({
+              key,
+              score: value.score,
+              wickets: value.wickets,
+              overs: value.overs,
+              runRate: value.runRate,
+            }))
+          : [],
       },
       awayScore: {
         current: match.awayScore?.current || null,
         display: match.awayScore?.display || null,
-        innings: match.awayScore?.innings ? Object.entries(match.awayScore.innings).map(([key, value]) => ({
-          key,
-          score: value.score,
-          wickets: value.wickets,
-          overs: value.overs,
-          runRate: value.runRate,
-        })) : [],
+        innings: match.awayScore?.innings
+          ? Object.entries(match.awayScore.innings).map(([key, value]) => ({
+              key,
+              score: value.score,
+              wickets: value.wickets,
+              overs: value.overs,
+              runRate: value.runRate,
+            }))
+          : [],
       },
       status: {
         code: match.status?.code || null,
@@ -313,12 +356,12 @@ const getAllScheduleMatches = async (req, res, next) => {
       id: match.id || null,
     }));
 
-    return apiResponse({ 
-      res, 
-      data: formattedData, 
-      status: true, 
-      message: "All matches fetched successfully", 
-      statusCode: StatusCodes.OK 
+    return apiResponse({
+      res,
+      data: formattedData,
+      status: true,
+      message: "All matches fetched successfully",
+      statusCode: StatusCodes.OK,
     });
   } catch (error) {
     return apiResponse({
@@ -334,5 +377,5 @@ export default {
   getCountryLeagueList,
   getSportList,
   getSportNews,
-  getAllScheduleMatches
+  getAllScheduleMatches,
 };

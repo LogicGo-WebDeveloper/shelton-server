@@ -5,6 +5,9 @@ const PlayerDetailsSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  image: {
+    type: String,
+  },
   data: { type: Array, required: true },
 });
 
