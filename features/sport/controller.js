@@ -356,9 +356,21 @@ const getAllScheduleMatches = async (req, res, next) => {
       id: match.id || null,
     }));
 
+    const currentDate = new Date().toISOString().split('T')[0];
+    let filteredStatusData
+    if (currentDate === date) {
+      const filterSameDateData = formattedData.filter(item => ['notstarted', 'inprogress', 'finished', 'canceled'].includes(item.status.type));
+      filteredStatusData = filterSameDateData.sort((a, b) => ['notstarted', 'inprogress', 'finished', 'canceled'].indexOf(a.status.type) - ['notstarted', 'inprogress', 'finished', 'canceled'].indexOf(b.status.type));
+    } else if (currentDate > date) {
+      const filterPreviousDateData = formattedData.filter(item => ['finished', 'canceled'].includes(item.status.type));
+      filteredStatusData = filterPreviousDateData.sort((a, b) => ['notstarted', 'inprogress', 'finished', 'canceled'].indexOf(a.status.type) - ['notstarted', 'inprogress', 'finished', 'canceled'].indexOf(b.status.type));
+    } else {
+      filteredStatusData = formattedData.filter(item => item.status.type === 'notstarted');
+    }
+
     return apiResponse({
       res,
-      data: formattedData,
+      data: filteredStatusData,
       status: true,
       message: "All matches fetched successfully",
       statusCode: StatusCodes.OK,
