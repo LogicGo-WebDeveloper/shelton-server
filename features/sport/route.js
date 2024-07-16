@@ -9,5 +9,6 @@ const route = express.Router();
 route.get("/:sport/categories", sportController.getCountryLeagueList);
 route.get("/:timezoneOffset/event-count", sportController.getSportList);
 route.get("/:sport/news", sportController.getSportNews);
+route.get("/:sport/schedule-matches/:date", sportController.getAllScheduleMatches);
 
 export default route;

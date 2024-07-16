@@ -6,6 +6,7 @@ import cacheTTL from "../cache/constants.js";
 import SportList from "./models/sportListSchema.js";
 import CountryLeagueList from "./models/countryLeagueListSchema.js";
 import BannerSportList from "./models/BannerList.js";
+import ScheduleMatches from "./models/sheduleMatchesSchema.js";
 
 const getCountryLeagueList = async (req, res, next) => {
   try {
@@ -213,8 +214,126 @@ const getSportNews = async (req, res, next) => {
   }
 };
 
+const getAllScheduleMatches = async (req, res, next) => {
+  try {
+    const { sport, date } = req.params;
+    const key = cacheService.getCacheKey(req);
+    let data = cacheService.getCache(key);
+    if (!data) {
+      const matches = await ScheduleMatches.findOne({ sport: sport });
+      if (matches) {
+        const matchesData = matches.data.find((match) => match.date === date);
+        if(matchesData){
+          data = matchesData.matches;
+        }else{
+          data = await sportService.getAllScheduleMatches(sport, date);
+          cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
+          matches.data.push({ date, matches: data });
+          await matches.save();
+        }
+      } else {
+        data = await sportService.getAllScheduleMatches(sport, date);
+        cacheService.setCache(key, data, cacheTTL.ONE_DAY);
+        const matchesEntry = new ScheduleMatches({
+          sport: sport,
+          data: [{ date: date, matches: data }],
+        });
+        await matchesEntry.save();
+      }
+    }
+
+    const formattedData = data?.events?.map(match => ({
+      tournament: {
+        name: match.tournament?.name || null,
+        slug: match.tournament?.slug || null,
+        id: match.tournament?.id || null,
+        category: {
+          name: match.tournament?.category?.name || null,
+          slug: match.tournament?.category?.slug || null,
+          id: match.tournament?.category?.id || null,
+          country: match.tournament?.category?.country || null,
+        },
+      },
+      customId: match.customId || null,
+      homeTeam: {
+        name: match.homeTeam?.name || null,
+        slug: match.homeTeam?.slug || null,
+        shortName: match.homeTeam?.shortName || null,
+        nameCode: match.homeTeam?.nameCode || null,
+        id: match.homeTeam?.id || null,
+      },
+      awayTeam: {
+        name: match.awayTeam?.name || null,
+        slug: match.awayTeam?.slug || null,
+        shortName: match.awayTeam?.shortName || null,
+        nameCode: match.awayTeam?.nameCode || null,
+        id: match.awayTeam?.id || null,
+      },
+      homeScore: {
+        current: match.homeScore?.current || null,
+        display: match.homeScore?.display || null,
+        innings: match.homeScore?.innings ? Object.entries(match.homeScore.innings).map(([key, value]) => ({
+          key,
+          score: value.score,
+          wickets: value.wickets,
+          overs: value.overs,
+          runRate: value.runRate,
+        })) : [],
+      },
+      awayScore: {
+        current: match.awayScore?.current || null,
+        display: match.awayScore?.display || null,
+        innings: match.awayScore?.innings ? Object.entries(match.awayScore.innings).map(([key, value]) => ({
+          key,
+          score: value.score,
+          wickets: value.wickets,
+          overs: value.overs,
+          runRate: value.runRate,
+        })) : [],
+      },
+      status: {
+        code: match.status?.code || null,
+        description: match.status?.description || null,
+        type: match.status?.type || null,
+      },
+      season: {
+        name: match.season?.name || null,
+        year: match.season?.year || null,
+        id: match.season?.id || null,
+      },
+      notes: match.note || null,
+      currentBattingTeamId: match.currentBattingTeamId || null,
+      endTimestamp: match.endTimestamp || null,
+      startTimestamp: match.startTimestamp || null,
+      slug: match.slug || null,
+      tvUmpireName: match.tvUmpireName || null,
+      venue: match.venue || null,
+      umpire1Name: match.umpire1Name || null,
+      umpire2Name: match.umpire2Name || null,
+      winnerCode: match.winnerCode || null,
+      id: match.id || null,
+    }));
+
+    return apiResponse({ 
+      res, 
+      data: formattedData, 
+      status: true, 
+      message: "All matches fetched successfully", 
+      statusCode: StatusCodes.OK 
+    });
+  } catch (error) {
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
+
 export default {
   getCountryLeagueList,
   getSportList,
-  getSportNews
+  getSportNews,
+  getAllScheduleMatches
 };
