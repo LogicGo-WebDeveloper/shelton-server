@@ -14,7 +14,6 @@ const getCountryLeagueList = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
     if (!data) {
-      // Check if data exists in the database
       const countryLeagueListEntry = await CountryLeagueList.findOne({ sport });
       if (countryLeagueListEntry) {
         data = countryLeagueListEntry.data;
