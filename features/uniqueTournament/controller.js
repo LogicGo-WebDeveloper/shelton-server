@@ -9,6 +9,9 @@ import TopPlayers from "./models/topPlayesSchema.js";
 import FeaturedMatches from "./models/featuredMachesSchema.js";
 import SeasonStanding from "./models/standingSchema.js";
 import LeagueMatches from "./models/leagueMatchesSchema.js";
+import { uploadFile } from "../../helper/aws_s3.js";
+import config from "../../config/config.js";
+const folderName = "top_players";
 
 const getTournamentById = async (req, res, next) => {
   try {
@@ -74,6 +77,7 @@ const getTournamentById = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
@@ -151,11 +155,13 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
     let data = cacheService.getCache(key);
 
     if (!data) {
-      const featuredMatches = await FeaturedMatches.findOne({ tournamentId: id });
+      const featuredMatches = await FeaturedMatches.findOne({
+        tournamentId: id,
+      });
 
-      if(featuredMatches){
+      if (featuredMatches) {
         data = featuredMatches.data;
-      }else{
+      } else {
         data = await service.getLeagueFeaturedEventsByTournament(id);
         cacheService.setCache(key, data, cacheTTL.ONE_MINUTE);
         const featuredMatches = new FeaturedMatches({ tournamentId: id, data });
@@ -459,6 +465,623 @@ const getSeasonStandingByTournament = async (req, res, next) => {
   }
 };
 
+// const getSeasonTopPlayersByTournament = async (req, res, next) => {
+//   try {
+//     const { id, seasonId, positionDetailed } = req.params;
+
+//     const key = cacheService.getCacheKey(req);
+//     let data = cacheService.getCache(key);
+
+//     if (!data) {
+//       // Check if data exists in the database
+//       const topPlayers = await TopPlayers.findOne({ tournamentId: id });
+//       if (topPlayers) {
+//         const season = topPlayers.seasons.find(
+//           (season) => season.seasonId === seasonId
+//         );
+//         if (season) {
+//           data = season.playerStatistics;
+//         } else {
+//           // Fetch data from the API
+//           data = await service.getSeasonTopPlayersByTournament(
+//             id,
+//             seasonId,
+//             positionDetailed
+//           );
+//           cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
+
+//           // Add new season to the existing tournament
+//           topPlayers.seasons.push({ seasonId, playerStatistics: data });
+//           await topPlayers.save();
+//         }
+//       } else {
+//         // Fetch data from the API
+//         data = await service.getSeasonTopPlayersByTournament(
+//           id,
+//           seasonId,
+//           positionDetailed
+//         );
+//         cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
+
+//         // Create new tournament with the season
+//         const topPlayersEntry = new TopPlayers({
+//           tournamentId: id,
+//           seasons: [{ seasonId: seasonId, playerStatistics: data }],
+//         });
+//         await topPlayersEntry.save();
+//       }
+//     }
+
+//     const teamPlayerData = await TopPlayers.aggregate([
+//       { $match: { tournamentId: id } },
+//       {
+//         $project: {
+//           runsScored: {
+//             $cond: {
+//               if: {
+//                 $eq: [
+//                   {
+//                     $size: {
+//                       $arrayElemAt: ["$seasons.playerStatistics.runsScored", 0],
+//                     },
+//                   },
+//                   0,
+//                 ],
+//               },
+//               then: null,
+//               else: {
+//                 $reduce: {
+//                   input: {
+//                     $arrayElemAt: ["$seasons.playerStatistics.runsScored", 0],
+//                   },
+//                   initialValue: [],
+//                   in: {
+//                     $concatArrays: [
+//                       "$$value",
+//                       {
+//                         $map: {
+//                           input: "$$this",
+//                           as: "run",
+//                           in: {
+//                             runsScored: "$$run.statistics.runsScored",
+//                             player: "$$run.player.name",
+//                             playerId: "$$run.player.id",
+//                             imageUrl: "$$run.player.imageUrl",
+//                             position: "$$run.player.position",
+//                           },
+//                         },
+//                       },
+//                     ],
+//                   },
+//                 },
+//               },
+//             },
+//           },
+
+//           battingStrikeRate: {
+//             $cond: {
+//               if: {
+//                 $eq: [
+//                   {
+//                     $size: {
+//                       $arrayElemAt: [
+//                         "$seasons.playerStatistics.battingStrikeRate",
+//                         0,
+//                       ],
+//                     },
+//                   },
+//                   0,
+//                 ],
+//               },
+//               then: null,
+//               else: {
+//                 $reduce: {
+//                   input: {
+//                     $arrayElemAt: [
+//                       "$seasons.playerStatistics.battingStrikeRate",
+//                       0,
+//                     ],
+//                   },
+//                   initialValue: [],
+//                   in: {
+//                     $concatArrays: [
+//                       "$$value",
+//                       {
+//                         $map: {
+//                           input: "$$this",
+//                           as: "run",
+//                           in: {
+//                             battingStrikeRate:
+//                               "$$run.statistics.battingStrikeRate",
+//                             player: "$$run.player.name",
+//                             playerId: "$$run.player.id",
+//                             imageUrl: "$$run.player.imageUrl",
+//                             position: "$$run.player.position",
+//                           },
+//                         },
+//                       },
+//                     ],
+//                   },
+//                 },
+//               },
+//             },
+//           },
+
+//           battingAverage: {
+//             $cond: {
+//               if: {
+//                 $eq: [
+//                   {
+//                     $size: {
+//                       $arrayElemAt: [
+//                         "$seasons.playerStatistics.battingAverage",
+//                         0,
+//                       ],
+//                     },
+//                   },
+//                   0,
+//                 ],
+//               },
+//               then: null,
+//               else: {
+//                 $reduce: {
+//                   input: {
+//                     $arrayElemAt: [
+//                       "$seasons.playerStatistics.battingAverage",
+//                       0,
+//                     ],
+//                   },
+//                   initialValue: [],
+//                   in: {
+//                     $concatArrays: [
+//                       "$$value",
+//                       {
+//                         $map: {
+//                           input: "$$this",
+//                           as: "run",
+//                           in: {
+//                             battingAverage: "$$run.statistics.battingAverage",
+//                             player: "$$run.player.name",
+//                             playerId: "$$run.player.id",
+//                             imageUrl: "$$run.player.imageUrl",
+//                             position: "$$run.player.position",
+//                           },
+//                         },
+//                       },
+//                     ],
+//                   },
+//                 },
+//               },
+//             },
+//           },
+
+//           fifties: {
+//             $cond: {
+//               if: {
+//                 $eq: [
+//                   {
+//                     $size: {
+//                       $arrayElemAt: ["$seasons.playerStatistics.fifties", 0],
+//                     },
+//                   },
+//                   0,
+//                 ],
+//               },
+//               then: null,
+//               else: {
+//                 $reduce: {
+//                   input: {
+//                     $arrayElemAt: ["$seasons.playerStatistics.fifties", 0],
+//                   },
+//                   initialValue: [],
+//                   in: {
+//                     $concatArrays: [
+//                       "$$value",
+//                       {
+//                         $map: {
+//                           input: "$$this",
+//                           as: "run",
+//                           in: {
+//                             fifties: "$$run.statistics.fifties",
+//                             player: "$$run.player.name",
+//                             playerId: "$$run.player.id",
+//                             imageUrl: "$$run.player.imageUrl",
+//                             position: "$$run.player.position",
+//                           },
+//                         },
+//                       },
+//                     ],
+//                   },
+//                 },
+//               },
+//             },
+//           },
+
+//           hundreds: {
+//             $cond: {
+//               if: {
+//                 $eq: [
+//                   {
+//                     $size: {
+//                       $arrayElemAt: ["$seasons.playerStatistics.hundreds", 0],
+//                     },
+//                   },
+//                   0,
+//                 ],
+//               },
+//               then: null,
+//               else: {
+//                 $reduce: {
+//                   input: {
+//                     $arrayElemAt: ["$seasons.playerStatistics.hundreds", 0],
+//                   },
+//                   initialValue: [],
+//                   in: {
+//                     $concatArrays: [
+//                       "$$value",
+//                       {
+//                         $map: {
+//                           input: "$$this",
+//                           as: "run",
+//                           in: {
+//                             hundreds: "$$run.statistics.hundreds",
+//                             player: "$$run.player.name",
+//                             playerId: "$$run.player.id",
+//                             imageUrl: "$$run.player.imageUrl",
+//                             position: "$$run.player.position",
+//                           },
+//                         },
+//                       },
+//                     ],
+//                   },
+//                 },
+//               },
+//             },
+//           },
+
+//           fours: {
+//             $cond: {
+//               if: {
+//                 $eq: [
+//                   {
+//                     $size: {
+//                       $arrayElemAt: ["$seasons.playerStatistics.fours", 0],
+//                     },
+//                   },
+//                   0,
+//                 ],
+//               },
+//               then: null,
+//               else: {
+//                 $reduce: {
+//                   input: {
+//                     $arrayElemAt: ["$seasons.playerStatistics.fours", 0],
+//                   },
+//                   initialValue: [],
+//                   in: {
+//                     $concatArrays: [
+//                       "$$value",
+//                       {
+//                         $map: {
+//                           input: "$$this",
+//                           as: "run",
+//                           in: {
+//                             fours: "$$run.statistics.fours",
+//                             player: "$$run.player.name",
+//                             playerId: "$$run.player.id",
+//                             imageUrl: "$$run.player.imageUrl",
+//                             position: "$$run.player.position",
+//                           },
+//                         },
+//                       },
+//                     ],
+//                   },
+//                 },
+//               },
+//             },
+//           },
+
+//           sixes: {
+//             $cond: {
+//               if: {
+//                 $eq: [
+//                   {
+//                     $size: {
+//                       $arrayElemAt: ["$seasons.playerStatistics.sixes", 0],
+//                     },
+//                   },
+//                   0,
+//                 ],
+//               },
+//               then: null,
+//               else: {
+//                 $reduce: {
+//                   input: {
+//                     $arrayElemAt: ["$seasons.playerStatistics.sixes", 0],
+//                   },
+//                   initialValue: [],
+//                   in: {
+//                     $concatArrays: [
+//                       "$$value",
+//                       {
+//                         $map: {
+//                           input: "$$this",
+//                           as: "run",
+//                           in: {
+//                             sixes: "$$run.statistics.sixes",
+//                             player: "$$run.player.name",
+//                             playerId: "$$run.player.id",
+//                             imageUrl: "$$run.player.imageUrl",
+//                             position: "$$run.player.position",
+//                           },
+//                         },
+//                       },
+//                     ],
+//                   },
+//                 },
+//               },
+//             },
+//           },
+
+//           nineties: {
+//             $cond: {
+//               if: {
+//                 $eq: [
+//                   {
+//                     $size: {
+//                       $arrayElemAt: ["$seasons.playerStatistics.nineties", 0],
+//                     },
+//                   },
+//                   0,
+//                 ],
+//               },
+//               then: null,
+//               else: {
+//                 $reduce: {
+//                   input: {
+//                     $arrayElemAt: ["$seasons.playerStatistics.nineties", 0],
+//                   },
+//                   initialValue: [],
+//                   in: {
+//                     $concatArrays: [
+//                       "$$value",
+//                       {
+//                         $map: {
+//                           input: "$$this",
+//                           as: "run",
+//                           in: {
+//                             nineties: "$$run.statistics.nineties",
+//                             player: "$$run.player.name",
+//                             playerId: "$$run.player.id",
+//                             imageUrl: "$$run.player.imageUrl",
+//                             position: "$$run.player.position",
+//                           },
+//                         },
+//                       },
+//                     ],
+//                   },
+//                 },
+//               },
+//             },
+//           },
+
+//           bowlingAverage: {
+//             $cond: {
+//               if: {
+//                 $eq: [
+//                   {
+//                     $size: {
+//                       $arrayElemAt: [
+//                         "$seasons.playerStatistics.bowlingAverage",
+//                         0,
+//                       ],
+//                     },
+//                   },
+//                   0,
+//                 ],
+//               },
+//               then: null,
+//               else: {
+//                 $reduce: {
+//                   input: {
+//                     $arrayElemAt: [
+//                       "$seasons.playerStatistics.bowlingAverage",
+//                       0,
+//                     ],
+//                   },
+//                   initialValue: [],
+//                   in: {
+//                     $concatArrays: [
+//                       "$$value",
+//                       {
+//                         $map: {
+//                           input: "$$this",
+//                           as: "run",
+//                           in: {
+//                             bowlingAverage: "$$run.statistics.bowlingAverage",
+//                             player: "$$run.player.name",
+//                             playerId: "$$run.player.id",
+//                             imageUrl: "$$run.player.imageUrl",
+//                             position: "$$run.player.position",
+//                           },
+//                         },
+//                       },
+//                     ],
+//                   },
+//                 },
+//               },
+//             },
+//           },
+
+//           fiveWicketsHaul: {
+//             $cond: {
+//               if: {
+//                 $eq: [
+//                   {
+//                     $size: {
+//                       $arrayElemAt: [
+//                         "$seasons.playerStatistics.fiveWicketsHaul",
+//                         0,
+//                       ],
+//                     },
+//                   },
+//                   0,
+//                 ],
+//               },
+//               then: null,
+//               else: {
+//                 $reduce: {
+//                   input: {
+//                     $arrayElemAt: [
+//                       "$seasons.playerStatistics.fiveWicketsHaul",
+//                       0,
+//                     ],
+//                   },
+//                   initialValue: [],
+//                   in: {
+//                     $concatArrays: [
+//                       "$$value",
+//                       {
+//                         $map: {
+//                           input: "$$this",
+//                           as: "run",
+//                           in: {
+//                             fiveWicketsHaul: "$$run.statistics.fiveWicketsHaul",
+//                             player: "$$run.player.name",
+//                             playerId: "$$run.player.id",
+//                             imageUrl: "$$run.player.imageUrl",
+//                             position: "$$run.player.position",
+//                           },
+//                         },
+//                       },
+//                     ],
+//                   },
+//                 },
+//               },
+//             },
+//           },
+//           economy: {
+//             $cond: {
+//               if: {
+//                 $eq: [
+//                   {
+//                     $size: {
+//                       $arrayElemAt: ["$seasons.playerStatistics.economy", 0],
+//                     },
+//                   },
+//                   0,
+//                 ],
+//               },
+//               then: null,
+//               else: {
+//                 $reduce: {
+//                   input: {
+//                     $arrayElemAt: ["$seasons.playerStatistics.economy", 0],
+//                   },
+//                   initialValue: [],
+//                   in: {
+//                     $concatArrays: [
+//                       "$$value",
+//                       {
+//                         $map: {
+//                           input: "$$this",
+//                           as: "run",
+//                           in: {
+//                             economy: "$$run.statistics.economy",
+//                             player: "$$run.player.name",
+//                             playerId: "$$run.player.id",
+//                             imageUrl: "$$run.player.imageUrl",
+//                             position: "$$run.player.position",
+//                           },
+//                         },
+//                       },
+//                     ],
+//                   },
+//                 },
+//               },
+//             },
+//           },
+
+//           bowlingStrikeRate: {
+//             $cond: {
+//               if: {
+//                 $eq: [
+//                   {
+//                     $size: {
+//                       $arrayElemAt: [
+//                         "$seasons.playerStatistics.bowlingStrikeRate",
+//                         0,
+//                       ],
+//                     },
+//                   },
+//                   0,
+//                 ],
+//               },
+//               then: null,
+//               else: {
+//                 $reduce: {
+//                   input: {
+//                     $arrayElemAt: [
+//                       "$seasons.playerStatistics.bowlingStrikeRate",
+//                       0,
+//                     ],
+//                   },
+//                   initialValue: [],
+//                   in: {
+//                     $concatArrays: [
+//                       "$$value",
+//                       {
+//                         $map: {
+//                           input: "$$this",
+//                           as: "run",
+//                           in: {
+//                             bowlingStrikeRate:
+//                               "$$run.statistics.bowlingStrikeRate",
+//                             player: "$$run.player.name",
+//                             playerId: "$$run.player.id",
+//                             imageUrl: "$$run.player.imageUrl",
+//                             position: "$$run.player.position",
+//                           },
+//                         },
+//                       },
+//                     ],
+//                   },
+//                 },
+//               },
+//             },
+//           },
+//         },
+//       },
+//     ]);
+
+//     return apiResponse({
+//       res,
+//       data: teamPlayerData[0],
+//       status: true,
+//       message: "Season top players fetched successfully",
+//       statusCode: StatusCodes.OK,
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     if (error.response && error.response.status === 404) {
+//       return apiResponse({
+//         res,
+//         data: null,
+//         status: true,
+//         message: "No data found",
+//         statusCode: StatusCodes.OK,
+//       });
+//     } else {
+//       return apiResponse({
+//         res,
+//         status: false,
+//         message: "Internal server error",
+//         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+//       });
+//     }
+//   }
+// };
+
 const getSeasonTopPlayersByTournament = async (req, res, next) => {
   try {
     const { id, seasonId, positionDetailed } = req.params;
@@ -467,7 +1090,6 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
     let data = cacheService.getCache(key);
 
     if (!data) {
-      // Check if data exists in the database
       const topPlayers = await TopPlayers.findOne({ tournamentId: id });
       if (topPlayers) {
         const season = topPlayers.seasons.find(
@@ -484,6 +1106,33 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
           );
           cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
 
+          // Process player images
+          for (const player of data) {
+            const playerId = player.id;
+            try {
+              const image = await service.getTopPlayersImage(playerId);
+
+              const name = `${playerId}.jpg`;
+              const folderName = `players/${id}/${seasonId}`;
+
+              await uploadFile({
+                filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+                file: image,
+                ACL: "public-read",
+              });
+
+              const filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+              // Save the image URL in the player object
+              player.image = filename;
+            } catch (error) {
+              console.error(
+                `Failed to upload image for player ${playerId}:`,
+                error
+              );
+            }
+          }
+
           // Add new season to the existing tournament
           topPlayers.seasons.push({ seasonId, playerStatistics: data });
           await topPlayers.save();
@@ -497,12 +1146,61 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
         );
         cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
 
+        // Process player images
+        for (const player of data) {
+          const playerId = player.id;
+          try {
+            const image = await service.getTopPlayersImage(playerId);
+
+            const name = `${playerId}.jpg`;
+            const folderName = `players/${id}/${seasonId}`;
+
+            await uploadFile({
+              filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+              file: image,
+              ACL: "public-read",
+            });
+
+            const filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+            // Save the image URL in the player object
+            player.image = filename;
+          } catch (error) {
+            console.error(
+              `Failed to upload image for player ${playerId}:`,
+              error
+            );
+          }
+        }
+
         // Create new tournament with the season
         const topPlayersEntry = new TopPlayers({
           tournamentId: id,
           seasons: [{ seasonId: seasonId, playerStatistics: data }],
         });
         await topPlayersEntry.save();
+      }
+    }
+
+    for (const player of data) {
+      const playerId = player.id;
+      console.log(playerId);
+      try {
+        const image = await service.getTopPlayersImage(playerId);
+
+        const name = `${playerId}.jpg`;
+
+        await uploadFile({
+          filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+          file: image,
+          ACL: "public-read",
+        });
+
+        const filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+        player.image = filename;
+      } catch (error) {
+        console.error(`Failed to upload image for player ${playerId}:`, error);
       }
     }
 
@@ -540,6 +1238,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
                             runsScored: "$$run.statistics.runsScored",
                             player: "$$run.player.name",
                             playerId: "$$run.player.id",
+                            imageUrl: "$$run.player.imageUrl",
                             position: "$$run.player.position",
                           },
                         },
@@ -588,6 +1287,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
                               "$$run.statistics.battingStrikeRate",
                             player: "$$run.player.name",
                             playerId: "$$run.player.id",
+                            imageUrl: "$$run.player.imageUrl",
                             position: "$$run.player.position",
                           },
                         },
@@ -635,6 +1335,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
                             battingAverage: "$$run.statistics.battingAverage",
                             player: "$$run.player.name",
                             playerId: "$$run.player.id",
+                            imageUrl: "$$run.player.imageUrl",
                             position: "$$run.player.position",
                           },
                         },
@@ -676,6 +1377,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
                             fifties: "$$run.statistics.fifties",
                             player: "$$run.player.name",
                             playerId: "$$run.player.id",
+                            imageUrl: "$$run.player.imageUrl",
                             position: "$$run.player.position",
                           },
                         },
@@ -717,6 +1419,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
                             hundreds: "$$run.statistics.hundreds",
                             player: "$$run.player.name",
                             playerId: "$$run.player.id",
+                            imageUrl: "$$run.player.imageUrl",
                             position: "$$run.player.position",
                           },
                         },
@@ -758,6 +1461,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
                             fours: "$$run.statistics.fours",
                             player: "$$run.player.name",
                             playerId: "$$run.player.id",
+                            imageUrl: "$$run.player.imageUrl",
                             position: "$$run.player.position",
                           },
                         },
@@ -799,6 +1503,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
                             sixes: "$$run.statistics.sixes",
                             player: "$$run.player.name",
                             playerId: "$$run.player.id",
+                            imageUrl: "$$run.player.imageUrl",
                             position: "$$run.player.position",
                           },
                         },
@@ -840,6 +1545,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
                             nineties: "$$run.statistics.nineties",
                             player: "$$run.player.name",
                             playerId: "$$run.player.id",
+                            imageUrl: "$$run.player.imageUrl",
                             position: "$$run.player.position",
                           },
                         },
@@ -887,6 +1593,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
                             bowlingAverage: "$$run.statistics.bowlingAverage",
                             player: "$$run.player.name",
                             playerId: "$$run.player.id",
+                            imageUrl: "$$run.player.imageUrl",
                             position: "$$run.player.position",
                           },
                         },
@@ -934,6 +1641,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
                             fiveWicketsHaul: "$$run.statistics.fiveWicketsHaul",
                             player: "$$run.player.name",
                             playerId: "$$run.player.id",
+                            imageUrl: "$$run.player.imageUrl",
                             position: "$$run.player.position",
                           },
                         },
@@ -974,6 +1682,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
                             economy: "$$run.statistics.economy",
                             player: "$$run.player.name",
                             playerId: "$$run.player.id",
+                            imageUrl: "$$run.player.imageUrl",
                             position: "$$run.player.position",
                           },
                         },
@@ -1022,6 +1731,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
                               "$$run.statistics.bowlingStrikeRate",
                             player: "$$run.player.name",
                             playerId: "$$run.player.id",
+                            imageUrl: "$$run.player.imageUrl",
                             position: "$$run.player.position",
                           },
                         },
@@ -1044,6 +1754,7 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
@@ -1159,10 +1870,16 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
             slug: { $ifNull: ["$seasons.data.tournament.slug", null] },
             id: { $ifNull: ["$seasons.data.tournament.id", null] },
             category: {
-              name: { $ifNull: ["$seasons.data.tournament.category.name", null]},
-              slug: { $ifNull: ["$seasons.data.tournament.category.slug", null]},
-              id: { $ifNull: ["$seasons.data.tournament.category.id", null]},
-              country: { $ifNull: ["$seasons.data.tournament.category.country", null]},
+              name: {
+                $ifNull: ["$seasons.data.tournament.category.name", null],
+              },
+              slug: {
+                $ifNull: ["$seasons.data.tournament.category.slug", null],
+              },
+              id: { $ifNull: ["$seasons.data.tournament.category.id", null] },
+              country: {
+                $ifNull: ["$seasons.data.tournament.category.country", null],
+              },
             },
           },
           customId: { $ifNull: ["$seasons.data.customId", null] },
@@ -1192,10 +1909,10 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
                   score: "$$inning.v.score",
                   wickets: "$$inning.v.wickets",
                   overs: "$$inning.v.overs",
-                  runRate: "$$inning.v.runRate"
-                }
-              }
-            }
+                  runRate: "$$inning.v.runRate",
+                },
+              },
+            },
           },
           awayScore: {
             current: { $ifNull: ["$seasons.data.awayScore.current", null] },
@@ -1209,14 +1926,16 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
                   score: "$$inning.v.score",
                   wickets: "$$inning.v.wickets",
                   overs: "$$inning.v.overs",
-                  runRate: "$$inning.v.runRate"
-                }
-              }
-            }
+                  runRate: "$$inning.v.runRate",
+                },
+              },
+            },
           },
           status: {
             code: { $ifNull: ["$seasons.data.status.code", null] },
-            description: { $ifNull: ["$seasons.data.status.description", null]},
+            description: {
+              $ifNull: ["$seasons.data.status.description", null],
+            },
             type: { $ifNull: ["$seasons.data.status.type", null] },
           },
           season: {
@@ -1225,7 +1944,9 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
             id: { $ifNull: ["$seasons.data.season.id", null] },
           },
           notes: { $ifNull: ["$seasons.data.note", null] },
-          currentBattingTeamId: { $ifNull: ["$seasons.data.currentBattingTeamId", null]},
+          currentBattingTeamId: {
+            $ifNull: ["$seasons.data.currentBattingTeamId", null],
+          },
           endTimestamp: { $ifNull: ["$seasons.data.endTimestamp", null] },
           startTimestamp: { $ifNull: ["$seasons.data.startTimestamp", null] },
           slug: { $ifNull: ["$seasons.data.slug", null] },
@@ -1247,6 +1968,7 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
