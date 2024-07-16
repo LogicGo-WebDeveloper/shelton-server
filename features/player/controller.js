@@ -20,12 +20,10 @@ const getPlayerDetailsById = async (req, res, next) => {
 
     if (!data) {
       data = await service.getPlayerById(id);
-      image = await service.getPlayerImage(id);
       const players = await PlayerDetails.findOne({ PlayerId: id });
 
       if (players) {
         data = players.data;
-        image = players.image;
       } else {
         const name = id;
         let filename;
@@ -35,12 +33,12 @@ const getPlayerDetailsById = async (req, res, next) => {
         ) {
           filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
         } else {
+          image = await service.getPlayerImage(id);
           await uploadFile({
             filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
             file: image,
             ACL: "public-read",
           });
-
           filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
         }
 
