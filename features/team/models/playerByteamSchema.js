@@ -9,6 +9,7 @@ const PlayerTeamSchema = new mongoose.Schema(
     data: {
       type: Object,
       required: true,
+      image: String,
     },
   },
   {

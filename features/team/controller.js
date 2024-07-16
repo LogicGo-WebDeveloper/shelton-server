@@ -80,22 +80,25 @@ const getTopPlayers = async (req, res, next) => {
               const name = playerId;
               const folderName = "player";
 
-              const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+              const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
 
-              if (
-                `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}` ===
-                `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`
-              ) {
-                stat.player.image = imageUrl;
-              } else {
+              // Check if the image URL already exists
+              try {
+                const response = await fetch(baseUrl);
+                if (response.status !== 200) {
+                  throw new Error("Image not found");
+                }
+                stat.player.image = baseUrl;
+                // console.log({ playerId }, "==> free");
+              } catch (error) {
                 const image = await service.getTopPlayersImage(playerId);
-
+                // console.log({ playerId }, "==> paid");
                 await uploadFile({
                   filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
                   file: image,
                   ACL: "public-read",
                 });
-
+                const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
                 stat.player.image = imageUrl;
               }
             } catch (error) {
@@ -639,6 +642,51 @@ const getTeamPLayers = async (req, res, next) => {
 
     let data = cacheService.getCache(key);
 
+    const processPlayerImages = async (players) => {
+      for (const player of players) {
+        const playerId = player.player.id;
+        try {
+          const name = playerId;
+          const folderName = "player";
+          const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+          // Check if the image URL already exists
+          try {
+            const response = await fetch(baseUrl);
+            if (response.status !== 200) {
+              throw new Error("Image not found");
+            }
+            player.player.image = baseUrl;
+            // console.log({ playerId }, "==> free");
+          } catch (error) {
+            const image = await service.getTopPlayersImage(playerId);
+            // console.log({ playerId }, "==> paid");
+            await uploadFile({
+              filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+              file: image,
+              ACL: "public-read",
+            });
+            const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+            player.player.image = imageUrl;
+          }
+        } catch (error) {
+          console.error(
+            `Failed to upload image for player ${playerId}:`,
+            error
+          );
+        }
+      }
+    };
+
+    const processAllPlayerImages = async (data) => {
+      const categories = ["players", "foreignPlayers", "nationalPlayers"];
+      for (const category of categories) {
+        if (data[category]) {
+          await processPlayerImages(data[category]);
+        }
+      }
+    };
+
     if (!data) {
       data = await service.getTeamPLayers(req.params);
 
@@ -652,6 +700,9 @@ const getTeamPLayers = async (req, res, next) => {
         // Fetch data from the API
         data = await service.getTeamPLayers(req.params);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
+
+        // Process player images
+        await processAllPlayerImages(data);
 
         // Store the fetched data in the database
         const teamPlayerEntry = new PlayerTeam({ teamId: req.params.id, data });
@@ -673,6 +724,7 @@ const getTeamPLayers = async (req, res, next) => {
                 name: "$$playerObj.player.name",
                 position: "$$playerObj.player.position",
                 id: "$$playerObj.player.id",
+                image: "$$playerObj.player.image",
                 country: "$$playerObj.player.country.name",
                 dateOfBirthTimestamp: "$$playerObj.player.dateOfBirthTimestamp",
               },
@@ -686,6 +738,7 @@ const getTeamPLayers = async (req, res, next) => {
                 name: "$$playerObj.player.name",
                 position: "$$playerObj.player.position",
                 id: "$$playerObj.player.id",
+                image: "$$playerObj.player.image",
                 country: "$$playerObj.player.country.name",
                 dateOfBirthTimestamp: "$$playerObj.player.dateOfBirthTimestamp",
               },
@@ -699,6 +752,7 @@ const getTeamPLayers = async (req, res, next) => {
                 name: "$$playerObj.player.name",
                 position: "$$playerObj.player.position",
                 id: "$$playerObj.player.id",
+                image: "$$playerObj.player.image",
                 country: "$$playerObj.player.country.name",
                 dateOfBirthTimestamp: "$$playerObj.player.dateOfBirthTimestamp",
               },
@@ -712,6 +766,7 @@ const getTeamPLayers = async (req, res, next) => {
                 name: "$$playerObj.name",
                 role: "$$playerObj.role",
                 id: "$$playerObj.id",
+                image: "$$playerObj.image",
               },
             },
           },
@@ -727,12 +782,22 @@ const getTeamPLayers = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No team found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 

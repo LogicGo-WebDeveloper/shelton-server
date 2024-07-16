@@ -84,7 +84,7 @@ const getSeasonStandingsbyTeam = async (id, tournamentId) => {
 const getTopPlayersImage = async (playerId) => {
   const { data } = await axiosInstance.get(`/api/v1/player/${playerId}/image`);
 
-  return data ?? [];
+  return data ?? []
 };
 
 export default {
