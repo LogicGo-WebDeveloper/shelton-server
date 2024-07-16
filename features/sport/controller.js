@@ -11,6 +11,7 @@ import service from "./service.js";
 import { uploadFile } from "../../helper/aws_s3.js";
 import config from "../../config/config.js";
 import axiosInstance from "../../config/axios.config.js";
+import RecentMatch from "./models/recentMatchesSchema.js";
 const folderName = "country";
 
 const getCountryLeagueList = async (req, res, next) => {
@@ -381,9 +382,30 @@ const getAllScheduleMatches = async (req, res, next) => {
   }
 };
 
+const getRecentMatches = async (req, res, next) => {
+  try {
+    const recentMatches = await RecentMatch.find().sort({ createdAt: -1 }).limit(10);
+    return apiResponse({
+      res,
+      data: recentMatches,
+      status: true,
+      message: "Recent matches fetched successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
+
 export default {
   getCountryLeagueList,
   getSportList,
   getSportNews,
   getAllScheduleMatches,
+  getRecentMatches
 };
