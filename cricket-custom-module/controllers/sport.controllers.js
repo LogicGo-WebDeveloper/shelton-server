@@ -6,11 +6,11 @@ const getSportList = async (req, res, next) => {
   try {
     const sportList = await CustomSportList.find();
 
-    var fullUrl = req.protocol + '://' + req.get('host') + '/images/';
-    sportList.forEach((sport)=>{
+    var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
+    sportList.forEach((sport) => {
       sport.image = sport.image ? fullUrl + sport.image : "";
-    })
-    
+    });
+
     return apiResponse({
       res,
       statusCode: StatusCodes.OK,

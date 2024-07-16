@@ -3,6 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import cacheService from "../cache/service.js";
 import service from "./service.js";
 import cacheTTL from "../cache/constants.js";
+import TeamSeasonStanding from "./models/TeamStandings.js";
 
 const getSeasonStandingsByTeams = async (req, res, next) => {
   try {
@@ -15,17 +16,61 @@ const getSeasonStandingsByTeams = async (req, res, next) => {
     if (!data) {
       data = await service.getSeasonStandingsByTeams(id, seasonId);
 
+      if (!data) {
+      } else {
+        data = await service.getSeasonStandingsByTeams(id, seasonId);
+        cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
+
+        const seasonStandingEntry = new TeamSeasonStanding({
+          tournamentId: id,
+          seasons: [{ seasonId: seasonId, data: data.standings }],
+        });
+        await seasonStandingEntry.save();
+      }
+
       cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
     }
 
+    const seasonStandingData = await TeamSeasonStanding.aggregate([
+      { $match: { tournamentId: id, "seasons.seasonId": seasonId } },
+      { $unwind: "$seasons" },
+      { $match: { "seasons.seasonId": seasonId } },
+      {
+        $project: {
+          name: { $arrayElemAt: ["$seasons.data.tournament.name", 0] },
+          id: { $arrayElemAt: ["$seasons.data.tournament.id", 0] },
+          rows: {
+            $map: {
+              input: { $arrayElemAt: ["$seasons.data.rows", 0] },
+              as: "rowObj",
+              in: {
+                position: "$$rowObj.position",
+                matches: "$$rowObj.matches",
+                draws: "$$rowObj.draws",
+                losses: "$$rowObj.losses",
+                points: "$$rowObj.points",
+                netRunRate: "$$rowObj.netRunRate",
+                noResult: "$$rowObj.noResult",
+                wins: "$$rowObj.wins",
+                id: "$$rowObj.team.id",
+                shortName: "$$rowObj.team.shortName",
+                teamName: "$$rowObj.team.name",
+              },
+            },
+          },
+        },
+      },
+    ]);
+
     return apiResponse({
       res,
-      data: data,
+      data: seasonStandingData,
       status: true,
       message: "Season standings by teams fetched successfully",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,

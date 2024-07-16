@@ -9,5 +9,5 @@ const getSeasonStandingsByTeams = async (id, seasonId) => {
 };
 
 export default {
-  getSeasonStandingsByTeams
+  getSeasonStandingsByTeams,
 };

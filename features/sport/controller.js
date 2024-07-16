@@ -15,8 +15,6 @@ import RecentMatch from "./models/recentMatchesSchema.js";
 const folderName = "country";
 
 const getCountryLeagueList = async (req, res, next) => {
-  console.log(11);
-
   try {
     const { sport } = req.params;
     const key = cacheService.getCacheKey(req);
@@ -223,7 +221,6 @@ const getSportList = async (req, res, next) => {
 const getSportNews = async (req, res, next) => {
   try {
     const { sport } = req.params;
-    console.log("________", sport);
     const news = await sportService.getSportNews(sport);
     return apiResponse({
       res,
@@ -234,7 +231,6 @@ const getSportNews = async (req, res, next) => {
     });
   } catch (error) {
     if (error.response && error.response.status === 404) {
-      // console.log("______________>>>>", error)
       return apiResponse({
         res,
         data: null,
