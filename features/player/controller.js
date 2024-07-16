@@ -27,13 +27,19 @@ const getPlayerDetailsById = async (req, res, next) => {
       } else {
         const name = id;
         let filename;
-        if (
-          `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}` ===
-          `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`
-        ) {
-          filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
-        } else {
+        const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+        // Check if the image URL already exists
+        try {
+          const response = await fetch(baseUrl);
+          if (response.status !== 200) {
+            throw new Error("Image not found");
+          }
+          filename = baseUrl;
+          // console.log({ id }, "==> free");
+        } catch (error) {
           image = await service.getPlayerImage(id);
+          // console.log({ id }, "==> paid");
           await uploadFile({
             filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
             file: image,
@@ -127,32 +133,35 @@ const getPlayerMatchesById = async (req, res, next) => {
         image = players.image;
       } else {
         const name = id;
-        if (
-          `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}` ===
-          `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`
-        ) {
-          const filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
-          const playerEntry = new PlayerMatches({
-            playerId: id,
-            matches: data.events,
-            image: filename,
-          });
-          await playerEntry.save();
-        } else {
+
+        let filename;
+        const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+        // Check if the image URL already exists
+        try {
+          const response = await fetch(baseUrl);
+          if (response.status !== 200) {
+            throw new Error("Image not found");
+          }
+          filename = baseUrl;
+          // console.log({ id }, "==> free");
+        } catch (error) {
+          image = await service.getPlayerImage(id);
+          // console.log({ id }, "==> paid");
           await uploadFile({
             filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
             file: image,
             ACL: "public-read",
           });
-
-          const filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
-          const playerEntry = new PlayerMatches({
-            playerId: id,
-            matches: data.events,
-            image: filename,
-          });
-          await playerEntry.save();
+          filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
         }
+
+        const playerEntry = new PlayerMatches({
+          playerId: id,
+          matches: data.events,
+          image: filename,
+        });
+        await playerEntry.save();
       }
 
       cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
