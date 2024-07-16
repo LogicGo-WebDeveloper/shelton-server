@@ -38,7 +38,9 @@ const getTeamMatchesByTeam = async (id, span, page) => {
 };
 
 const getTeamPlayerStatisticsSeasons = async (id) => {
-  const { data } = await axiosInstance.get(`/api/v1/team/${id}/player-statistics/seasons`);
+  const { data } = await axiosInstance.get(
+    `/api/v1/team/${id}/player-statistics/seasons`
+  );
   return data ?? [];
 };
 
@@ -53,11 +55,13 @@ const getTeamFeaturedEventsByTeams = async (id) => {
 };
 
 const getSeasonStandingsbyTeam = async (id, tournamentId) => {
-  const { data } = await axiosInstance.get(`/api/v1/team/${id}/standings/seasons`);
+  const { data } = await axiosInstance.get(
+    `/api/v1/team/${id}/standings/seasons`
+  );
 
   const seasonsArray = [];
-  
-  data.tournamentSeasons.forEach(item => {
+
+  data.tournamentSeasons.forEach((item) => {
     if (item.tournament.uniqueTournament.id == tournamentId) {
       seasonsArray.push(item);
     }
@@ -68,12 +72,19 @@ const getSeasonStandingsbyTeam = async (id, tournamentId) => {
     return acc;
   }, []);
 
-  const uniqueSeasons = combinedSeasons.filter((season, index, self) =>
-    index === self.findIndex((t) => (
-      t.id === season.id
-    ))
+  const uniqueSeasons = combinedSeasons.filter(
+    (season, index, self) => index === self.findIndex((t) => t.id === season.id)
   );
   return uniqueSeasons ?? [];
+};
+
+/**
+ * Get top players images
+ */
+const getTopPlayersImage = async (playerId) => {
+  const { data } = await axiosInstance.get(`/api/v1/player/${playerId}/image`);
+
+  return data ?? [];
 };
 
 export default {
@@ -85,5 +96,6 @@ export default {
   getTeamPlayerStatisticsSeasons,
   getTeamMedia,
   getTeamFeaturedEventsByTeams,
-  getSeasonStandingsbyTeam
+  getSeasonStandingsbyTeam,
+  getTopPlayersImage,
 };

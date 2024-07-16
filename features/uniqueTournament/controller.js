@@ -445,17 +445,20 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
 
               const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
 
-              // Check if the image already exists
-              if (stat.player.image !== imageUrl) {
+              if (
+                `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}` ===
+                `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`
+              ) {
+                stat.player.image = imageUrl;
+              } else {
                 const image = await service.getTopPlayersImage(playerId);
+
                 await uploadFile({
                   filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
                   file: image,
                   ACL: "public-read",
                 });
 
-                stat.player.image = imageUrl;
-              } else {
                 stat.player.image = imageUrl;
               }
             } catch (error) {

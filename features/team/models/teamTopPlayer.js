@@ -9,7 +9,7 @@ const teamTopPlayersSchema = new mongoose.Schema({
   seasons: [
     {
       seasonId: { type: String, required: true },
-      playerStatistics: { type: Array, required: true },
+      playerStatistics: { type: Array, required: true, image: String },
     },
   ],
 });

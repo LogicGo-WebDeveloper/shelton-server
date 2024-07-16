@@ -11,6 +11,8 @@ import TeamTopPlayers from "./models/teamTopPlayer.js";
 import TeamSeasons from "./models/teamSeasons.js";
 import TeamFeaturedMatches from "./models/teamFeaturedMatchesSchema.js";
 import TeamSeasonsStanding from "./models/teamSeasonsStandingSchema.js";
+import config from "../../config/config.js";
+import { uploadFile } from "../../helper/aws_s3.js";
 
 const getTeamPerformance = async (req, res, next) => {
   try {
@@ -53,6 +55,60 @@ const getTopPlayers = async (req, res, next) => {
 
     let data = cacheService.getCache(key);
 
+    const processPlayerImages = async (playerStatistics) => {
+      const categories = [
+        "runsScored",
+        "battingAverage",
+        "battingStrikeRate",
+        "hundreds",
+        "fifties",
+        "fours",
+        "sixes",
+        "nineties",
+        "wickets",
+        "bowlingAverage",
+        "fiveWicketsHaul",
+        "economy",
+        "bowlingStrikeRate",
+      ];
+
+      for (const category of categories) {
+        if (playerStatistics[category]) {
+          for (const stat of playerStatistics[category]) {
+            const playerId = stat.player.id;
+            try {
+              const name = playerId;
+              const folderName = "player";
+
+              const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+              if (
+                `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}` ===
+                `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`
+              ) {
+                stat.player.image = imageUrl;
+              } else {
+                const image = await service.getTopPlayersImage(playerId);
+
+                await uploadFile({
+                  filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+                  file: image,
+                  ACL: "public-read",
+                });
+
+                stat.player.image = imageUrl;
+              }
+            } catch (error) {
+              console.error(
+                `Failed to upload image for player ${playerId}:`,
+                error
+              );
+            }
+          }
+        }
+      }
+    };
+
     if (!data) {
       data = await service.getTopPlayers(req.params);
 
@@ -74,6 +130,9 @@ const getTopPlayers = async (req, res, next) => {
         // Fetch data from the API
         data = await service.getTopPlayers(req.params);
         cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
+
+        // Process player images
+        await processPlayerImages(data);
 
         // Create new tournament with the season
         const topPlayersEntry = new TeamTopPlayers({
@@ -117,6 +176,7 @@ const getTopPlayers = async (req, res, next) => {
                         runsScored: "$$run.statistics.runsScored",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -146,6 +206,7 @@ const getTopPlayers = async (req, res, next) => {
                         battingStrikeRate: "$$run.statistics.battingStrikeRate",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -172,6 +233,7 @@ const getTopPlayers = async (req, res, next) => {
                         battingAverage: "$$run.statistics.battingAverage",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -198,6 +260,7 @@ const getTopPlayers = async (req, res, next) => {
                         fifties: "$$run.statistics.fifties",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -224,6 +287,7 @@ const getTopPlayers = async (req, res, next) => {
                         hundreds: "$$run.statistics.hundreds",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -250,6 +314,7 @@ const getTopPlayers = async (req, res, next) => {
                         fours: "$$run.statistics.fours",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -276,6 +341,7 @@ const getTopPlayers = async (req, res, next) => {
                         sixes: "$$run.statistics.sixes",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -302,6 +368,7 @@ const getTopPlayers = async (req, res, next) => {
                         nineties: "$$run.statistics.nineties",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -328,6 +395,7 @@ const getTopPlayers = async (req, res, next) => {
                         bowlingAverage: "$$run.statistics.bowlingAverage",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -354,6 +422,7 @@ const getTopPlayers = async (req, res, next) => {
                         fiveWicketsHaul: "$$run.statistics.fiveWicketsHaul",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -380,6 +449,7 @@ const getTopPlayers = async (req, res, next) => {
                         economy: "$$run.statistics.economy",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -409,6 +479,7 @@ const getTopPlayers = async (req, res, next) => {
                         bowlingStrikeRate: "$$run.statistics.bowlingStrikeRate",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -725,10 +796,12 @@ const getTeamMatchesByTeam = async (req, res, next) => {
             slug: { $ifNull: ["$matches.tournament.slug", null] },
             id: { $ifNull: ["$matches.tournament.id", null] },
             category: {
-              name: { $ifNull: ["$matches.tournament.category.name", null]},
-              slug: { $ifNull: ["$matches.tournament.category.slug", null]},
-              id: { $ifNull: ["$matches.tournament.category.id", null]},
-              country: { $ifNull: ["$matches.tournament.category.country", null]},
+              name: { $ifNull: ["$matches.tournament.category.name", null] },
+              slug: { $ifNull: ["$matches.tournament.category.slug", null] },
+              id: { $ifNull: ["$matches.tournament.category.id", null] },
+              country: {
+                $ifNull: ["$matches.tournament.category.country", null],
+              },
             },
           },
           customId: { $ifNull: ["$matches.customId", null] },
@@ -758,10 +831,10 @@ const getTeamMatchesByTeam = async (req, res, next) => {
                   score: "$$inning.v.score",
                   wickets: "$$inning.v.wickets",
                   overs: "$$inning.v.overs",
-                  runRate: "$$inning.v.runRate"
-                }
-              }
-            }
+                  runRate: "$$inning.v.runRate",
+                },
+              },
+            },
           },
           awayScore: {
             current: { $ifNull: ["$matches.awayScore.current", null] },
@@ -775,14 +848,14 @@ const getTeamMatchesByTeam = async (req, res, next) => {
                   score: "$$inning.v.score",
                   wickets: "$$inning.v.wickets",
                   overs: "$$inning.v.overs",
-                  runRate: "$$inning.v.runRate"
-                }
-              }
-            }
+                  runRate: "$$inning.v.runRate",
+                },
+              },
+            },
           },
           status: {
             code: { $ifNull: ["$matches.status.code", null] },
-            description: { $ifNull: ["$matches.status.description", null]},
+            description: { $ifNull: ["$matches.status.description", null] },
             type: { $ifNull: ["$matches.status.type", null] },
           },
           season: {
@@ -791,7 +864,9 @@ const getTeamMatchesByTeam = async (req, res, next) => {
             id: { $ifNull: ["$matches.season.id", null] },
           },
           notes: { $ifNull: ["$matches.note", null] },
-          currentBattingTeamId: { $ifNull: ["$matches.currentBattingTeamId", null]},
+          currentBattingTeamId: {
+            $ifNull: ["$matches.currentBattingTeamId", null],
+          },
           endTimestamp: { $ifNull: ["$matches.endTimestamp", null] },
           startTimestamp: { $ifNull: ["$matches.startTimestamp", null] },
           slug: { $ifNull: ["$matches.slug", null] },
@@ -805,14 +880,24 @@ const getTeamMatchesByTeam = async (req, res, next) => {
             $cond: {
               if: {
                 $or: [
-                  { $and: [{ $eq: ["$matches.winnerCode", 1] }, { $eq: ["$matches.homeTeam.id", id] }] },
-                  { $and: [{ $eq: ["$matches.winnerCode", 2] }, { $eq: ["$matches.awayTeam.id", id] }] }
-                ]
+                  {
+                    $and: [
+                      { $eq: ["$matches.winnerCode", 1] },
+                      { $eq: ["$matches.homeTeam.id", id] },
+                    ],
+                  },
+                  {
+                    $and: [
+                      { $eq: ["$matches.winnerCode", 2] },
+                      { $eq: ["$matches.awayTeam.id", id] },
+                    ],
+                  },
+                ],
               },
               then: true,
-              else: false
-            }
-          }
+              else: false,
+            },
+          },
         },
       },
     ]);
