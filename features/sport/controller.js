@@ -42,9 +42,10 @@ const getCountryLeagueList = async (req, res, next) => {
               try {
                 const response = await fetch(baseUrl);
                 if (response.status !== 200) {
-                  throw new Error("Image not found");
+                  item.image = null;
+                } else {
+                  item.image = baseUrl;
                 }
-                item.image = baseUrl;
                 // console.log({ identifier }, "==>> free");
               } catch (error) {
                 const response = await axiosInstance.get(

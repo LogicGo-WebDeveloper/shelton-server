@@ -39,9 +39,10 @@ const getTournamentById = async (req, res, next) => {
         try {
           const response = await fetch(baseUrl);
           if (response.status !== 200) {
-            throw new Error("Image not found");
+            filename = null;
+          } else {
+            filename = baseUrl;
           }
-          filename = baseUrl;
           // console.log({ id }, "==> free");
         } catch (error) {
           image = await service.getTournamentImage(id);
@@ -217,9 +218,10 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
         try {
           const response = await fetch(baseUrl);
           if (response.status !== 200) {
-            throw new Error("Image not found");
+            filename = null;
+          } else {
+            filename = baseUrl;
           }
-          filename = baseUrl;
           // console.log({ id }, "==> free");
         } catch (error) {
           image = await service.getTournamentImage(id);
@@ -580,9 +582,10 @@ const getSeasonTopPlayersByTournament = async (req, res, next) => {
               try {
                 const response = await fetch(baseUrl);
                 if (response.status !== 200) {
-                  throw new Error("Image not found");
+                  stat.player.image = null;
+                } else {
+                  stat.player.image = baseUrl;
                 }
-                stat.player.image = baseUrl;
                 // console.log({ playerId }, "==> free");
               } catch (error) {
                 const image = await service.getTopPlayersImage(playerId);
@@ -1241,10 +1244,11 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
       try {
         const response = await fetch(baseUrl);
         if (response.status !== 200) {
-          throw new Error("Image not found");
+          filename = null;
+        } else {
+          filename = baseUrl;
         }
         // console.log({ teamId }, "==> free");
-        filename = baseUrl;
       } catch (error) {
         const image = await service.getTeamImages(teamId);
         // console.log({ teamId }, "==> paid <==");

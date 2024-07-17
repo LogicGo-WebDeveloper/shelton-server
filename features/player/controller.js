@@ -34,9 +34,11 @@ const getPlayerDetailsById = async (req, res, next) => {
         try {
           const response = await fetch(baseUrl);
           if (response.status !== 200) {
-            throw new Error("Image not found");
+            filename = null;
+          } else {
+            filename = baseUrl;
           }
-          filename = baseUrl;
+
           // console.log({ id }, "==> free");
         } catch (error) {
           image = await service.getPlayerImage(id);
