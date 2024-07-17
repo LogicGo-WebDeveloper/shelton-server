@@ -38,7 +38,7 @@ const getCountryLeagueList = async (req, res, next) => {
             const identifier = (alpha2 || flag).toLowerCase();
 
             if (identifier) {
-              const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}${identifier}.png`;
+              const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
               try {
                 const response = await fetch(baseUrl);
                 if (response.status !== 200) {
