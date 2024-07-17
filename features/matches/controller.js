@@ -20,7 +20,7 @@ import MatchesStanding from "./models/matchesStandings.js";
 import MatchH2H from "./models/matchH2HSchema.js";
 import MatchesScreenMatches from "./models/matchesDetails.js";
 import helper from "../../helper/common.js";
-import { verifyToken } from "../../middleware/verifyToken.js";
+// import { verifyToken } from "../../middleware/verifyToken.js";
 
 const getOverDetailsById = async (req, res, next) => {
   try {
@@ -208,10 +208,13 @@ const getSingleMatchDetail = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
     const authHeader = req.headers?.authorization;
-    const token = authHeader?.split(' ')[1];
-    const decodedToken = await helper.verifyToken(token);
-    const userId = decodedToken?.userId;
-
+    const token = authHeader ? authHeader?.split(' ')[1] : null
+    let decodedToken;
+    if(token){
+       decodedToken = await helper.verifyToken(token);
+    } else {
+      decodedToken = null
+    }
     if (!data) {
       let matchDetails = await MatcheDetailsByMatchScreen.findOne({
         matchId: id,
@@ -232,12 +235,12 @@ const getSingleMatchDetail = async (req, res, next) => {
     }
 
     const filteredMatchDetails = filterLiveMatchData(data?.event);
-    if(userId){
-      await helper.storeRecentMatch(userId, data?.event?.tournament?.category?.sport?.slug, filteredMatchDetails);
+    if(decodedToken?.userId){
+      await helper.storeRecentMatch(decodedToken?.userId, data?.event?.tournament?.category?.sport?.slug, filteredMatchDetails);
     }
     return apiResponse({
       res,
-      data: data?.event,
+      data: filteredMatchDetails,
       status: true,
       message: "match details fetched successfully",
       statusCode: StatusCodes.OK,
