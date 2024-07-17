@@ -1,7 +1,7 @@
 import { apiResponse } from "../../helper/apiResponse.js";
 import { StatusCodes } from "http-status-codes";
 import validate from "../validation/validation.js";
-import Player from "../models/player.models.js";
+import CustomPlayers from "../models/player.models.js";
 import mongoose from "mongoose";
 
 const createPlayer = async (req, res, next) => {
@@ -15,7 +15,7 @@ const createPlayer = async (req, res, next) => {
     });
   } else {
     try {
-      const player = await Player.create({ playerName, phoneNumber, role });
+      const player = await CustomPlayers.create({ playerName, phoneNumber, role });
 
       return apiResponse({
         res,
@@ -38,7 +38,7 @@ const createPlayer = async (req, res, next) => {
 
 const listPlayers = async (req, res) => {
   try {
-    const players = await Player.find();
+    const players = await CustomPlayers.find();
     return apiResponse({
       res,
       status: true,
@@ -77,7 +77,7 @@ const updatePlayer = async (req, res, next) => {
     });
   } else {
     try {
-      const player = await Player.findByIdAndUpdate(
+      const player = await CustomPlayers.findByIdAndUpdate(
         id,
         { playerName, phoneNumber, role },
         { new: true }
@@ -115,9 +115,9 @@ const deletePlayer = async (req, res, next) => {
   }
 
   try {
-    const player = await Player.findById(id);
+    const player = await CustomPlayers.findById(id);
     if (player) {
-      await Player.findByIdAndDelete(id);
+      await CustomPlayers.findByIdAndDelete(id);
       return apiResponse({
         res,
         status: true,
