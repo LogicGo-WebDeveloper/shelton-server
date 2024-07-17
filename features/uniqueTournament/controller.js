@@ -39,19 +39,23 @@ const getTournamentById = async (req, res, next) => {
         try {
           const response = await fetch(baseUrl);
           if (response.status !== 200) {
-            throw new Error("Image not found");
+            filename = null;
+          } else {
+            filename = baseUrl
           }
-          filename = baseUrl;
           // console.log({ id }, "==> free");
         } catch (error) {
+          
           image = await service.getTournamentImage(id);
           // console.log({ id }, "==> paid");
-          await uploadFile({
-            filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-            file: image,
-            ACL: "public-read",
-          });
-          filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+          if(image){
+            await uploadFile({
+              filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+              file: image,
+              ACL: "public-read",
+            });
+            filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+          }
         }
 
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
@@ -60,7 +64,7 @@ const getTournamentById = async (req, res, next) => {
         const tournamentEntry = new Tournament({
           tournamentId: id,
           data,
-          image: filename,
+          image: filename ? filename : null,
         });
         await tournamentEntry.save();
       }
@@ -112,13 +116,13 @@ const getTournamentById = async (req, res, next) => {
 
     return apiResponse({
       res,
-      body: modifyData[0]?.data[0],
+      data: modifyData[0]?.data[0],
       status: true,
       message: "unique tournament fetched successfully",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    console.log(error);
+    console.log(error); 
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
