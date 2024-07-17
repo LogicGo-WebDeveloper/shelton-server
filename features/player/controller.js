@@ -58,6 +58,7 @@ const getPlayerDetailsById = async (req, res, next) => {
               input: "$data.player",
               as: "playerObj",
               in: {
+                _id: "$_id", // Include MongoDB _id here
                 playerName: "$$playerObj.name",
                 position: "$$playerObj.position",
                 id: "$$playerObj.id",
@@ -69,6 +70,7 @@ const getPlayerDetailsById = async (req, res, next) => {
                 battingQuality: "$$playerObj.cricketPlayerInfo.batting",
                 nationality: "$$playerObj.country.alpha3",
                 image: "$image",
+                teamName: "$$playerObj.team.name",
               },
             },
           },

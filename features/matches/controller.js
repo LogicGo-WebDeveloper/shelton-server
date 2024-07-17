@@ -208,12 +208,12 @@ const getSingleMatchDetail = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
     const authHeader = req.headers?.authorization;
-    const token = authHeader ? authHeader?.split(' ')[1] : null
+    const token = authHeader ? authHeader?.split(" ")[1] : null;
     let decodedToken;
-    if(token){
-       decodedToken = await helper.verifyToken(token);
+    if (token) {
+      decodedToken = await helper.verifyToken(token);
     } else {
-      decodedToken = null
+      decodedToken = null;
     }
     if (!data) {
       let matchDetails = await MatcheDetailsByMatchScreen.findOne({
@@ -221,7 +221,7 @@ const getSingleMatchDetail = async (req, res, next) => {
       });
 
       if (matchDetails) {
-        data = matchDetails.data;
+        data = matchDetails;
       } else {
         const apiData = await service.getSingleMatchDetail(id);
         const matchEntry = new MatcheDetailsByMatchScreen({
@@ -234,9 +234,13 @@ const getSingleMatchDetail = async (req, res, next) => {
       }
     }
 
-    const filteredMatchDetails = filterLiveMatchData(data?.event);
-    if(decodedToken?.userId){
-      await helper.storeRecentMatch(decodedToken?.userId, data?.event?.tournament?.category?.sport?.slug, filteredMatchDetails);
+    const filteredMatchDetails = filterLiveMatchData(data);
+    if (decodedToken?.userId) {
+      await helper.storeRecentMatch(
+        decodedToken?.userId,
+        data?.event?.tournament?.category?.sport?.slug,
+        filteredMatchDetails
+      );
     }
     return apiResponse({
       res,
@@ -460,12 +464,17 @@ const getMatchesScreenDetailsById = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
     if (!data) {
-      const matchesData = await MatchesScreenMatches.findOne({customId: customId});
+      const matchesData = await MatchesScreenMatches.findOne({
+        customId: customId,
+      });
       if (matchesData) {
         data = matchesData?.data;
       } else {
         const apiData = await service.getMatches(customId);
-        const matchesEntry = new MatchesScreenMatches({ customId, data: apiData});
+        const matchesEntry = new MatchesScreenMatches({
+          customId,
+          data: apiData,
+        });
         await matchesEntry.save();
         data = matchesEntry.data;
         cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
