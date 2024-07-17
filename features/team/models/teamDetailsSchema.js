@@ -10,6 +10,7 @@ const teamDetailsSchema = new mongoose.Schema(
       type: Object,
       required: true,
     },
+    image: String,
   },
   {
     timestamps: true,
