@@ -7,8 +7,12 @@ export const convertSportListToArray = (sportList) => {
   }));
 };
 
-export const filterLiveMatchData = (match) => {
+export const filterLiveMatchData = (data) => {
+  // console.log(data.data.event);
+  let match = data.data.event;
+
   return {
+    _id: data._id,
     tournament: {
       name: match?.tournament?.name || null,
       slug: match?.tournament?.slug || null,
@@ -166,29 +170,35 @@ export const filteredOversData = (data) => {
       wicket: item.wicket ? true : false,
       missed: item.missed ? true : false,
       scored: item.scored ? true : false,
-      batsman: item.batsman ? {
-        name : item.batsman?.name || null,
-        shortName: item.batsman?.shortName || null,
-        position: item.batsman?.position || null,
-        id: item.batsman?.id || null,
-        cricketPlayerInfo: item.batsman?.cricketPlayerInfo || null,
-      }: null,
-      bowler: item.bowler ? {
-        name : item.bowler?.name || null,
-        shortName: item.bowler?.shortName || null,
-        position: item.bowler?.position || null,
-        id: item.bowler?.id || null,
-        cricketPlayerInfo: item.bowler?.cricketPlayerInfo || null,
-      }: null,
-      fielder: item.fielder ? {
-        name : item.fielder?.name || null,
-        shortName: item.fielder?.shortName || null,
-        position: item.fielder?.position || null,
-        id: item.fielder?.id || null,
-        cricketPlayerInfo: item.fielder?.cricketPlayerInfo || null,
-      } : null,
+      batsman: item.batsman
+        ? {
+            name: item.batsman?.name || null,
+            shortName: item.batsman?.shortName || null,
+            position: item.batsman?.position || null,
+            id: item.batsman?.id || null,
+            cricketPlayerInfo: item.batsman?.cricketPlayerInfo || null,
+          }
+        : null,
+      bowler: item.bowler
+        ? {
+            name: item.bowler?.name || null,
+            shortName: item.bowler?.shortName || null,
+            position: item.bowler?.position || null,
+            id: item.bowler?.id || null,
+            cricketPlayerInfo: item.bowler?.cricketPlayerInfo || null,
+          }
+        : null,
+      fielder: item.fielder
+        ? {
+            name: item.fielder?.name || null,
+            shortName: item.fielder?.shortName || null,
+            position: item.fielder?.position || null,
+            id: item.fielder?.id || null,
+            cricketPlayerInfo: item.fielder?.cricketPlayerInfo || null,
+          }
+        : null,
       incidentClassLabel: item?.incidentClassLabel || null,
-      zone: item?.zone || null
+      zone: item?.zone || null,
     });
   });
 

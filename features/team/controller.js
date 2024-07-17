@@ -479,7 +479,7 @@ const getTeamDetails = async (req, res, next) => {
         { $match: { teamId: req.params.id } },
         {
           $project: {
-            _id: 0,
+            _id: 1,
             teamId: "$teamId",
             team: {
               name: { $ifNull: ["$data.team.name", null] },
