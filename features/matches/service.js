@@ -61,6 +61,24 @@ const getMatchH2H = async (matchId) => {
   return data;
 };
 
+/**
+ * Get top players images
+ */
+const getTopPlayersImage = async (playerId) => {
+  const { data } = await axiosInstance.get(`/api/v1/player/${playerId}/image`);
+
+  return data ?? [];
+};
+
+/**
+ * Get team images
+ */
+const getTeamImages = async (teamId) => {
+  const { data } = await axiosInstance.get(`/api/v1/team/${teamId}/image`);
+
+  return data ?? [];
+};
+
 export default {
   getSingleMatchDetail,
   getScorecard,
@@ -72,4 +90,6 @@ export default {
   getPregameForm,
   getSeasonStandingsByTeams,
   getMatchH2H,
+  getTopPlayersImage,
+  getTeamImages,
 };

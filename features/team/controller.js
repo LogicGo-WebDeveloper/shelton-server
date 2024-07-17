@@ -11,6 +11,8 @@ import TeamTopPlayers from "./models/teamTopPlayer.js";
 import TeamSeasons from "./models/teamSeasons.js";
 import TeamFeaturedMatches from "./models/teamFeaturedMatchesSchema.js";
 import TeamSeasonsStanding from "./models/teamSeasonsStandingSchema.js";
+import config from "../../config/config.js";
+import { uploadFile } from "../../helper/aws_s3.js";
 
 const getTeamPerformance = async (req, res, next) => {
   try {
@@ -53,6 +55,63 @@ const getTopPlayers = async (req, res, next) => {
 
     let data = cacheService.getCache(key);
 
+    const processPlayerImages = async (playerStatistics) => {
+      const categories = [
+        "runsScored",
+        "battingAverage",
+        "battingStrikeRate",
+        "hundreds",
+        "fifties",
+        "fours",
+        "sixes",
+        "nineties",
+        "wickets",
+        "bowlingAverage",
+        "fiveWicketsHaul",
+        "economy",
+        "bowlingStrikeRate",
+      ];
+
+      for (const category of categories) {
+        if (playerStatistics[category]) {
+          for (const stat of playerStatistics[category]) {
+            const playerId = stat.player.id;
+            try {
+              const name = playerId;
+              const folderName = "player";
+
+              const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+              // Check if the image URL already exists
+              try {
+                const response = await fetch(baseUrl);
+                if (response.status !== 200) {
+                  throw new Error("Image not found");
+                }
+                stat.player.image = baseUrl;
+                // console.log({ playerId }, "==> free");
+              } catch (error) {
+                const image = await service.getTopPlayersImage(playerId);
+                // console.log({ playerId }, "==> paid");
+                await uploadFile({
+                  filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+                  file: image,
+                  ACL: "public-read",
+                });
+                const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+                stat.player.image = imageUrl;
+              }
+            } catch (error) {
+              console.error(
+                `Failed to upload image for player ${playerId}:`,
+                error
+              );
+            }
+          }
+        }
+      }
+    };
+
     if (!data) {
       data = await service.getTopPlayers(req.params);
 
@@ -74,6 +133,9 @@ const getTopPlayers = async (req, res, next) => {
         // Fetch data from the API
         data = await service.getTopPlayers(req.params);
         cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
+
+        // Process player images
+        await processPlayerImages(data);
 
         // Create new tournament with the season
         const topPlayersEntry = new TeamTopPlayers({
@@ -117,6 +179,7 @@ const getTopPlayers = async (req, res, next) => {
                         runsScored: "$$run.statistics.runsScored",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -146,6 +209,7 @@ const getTopPlayers = async (req, res, next) => {
                         battingStrikeRate: "$$run.statistics.battingStrikeRate",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -172,6 +236,7 @@ const getTopPlayers = async (req, res, next) => {
                         battingAverage: "$$run.statistics.battingAverage",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -198,6 +263,7 @@ const getTopPlayers = async (req, res, next) => {
                         fifties: "$$run.statistics.fifties",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -224,6 +290,7 @@ const getTopPlayers = async (req, res, next) => {
                         hundreds: "$$run.statistics.hundreds",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -250,6 +317,7 @@ const getTopPlayers = async (req, res, next) => {
                         fours: "$$run.statistics.fours",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -276,6 +344,7 @@ const getTopPlayers = async (req, res, next) => {
                         sixes: "$$run.statistics.sixes",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -302,6 +371,7 @@ const getTopPlayers = async (req, res, next) => {
                         nineties: "$$run.statistics.nineties",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -328,6 +398,7 @@ const getTopPlayers = async (req, res, next) => {
                         bowlingAverage: "$$run.statistics.bowlingAverage",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -354,6 +425,7 @@ const getTopPlayers = async (req, res, next) => {
                         fiveWicketsHaul: "$$run.statistics.fiveWicketsHaul",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -380,6 +452,7 @@ const getTopPlayers = async (req, res, next) => {
                         economy: "$$run.statistics.economy",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -409,6 +482,7 @@ const getTopPlayers = async (req, res, next) => {
                         bowlingStrikeRate: "$$run.statistics.bowlingStrikeRate",
                         player: "$$run.player.name",
                         playerId: "$$run.player.id",
+                        image: "$$run.player.image",
                         position: "$$run.player.position",
                       },
                     },
@@ -452,22 +526,50 @@ const getTopPlayers = async (req, res, next) => {
 
 const getTeamDetails = async (req, res, next) => {
   try {
+    const { id } = req.params;
     const key = cacheService.getCacheKey(req);
 
     let data = cacheService.getCache(key);
+    let image = cacheService.getCache(key);
 
     if (!data) {
       // Check if the data exists in the database
-      let detailsTeam = await TeamDetails.findOne({ teamId: req.params.id });
+      let detailsTeam = await TeamDetails.findOne({ teamId: id });
 
       if (!detailsTeam) {
         // Fetch data from the API
+
+        const name = id;
+        const folderName = "team";
+        let filename;
+        const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+        // Check if the image URL already exists
+        try {
+          const response = await fetch(baseUrl);
+          if (response.status !== 200) {
+            throw new Error("Image not found");
+          }
+          filename = baseUrl;
+          // console.log({ id }, "==> free");
+        } catch (error) {
+          image = await service.getTeamImages(id);
+          // console.log({ id }, "==> paid");
+          await uploadFile({
+            filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+            file: image,
+            ACL: "public-read",
+          });
+          filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+        }
+
         const apiData = await service.getTeamDetails(req.params);
 
         // Store the fetched data in the database
         const teamDetailsEntry = new TeamDetails({
           teamId: req.params.id,
           data: apiData,
+          image: filename,
         });
         await teamDetailsEntry.save();
         // Set the data to be used for aggregation
@@ -481,6 +583,7 @@ const getTeamDetails = async (req, res, next) => {
           $project: {
             _id: 1,
             teamId: "$teamId",
+            image: 1,
             team: {
               name: { $ifNull: ["$data.team.name", null] },
               slug: { $ifNull: ["$data.team.slug", null] },
@@ -553,12 +656,22 @@ const getTeamDetails = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No team found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 
@@ -567,6 +680,51 @@ const getTeamPLayers = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
 
     let data = cacheService.getCache(key);
+
+    const processPlayerImages = async (players) => {
+      for (const player of players) {
+        const playerId = player.player.id;
+        try {
+          const name = playerId;
+          const folderName = "player";
+          const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+          // Check if the image URL already exists
+          try {
+            const response = await fetch(baseUrl);
+            if (response.status !== 200) {
+              throw new Error("Image not found");
+            }
+            player.player.image = baseUrl;
+            // console.log({ playerId }, "==> free");
+          } catch (error) {
+            const image = await service.getTopPlayersImage(playerId);
+            // console.log({ playerId }, "==> paid");
+            await uploadFile({
+              filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+              file: image,
+              ACL: "public-read",
+            });
+            const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+            player.player.image = imageUrl;
+          }
+        } catch (error) {
+          console.error(
+            `Failed to upload image for player ${playerId}:`,
+            error
+          );
+        }
+      }
+    };
+
+    const processAllPlayerImages = async (data) => {
+      const categories = ["players", "foreignPlayers", "nationalPlayers"];
+      for (const category of categories) {
+        if (data[category]) {
+          await processPlayerImages(data[category]);
+        }
+      }
+    };
 
     if (!data) {
       data = await service.getTeamPLayers(req.params);
@@ -581,6 +739,9 @@ const getTeamPLayers = async (req, res, next) => {
         // Fetch data from the API
         data = await service.getTeamPLayers(req.params);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
+
+        // Process player images
+        await processAllPlayerImages(data);
 
         // Store the fetched data in the database
         const teamPlayerEntry = new PlayerTeam({ teamId: req.params.id, data });
@@ -602,6 +763,7 @@ const getTeamPLayers = async (req, res, next) => {
                 name: "$$playerObj.player.name",
                 position: "$$playerObj.player.position",
                 id: "$$playerObj.player.id",
+                image: "$$playerObj.player.image",
                 country: "$$playerObj.player.country.name",
                 dateOfBirthTimestamp: "$$playerObj.player.dateOfBirthTimestamp",
               },
@@ -615,6 +777,7 @@ const getTeamPLayers = async (req, res, next) => {
                 name: "$$playerObj.player.name",
                 position: "$$playerObj.player.position",
                 id: "$$playerObj.player.id",
+                image: "$$playerObj.player.image",
                 country: "$$playerObj.player.country.name",
                 dateOfBirthTimestamp: "$$playerObj.player.dateOfBirthTimestamp",
               },
@@ -628,6 +791,7 @@ const getTeamPLayers = async (req, res, next) => {
                 name: "$$playerObj.player.name",
                 position: "$$playerObj.player.position",
                 id: "$$playerObj.player.id",
+                image: "$$playerObj.player.image",
                 country: "$$playerObj.player.country.name",
                 dateOfBirthTimestamp: "$$playerObj.player.dateOfBirthTimestamp",
               },
@@ -641,6 +805,7 @@ const getTeamPLayers = async (req, res, next) => {
                 name: "$$playerObj.name",
                 role: "$$playerObj.role",
                 id: "$$playerObj.id",
+                image: "$$playerObj.image",
               },
             },
           },
@@ -656,12 +821,22 @@ const getTeamPLayers = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        data: null,
+        status: true,
+        message: "No team found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 
@@ -670,6 +845,34 @@ const getTeamMatchesByTeam = async (req, res, next) => {
     const { id, span, page } = req.params;
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
+
+    const getImageUrl = async (teamId) => {
+      const name = teamId;
+      const folderName = "team";
+      let filename;
+      const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+      // Check if the image URL already exists
+      try {
+        const response = await fetch(baseUrl);
+        if (response.status !== 200) {
+          throw new Error("Image not found");
+        }
+        // console.log({ teamId }, "==> free");
+        filename = baseUrl;
+      } catch (error) {
+        const image = await service.getTeamImages(teamId);
+        // console.log({ teamId }, "==> paid <==");
+        await uploadFile({
+          filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+          file: image,
+          ACL: "public-read",
+        });
+        filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+      }
+
+      return filename;
+    };
 
     const teamMatchesData = await TeamMatches.findOne({ teamId: id });
     const count = Math.ceil(teamMatchesData?.matches?.length / 10);
@@ -697,6 +900,13 @@ const getTeamMatchesByTeam = async (req, res, next) => {
           await teamMatchesData.save();
           data = teamMatchesData;
         } else {
+          for (const match of newData.events) {
+            const homeTeamId = match.homeTeam.id;
+            const awayTeamId = match.awayTeam.id;
+            match.homeTeam.image = await getImageUrl(homeTeamId);
+            match.awayTeam.image = await getImageUrl(awayTeamId);
+          }
+
           // If no existing data, save the new data
           const teamMatchesEntry = new TeamMatches({
             teamId: id,
@@ -740,6 +950,7 @@ const getTeamMatchesByTeam = async (req, res, next) => {
             shortName: { $ifNull: ["$matches.homeTeam.shortName", null] },
             nameCode: { $ifNull: ["$matches.homeTeam.nameCode", null] },
             id: { $ifNull: ["$matches.homeTeam.id", null] },
+            image: { $ifNull: ["$matches.homeTeam.image", null] },
           },
           awayTeam: {
             name: { $ifNull: ["$matches.awayTeam.name", null] },
@@ -747,6 +958,7 @@ const getTeamMatchesByTeam = async (req, res, next) => {
             shortName: { $ifNull: ["$matches.awayTeam.shortName", null] },
             nameCode: { $ifNull: ["$matches.awayTeam.nameCode", null] },
             id: { $ifNull: ["$matches.awayTeam.id", null] },
+            image: { $ifNull: ["$matches.awayTeam.image", null] },
           },
           homeScore: {
             current: { $ifNull: ["$matches.homeScore.current", null] },
@@ -977,6 +1189,34 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
 
     let data = cacheService.getCache(key);
 
+    const getImageUrl = async (teamId) => {
+      const name = teamId;
+      const folderName = "team";
+      let filename;
+      const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+      // Check if the image URL already exists
+      try {
+        const response = await fetch(baseUrl);
+        if (response.status !== 200) {
+          throw new Error("Image not found");
+        }
+        // console.log({ teamId }, "==> free");
+        filename = baseUrl;
+      } catch (error) {
+        const image = await service.getTeamImages(teamId);
+        // console.log({ teamId }, "==> paid <==");
+        await uploadFile({
+          filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+          file: image,
+          ACL: "public-read",
+        });
+        filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+      }
+
+      return filename;
+    };
+
     if (!data) {
       // data = await service.getTeamFeaturedEventsByTeams(id);
 
@@ -988,8 +1228,24 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
       if (teamFeaturedData) {
         data = teamFeaturedData;
       } else {
-        // Fetch data from the API
         data = await service.getTeamFeaturedEventsByTeams(id);
+
+        const previousEvent = data.previousEvent;
+        if (previousEvent) {
+          const homeTeamId = previousEvent.homeTeam.id;
+          const awayTeamId = previousEvent.awayTeam.id;
+          previousEvent.homeTeam.image = await getImageUrl(homeTeamId);
+          previousEvent.awayTeam.image = await getImageUrl(awayTeamId);
+        }
+
+        const nextEvent = data.nextEvent;
+        if (nextEvent) {
+          const homeTeamId = nextEvent.homeTeam.id;
+          const awayTeamId = nextEvent.awayTeam.id;
+          nextEvent.homeTeam.image = await getImageUrl(homeTeamId);
+          nextEvent.awayTeam.image = await getImageUrl(awayTeamId);
+        }
+
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
         // Store the fetched data in the database
@@ -1043,6 +1299,7 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
                 $ifNull: ["$data.previousEvent.homeTeam.nameCode", null],
               },
               id: { $ifNull: ["$data.previousEvent.homeTeam.id", null] },
+              image: { $ifNull: ["$data.previousEvent.homeTeam.image", null] },
             },
             awayTeam: {
               name: { $ifNull: ["$data.previousEvent.awayTeam.name", null] },
@@ -1054,6 +1311,7 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
                 $ifNull: ["$data.previousEvent.awayTeam.nameCode", null],
               },
               id: { $ifNull: ["$data.previousEvent.awayTeam.id", null] },
+              image: { $ifNull: ["$data.previousEvent.awayTeam.image", null] },
             },
             status: {
               code: { $ifNull: ["$data.previousEvent.status.code", null] },
@@ -1177,6 +1435,7 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
                     $ifNull: ["$data.nextEvent.homeTeam.nameCode", null],
                   },
                   id: { $ifNull: ["$data.nextEvent.homeTeam.id", null] },
+                  image: { $ifNull: ["$data.nextEvent.homeTeam.image", null] },
                 },
                 awayTeam: {
                   name: { $ifNull: ["$data.nextEvent.awayTeam.name", null] },
@@ -1188,6 +1447,7 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
                     $ifNull: ["$data.nextEvent.awayTeam.nameCode", null],
                   },
                   id: { $ifNull: ["$data.nextEvent.awayTeam.id", null] },
+                  image: { $ifNull: ["$data.nextEvent.awayTeam.image", null] },
                 },
                 status: {
                   code: { $ifNull: ["$data.nextEvent.status.code", null] },
@@ -1281,6 +1541,7 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,

@@ -38,23 +38,33 @@ const getCountryLeagueList = async (req, res, next) => {
             const identifier = (alpha2 || flag).toLowerCase();
 
             if (identifier) {
-              const response = await axiosInstance.get(
-                `/static/images/flags/${identifier}.png`,
-                {
-                  responseType: "arraybuffer",
+              const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}${identifier}.png`;
+              try {
+                const response = await fetch(baseUrl);
+                if (response.status !== 200) {
+                  throw new Error("Image not found");
                 }
-              );
-              const buffer = Buffer.from(response.data, "binary");
+                item.image = baseUrl;
+                // console.log({ identifier }, "==>> free");
+              } catch (error) {
+                const response = await axiosInstance.get(
+                  `/static/images/flags/${identifier}.png`,
+                  {
+                    responseType: "arraybuffer",
+                  }
+                );
+                // console.log({ identifier }, "==>> paid");
+                const buffer = Buffer.from(response.data, "binary");
 
-              await uploadFile({
-                filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`,
-                file: buffer,
-                ACL: "public-read",
-              });
-
-              item.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
+                await uploadFile({
+                  filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`,
+                  file: buffer,
+                  ACL: "public-read",
+                });
+                const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}${identifier}.png`;
+                item.image = imageUrl;
+              }
             }
-
             return item;
           })
         );
@@ -358,16 +368,40 @@ const getAllScheduleMatches = async (req, res, next) => {
       id: match.id || null,
     }));
 
-    const currentDate = new Date().toISOString().split('T')[0];
-    let filteredStatusData
+    const currentDate = new Date().toISOString().split("T")[0];
+    let filteredStatusData;
     if (currentDate === date) {
-      const filterSameDateData = formattedData.filter(item => ['notstarted', 'inprogress', 'finished', 'canceled'].includes(item.status.type));
-      filteredStatusData = filterSameDateData.sort((a, b) => ['notstarted', 'inprogress', 'finished', 'canceled'].indexOf(a.status.type) - ['notstarted', 'inprogress', 'finished', 'canceled'].indexOf(b.status.type));
+      const filterSameDateData = formattedData.filter((item) =>
+        ["notstarted", "inprogress", "finished", "canceled"].includes(
+          item.status.type
+        )
+      );
+      filteredStatusData = filterSameDateData.sort(
+        (a, b) =>
+          ["notstarted", "inprogress", "finished", "canceled"].indexOf(
+            a.status.type
+          ) -
+          ["notstarted", "inprogress", "finished", "canceled"].indexOf(
+            b.status.type
+          )
+      );
     } else if (currentDate > date) {
-      const filterPreviousDateData = formattedData.filter(item => ['finished', 'canceled'].includes(item.status.type));
-      filteredStatusData = filterPreviousDateData.sort((a, b) => ['notstarted', 'inprogress', 'finished', 'canceled'].indexOf(a.status.type) - ['notstarted', 'inprogress', 'finished', 'canceled'].indexOf(b.status.type));
+      const filterPreviousDateData = formattedData.filter((item) =>
+        ["finished", "canceled"].includes(item.status.type)
+      );
+      filteredStatusData = filterPreviousDateData.sort(
+        (a, b) =>
+          ["notstarted", "inprogress", "finished", "canceled"].indexOf(
+            a.status.type
+          ) -
+          ["notstarted", "inprogress", "finished", "canceled"].indexOf(
+            b.status.type
+          )
+      );
     } else {
-      filteredStatusData = formattedData.filter(item => item.status.type === 'notstarted');
+      filteredStatusData = formattedData.filter(
+        (item) => item.status.type === "notstarted"
+      );
     }
 
     return apiResponse({
@@ -391,14 +425,16 @@ const getRecentMatches = async (req, res, next) => {
   try {
     const { sport } = req.params;
     const authHeader = req.headers?.authorization;
-    const token = authHeader?.split(' ')[1];
+    const token = authHeader?.split(" ")[1];
     const { userId } = await helper.verifyToken(token);
     let recentMatches;
-    if(userId){
+    if (userId) {
       const userAllRecentMatches = await RecentMatch.findOne({ userId });
-      if(userAllRecentMatches){
-        const userRecentMatches = userAllRecentMatches?.data?.find(item => item.sport === sport);
-        console.log("userRecentMatches", userRecentMatches?.data)
+      if (userAllRecentMatches) {
+        const userRecentMatches = userAllRecentMatches?.data?.find(
+          (item) => item.sport === sport
+        );
+        console.log("userRecentMatches", userRecentMatches?.data);
         recentMatches = userRecentMatches?.data;
       }
     }
@@ -411,7 +447,7 @@ const getRecentMatches = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    if(error.response && error.response.status === 404){
+    if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
         data: [],
@@ -432,7 +468,7 @@ const getRecentMatches = async (req, res, next) => {
 
 const globalSearch = async (req, res, next) => {
   try {
-    const { type, text } = req.body; 
+    const { type, text } = req.body;
     let data;
     if (type === "player") {
       const players = await PlayerDetails.aggregate([
@@ -448,22 +484,23 @@ const globalSearch = async (req, res, next) => {
                   player: { $ifNull: ["$$dataObj.player.name", null] },
                   position: { $ifNull: ["$$dataObj.player.position", null] },
                   playerId: { $ifNull: ["$$dataObj.player.id", null] },
-                  sport: { $ifNull: ["$$dataObj.player.team.sport.name", null] },
+                  sport: {
+                    $ifNull: ["$$dataObj.player.team.sport.name", null],
+                  },
                 },
               },
             },
           },
         },
       ]);
-      data = players.map(player => player.players).flat();
+      data = players.map((player) => player.players).flat();
     } else if (type === "team") {
       const teams = await TeamDetails.aggregate([
         { $match: { "data.team.name": { $regex: text, $options: "i" } } },
         {
           $project: {
             team: {
-
-              //This data only sending null  because of frontend side use standing model 
+              //This data only sending null  because of frontend side use standing model
               position: { $ifNull: ["$data.team.position", null] },
               matches: { $ifNull: ["$data.team.matches", null] },
               draws: { $ifNull: ["$data.team.draws", null] },
@@ -482,12 +519,16 @@ const globalSearch = async (req, res, next) => {
           },
         },
       ]);
-      data = teams.map(team => team.team);
-    } else if(type === "tournament"){
+      data = teams.map((team) => team.team);
+    } else if (type === "tournament") {
       const tournaments = await CountryLeagueList.aggregate([
         { $unwind: "$data" },
         { $unwind: "$data.tournamentlist" },
-        { $match: { "data.tournamentlist.name": { $regex: text, $options: "i" } } },
+        {
+          $match: {
+            "data.tournamentlist.name": { $regex: text, $options: "i" },
+          },
+        },
         {
           $project: {
             name: "$data.tournamentlist.name",
@@ -497,12 +538,12 @@ const globalSearch = async (req, res, next) => {
               name: "$data.tournamentlist.category.name",
               slug: "$data.tournamentlist.category.slug",
               id: "$data.tournamentlist.category.id",
-              flag: "$data.tournamentlist.category.flag"
+              flag: "$data.tournamentlist.category.flag",
             },
             userCount: "$data.tournamentlist.userCount",
-            sport: "$data.tournamentlist.category.sport.name"
-          }
-        }
+            sport: "$data.tournamentlist.category.sport.name",
+          },
+        },
       ]);
       data = tournaments;
     } else {
@@ -518,7 +559,9 @@ const globalSearch = async (req, res, next) => {
       res,
       data: data,
       status: true,
-      message: `${type.charAt(0).toUpperCase() + type.slice(1)} list fetched successfully`,
+      message: `${
+        type.charAt(0).toUpperCase() + type.slice(1)
+      } list fetched successfully`,
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
@@ -537,5 +580,5 @@ export default {
   getSportNews,
   getAllScheduleMatches,
   getRecentMatches,
-  globalSearch
+  globalSearch,
 };

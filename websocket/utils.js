@@ -40,6 +40,7 @@ export const filterLiveMatchData = (data) => {
       slug: match?.homeTeam?.slug || null,
       shortName: match?.homeTeam?.shortName || null,
       nameCode: match?.homeTeam?.nameCode || null,
+      image: match?.homeTeam?.image || null,
       id: match?.homeTeam?.id || null,
     },
     awayTeam: {
@@ -47,6 +48,7 @@ export const filterLiveMatchData = (data) => {
       slug: match?.awayTeam?.slug || null,
       shortName: match?.awayTeam?.shortName || null,
       nameCode: match?.awayTeam?.nameCode || null,
+      image: match?.awayTeam?.image || null,
       id: match?.awayTeam?.id || null,
     },
     homeScore: {
@@ -92,6 +94,7 @@ export const filterPlayerData = (players) => {
     bowling: player.player.cricketPlayerInfo.bowling || null,
     position: player.position || null,
     substitute: player.substitute || null,
+    image: player.player.image || null,
   }));
 };
 
