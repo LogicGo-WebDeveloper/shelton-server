@@ -254,6 +254,34 @@ const getSingleMatchDetail = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
 
+    const getImageUrl = async (teamId) => {
+      const name = teamId;
+      const folderName = "team";
+      let filename;
+      const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+      // Check if the image URL already exists
+      try {
+        const response = await fetch(baseUrl);
+        if (response.status !== 200) {
+          throw new Error("Image not found");
+        }
+        console.log({ teamId }, "==> free");
+        filename = baseUrl;
+      } catch (error) {
+        const image = await service.getTeamImages(teamId);
+        console.log({ teamId }, "==> paid <==");
+        await uploadFile({
+          filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+          file: image,
+          ACL: "public-read",
+        });
+        filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+      }
+
+      return filename;
+    };
+
     if (!data) {
       let matchDetails = await MatcheDetailsByMatchScreen.findOne({
         matchId: id,
@@ -263,6 +291,15 @@ const getSingleMatchDetail = async (req, res, next) => {
         data = matchDetails.data;
       } else {
         const apiData = await service.getSingleMatchDetail(id);
+
+        // Fetch image URLs for home and away teams
+        const homeTeamImageUrl = await getImageUrl(apiData.event.homeTeam.id);
+        const awayTeamImageUrl = await getImageUrl(apiData.event.awayTeam.id);
+
+        // Add image URLs to the team data
+        apiData.event.homeTeam.image = homeTeamImageUrl;
+        apiData.event.awayTeam.image = awayTeamImageUrl;
+
         const matchEntry = new MatcheDetailsByMatchScreen({
           matchId: id,
           data: apiData,
@@ -283,6 +320,7 @@ const getSingleMatchDetail = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response.status === 404) {
       return apiResponse({
         res,
@@ -496,6 +534,35 @@ const getMatchesScreenDetailsById = async (req, res, next) => {
     const { customId } = req.params;
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
+
+    const getImageUrl = async (teamId) => {
+      const name = teamId;
+      const folderName = "team";
+      let filename;
+      const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+      // Check if the image URL already exists
+      try {
+        const response = await fetch(baseUrl);
+        if (response.status !== 200) {
+          throw new Error("Image not found");
+        }
+        // console.log({ teamId }, "==> free");
+        filename = baseUrl;
+      } catch (error) {
+        const image = await service.getTeamImages(teamId);
+        // console.log({ teamId }, "==> paid <==");
+        await uploadFile({
+          filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+          file: image,
+          ACL: "public-read",
+        });
+        filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+      }
+
+      return filename;
+    };
+
     if (!data) {
       const matchesData = await MatchesScreenMatches.findOne({
         customId: customId,
@@ -504,6 +571,12 @@ const getMatchesScreenDetailsById = async (req, res, next) => {
         data = matchesData?.data;
       } else {
         const apiData = await service.getMatches(customId);
+
+        for (const event of apiData.events) {
+          event.homeTeam.image = await getImageUrl(event.homeTeam.id);
+          event.awayTeam.image = await getImageUrl(event.awayTeam.id);
+        }
+
         const matchesEntry = new MatchesScreenMatches({
           customId,
           data: apiData,

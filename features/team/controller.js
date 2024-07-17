@@ -553,7 +553,7 @@ const getTeamDetails = async (req, res, next) => {
           filename = baseUrl;
           // console.log({ id }, "==> free");
         } catch (error) {
-          image = await service.getPlayerImage(id);
+          image = await service.getTeamImages(id);
           // console.log({ id }, "==> paid");
           await uploadFile({
             filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,

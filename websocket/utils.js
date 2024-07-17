@@ -36,6 +36,7 @@ export const filterLiveMatchData = (match) => {
       slug: match?.homeTeam?.slug || null,
       shortName: match?.homeTeam?.shortName || null,
       nameCode: match?.homeTeam?.nameCode || null,
+      image: match?.homeTeam?.image || null,
       id: match?.homeTeam?.id || null,
     },
     awayTeam: {
@@ -43,6 +44,7 @@ export const filterLiveMatchData = (match) => {
       slug: match?.awayTeam?.slug || null,
       shortName: match?.awayTeam?.shortName || null,
       nameCode: match?.awayTeam?.nameCode || null,
+      image: match?.awayTeam?.image || null,
       id: match?.awayTeam?.id || null,
     },
     homeScore: {

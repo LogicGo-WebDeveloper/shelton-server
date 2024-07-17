@@ -23,8 +23,9 @@ const getOvers = async (matchId) => {
 };
 
 const getMatches = async (customId) => {
-  const { data } = await axiosInstance.get(`/api/v1/event/${customId}/h2h/events`);
-  console.log("______________>>>>>>>>", data)
+  const { data } = await axiosInstance.get(
+    `/api/v1/event/${customId}/h2h/events`
+  );
   return data;
 };
 
@@ -66,9 +67,17 @@ const getMatchH2H = async (matchId) => {
 const getTopPlayersImage = async (playerId) => {
   const { data } = await axiosInstance.get(`/api/v1/player/${playerId}/image`);
 
-  return data ?? []
+  return data ?? [];
 };
 
+/**
+ * Get team images
+ */
+const getTeamImages = async (teamId) => {
+  const { data } = await axiosInstance.get(`/api/v1/team/${teamId}/image`);
+
+  return data ?? [];
+};
 
 export default {
   getSingleMatchDetail,
@@ -81,5 +90,6 @@ export default {
   getPregameForm,
   getSeasonStandingsByTeams,
   getMatchH2H,
-  getTopPlayersImage
+  getTopPlayersImage,
+  getTeamImages,
 };
