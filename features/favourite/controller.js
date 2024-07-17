@@ -18,58 +18,57 @@ const favouriteMatchesadd = async (req, res, next) => {
     const userId = req.body.userId;
     const type = req.body.type;
 
+    // Check if the document already exists in the collection
     const existingFavourite = await FavouriteDetails.findOne({
       matchesId: matchesId,
     });
 
     if (existingFavourite) {
+      // Toggle the status field
+      const newStatus = existingFavourite.status === true ? false : true;
+
+      // Update the document with the new status and type
       const updatedFavourite = await FavouriteDetails.updateOne(
         { matchesId: matchesId },
-        { type: type },
-        { userId: userId, status: existingFavourite.status === 1 ? 0 : 1 }
+        { type: type, status: newStatus }
       );
 
       return apiResponse({
         res,
+        data: existingFavourite,
         status: true,
-        message: "Favorite matches remove successfully",
+        message:
+          newStatus === false
+            ? "Favorite matches added successfully"
+            : "Favorite matches removed successfully",
         statusCode: StatusCodes.OK,
       });
     } else {
-      // If document does not exist, create a new one
+      // If document does not exist, create a new one with status 1
       const newFavourite = await FavouriteDetails.create({
         matchesId: matchesId,
         userId: userId,
-        status: 0,
+        status: 1, // Set initial status to 1
         type: type,
         // Additional fields can be added here
       });
+
       return apiResponse({
         res,
         data: newFavourite,
         status: true,
-        message: "Favorite matches add successfully",
+        message: "Favorite matches added successfully",
         statusCode: StatusCodes.OK,
       });
     }
   } catch (error) {
-    console.log(error);
-    if (error.response && error.response.status === 404) {
-      return apiResponse({
-        res,
-        data: null,
-        status: true,
-        message: "No overs found",
-        statusCode: StatusCodes.OK,
-      });
-    } else {
-      return apiResponse({
-        res,
-        status: false,
-        message: "Internal server error",
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-      });
-    }
+    console.error("Error:", error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
@@ -205,33 +204,40 @@ const favouritePlayersadd = async (req, res, next) => {
     });
 
     if (existingFavourite) {
+      // Toggle the status field
+      const newStatus = existingFavourite.status === true ? false : true;
+
+      // Update the document with the new status and type
       const updatedFavourite = await FavouritePlayerDetails.updateOne(
         { playerId: playerId },
-        { type: type },
-        { userId: userId, status: existingFavourite.status === 1 ? 0 : 1 }
+        { type: type, status: newStatus }
       );
 
       return apiResponse({
         res,
+        data: existingFavourite,
         status: true,
-        message: "Favorite player remove successfully",
+        message:
+          newStatus === false
+            ? "Favorite player added successfully"
+            : "Favorite player removed successfully",
         statusCode: StatusCodes.OK,
       });
     } else {
-      // If document does not exist, create a new one
+      // If document does not exist, create a new one with status 1
       const newFavourite = await FavouritePlayerDetails.create({
         playerId: playerId,
         userId: userId,
-        status: 0,
+        status: 1, // Set initial status to 1
         type: type,
-
         // Additional fields can be added here
       });
+
       return apiResponse({
         res,
         data: newFavourite,
         status: true,
-        message: "Favorite player add successfully",
+        message: "Favorite player added successfully",
         statusCode: StatusCodes.OK,
       });
     }
@@ -242,7 +248,7 @@ const favouritePlayersadd = async (req, res, next) => {
         res,
         data: null,
         status: true,
-        message: "No overs found",
+        message: "No player found",
         statusCode: StatusCodes.OK,
       });
     } else {
@@ -390,32 +396,40 @@ const favouriteTeamsadd = async (req, res, next) => {
     });
 
     if (existingFavourite) {
+      // Toggle the status field
+      const newStatus = existingFavourite.status === true ? false : true;
+
+      // Update the document with the new status and type
       const updatedFavourite = await FavouriteTeamDetails.updateOne(
         { teamId: teamId },
-        { type: type },
-        { userId: userId, status: existingFavourite.status === 1 ? 0 : 1 }
+        { type: type, status: newStatus }
       );
 
       return apiResponse({
         res,
+        data: existingFavourite,
         status: true,
-        message: "Favorite team remove successfully",
+        message:
+          newStatus === false
+            ? "Favorite team added successfully"
+            : "Favorite team removed successfully",
         statusCode: StatusCodes.OK,
       });
     } else {
-      // If document does not exist, create a new one
+      // If document does not exist, create a new one with status 1
       const newFavourite = await FavouriteTeamDetails.create({
         teamId: teamId,
         userId: userId,
-        status: 0,
+        status: 1, // Set initial status to 1
         type: type,
         // Additional fields can be added here
       });
+
       return apiResponse({
         res,
         data: newFavourite,
         status: true,
-        message: "Favorite team add successfully",
+        message: "Favorite team added successfully",
         statusCode: StatusCodes.OK,
       });
     }
@@ -426,7 +440,7 @@ const favouriteTeamsadd = async (req, res, next) => {
         res,
         data: null,
         status: true,
-        message: "No overs found",
+        message: "No team found",
         statusCode: StatusCodes.OK,
       });
     } else {
