@@ -12,6 +12,7 @@ route.get("/:timezoneOffset/event-count", sportController.getSportList);
 route.get("/:sport/news", sportController.getSportNews);
 route.get("/:sport/schedule-matches/:date", sportController.getAllScheduleMatches);
 route.get("/:sport/recent-matches", verifyToken, sportController.getRecentMatches);
+route.get("/global-search", sportController.globalSearch);
 
 // // change password
 // route.post(

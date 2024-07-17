@@ -14,6 +14,8 @@ import axiosInstance from "../../config/axios.config.js";
 import RecentMatch from "./models/recentMatchesSchema.js";
 // import { verifyToken } from "../../middleware/verifyToken.js";
 import helper from "../../helper/common.js";
+import PlayerDetails from "../player/models/playerDetailsSchema.js";
+import TeamDetails from "../team/models/teamDetailsSchema.js";
 
 const folderName = "country";
 
@@ -428,10 +430,112 @@ const getRecentMatches = async (req, res, next) => {
   }
 };
 
+const globalSearch = async (req, res, next) => {
+  try {
+    const { type, text } = req.body; 
+    let data;
+    if (type === "player") {
+      const players = await PlayerDetails.aggregate([
+        { $match: { "data.player.name": { $regex: text, $options: "i" } } },
+        {
+          $project: {
+            players: {
+              $map: {
+                input: "$data",
+                as: "dataObj",
+                in: {
+                  runsScored: { $ifNull: ["$$dataObj.runsScored", null] },
+                  player: { $ifNull: ["$$dataObj.player.name", null] },
+                  position: { $ifNull: ["$$dataObj.player.position", null] },
+                  playerId: { $ifNull: ["$$dataObj.player.id", null] },
+                  sport: { $ifNull: ["$$dataObj.player.team.sport.name", null] },
+                },
+              },
+            },
+          },
+        },
+      ]);
+      data = players.map(player => player.players).flat();
+    } else if (type === "team") {
+      const teams = await TeamDetails.aggregate([
+        { $match: { "data.team.name": { $regex: text, $options: "i" } } },
+        {
+          $project: {
+            team: {
+
+              //This data only sending null  because of frontend side use standing model 
+              position: { $ifNull: ["$data.team.position", null] },
+              matches: { $ifNull: ["$data.team.matches", null] },
+              draws: { $ifNull: ["$data.team.draws", null] },
+              losses: { $ifNull: ["$data.team.losses", null] },
+              points: { $ifNull: ["$data.team.points", null] },
+              netRunRate: { $ifNull: ["$data.team.netRunRate", null] },
+              noResult: { $ifNull: ["$data.team.noResult", null] },
+              wins: { $ifNull: ["$data.team.wins", null] },
+
+              //The data is coming from here
+              id: { $ifNull: ["$data.team.id", null] },
+              shortName: { $ifNull: ["$data.team.shortName", null] },
+              teamName: { $ifNull: ["$data.team.name", null] },
+              sport: { $ifNull: ["$data.team.sport.name", null] },
+            },
+          },
+        },
+      ]);
+      data = teams.map(team => team.team);
+    } else if(type === "tournament"){
+      const tournaments = await CountryLeagueList.aggregate([
+        { $unwind: "$data" },
+        { $unwind: "$data.tournamentlist" },
+        { $match: { "data.tournamentlist.name": { $regex: text, $options: "i" } } },
+        {
+          $project: {
+            name: "$data.tournamentlist.name",
+            id: "$data.tournamentlist.id",
+            slug: "$data.tournamentlist.slug",
+            category: {
+              name: "$data.tournamentlist.category.name",
+              slug: "$data.tournamentlist.category.slug",
+              id: "$data.tournamentlist.category.id",
+              flag: "$data.tournamentlist.category.flag"
+            },
+            userCount: "$data.tournamentlist.userCount",
+            sport: "$data.tournamentlist.category.sport.name"
+          }
+        }
+      ]);
+      data = tournaments;
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Invalid type parameter",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    return apiResponse({
+      res,
+      data: data,
+      status: true,
+      message: `${type.charAt(0).toUpperCase() + type.slice(1)} list fetched successfully`,
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
+
 export default {
   getCountryLeagueList,
   getSportList,
   getSportNews,
   getAllScheduleMatches,
-  getRecentMatches
+  getRecentMatches,
+  globalSearch
 };

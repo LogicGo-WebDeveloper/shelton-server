@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
 
-const playerSchema = new mongoose.Schema({
+const customPlayersSchema = new mongoose.Schema({
   playerName: { type: String, required: true },
   phoneNumber: { type: String, required: true },
   role: { type: String, required: true },
 });
 
-const Player = mongoose.model("Player", playerSchema);
+const CustomPlayers = mongoose.model("CustomPlayers", customPlayersSchema);
 
-export default Player;
+export default CustomPlayers;
