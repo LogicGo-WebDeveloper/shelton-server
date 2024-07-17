@@ -12,6 +12,9 @@ import { uploadFile } from "../../helper/aws_s3.js";
 import config from "../../config/config.js";
 import axiosInstance from "../../config/axios.config.js";
 import RecentMatch from "./models/recentMatchesSchema.js";
+// import { verifyToken } from "../../middleware/verifyToken.js";
+import helper from "../../helper/common.js";
+
 const folderName = "country";
 
 const getCountryLeagueList = async (req, res, next) => {
@@ -384,21 +387,44 @@ const getAllScheduleMatches = async (req, res, next) => {
 
 const getRecentMatches = async (req, res, next) => {
   try {
-    const recentMatches = await RecentMatch.find().sort({ createdAt: -1 }).limit(10);
+    const { sport } = req.params;
+    const authHeader = req.headers?.authorization;
+    const token = authHeader?.split(' ')[1];
+    const { userId } = await helper.verifyToken(token);
+    let recentMatches;
+    if(userId){
+      const userAllRecentMatches = await RecentMatch.findOne({ userId });
+      if(userAllRecentMatches){
+        const userRecentMatches = userAllRecentMatches?.data?.find(item => item.sport === sport);
+        console.log("userRecentMatches", userRecentMatches?.data)
+        recentMatches = userRecentMatches?.data;
+      }
+    }
+
     return apiResponse({
       res,
-      data: recentMatches,
+      data: recentMatches ? recentMatches : [],
       status: true,
       message: "Recent matches fetched successfully",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
+    if(error.response && error.response.status === 404){
+      return apiResponse({
+        res,
+        data: [],
+        status: true,
+        message: "No data found",
+        statusCode: StatusCodes.OK,
+      });
+    } else {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Internal server error",
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 };
 
