@@ -665,7 +665,7 @@ const favouriteLeagueList = async (req, res, next) => {
       .find({ status: 1 })
       .populate({
         path: "leagueId",
-        model: "LeagueTournamentList",
+        model: "Tournament",
         select: "data",
       })
       .exec();

@@ -45,6 +45,7 @@ const getTournamentById = async (req, res, next) => {
               input: "$data",
               as: "dataObj",
               in: {
+                _id: "$_id",
                 name: "$$dataObj.name",
                 slug: "$$dataObj.slug",
                 id: "$$dataObj.id",
