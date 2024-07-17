@@ -9,6 +9,7 @@ const MatchesSquadSchema = new mongoose.Schema(
     data: {
       type: Object,
       required: true,
+      image: String,
     },
   },
   {

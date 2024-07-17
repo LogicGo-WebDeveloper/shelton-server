@@ -17,9 +17,10 @@ import MatchesSquad from "./models/matchesSquad.js";
 import PregameForm from "./models/pregameFormSchema.js";
 import MatchOdds from "./models/matchOddsSchema.js";
 import MatchesStanding from "./models/matchesStandings.js";
-import matchesScreenMatches from "./models/matchesDetails.js";
 import MatchH2H from "./models/matchH2HSchema.js";
 import MatchesScreenMatches from "./models/matchesDetails.js";
+import config from "../../config/config.js";
+import { uploadFile } from "../../helper/aws_s3.js";
 
 const getOverDetailsById = async (req, res, next) => {
   try {
@@ -146,19 +147,65 @@ const getSquadDetailsById = async (req, res, next) => {
     const { matchId } = req.params;
     let data;
 
-    const scoreCard = await MatchesSquad.findOne({
-      matchId: matchId,
-    });
+    const scoreCard = await MatchesSquad.findOne({ matchId });
 
     if (scoreCard) {
       data = scoreCard;
     } else {
       data = await service.getSquad(matchId);
 
+      const processPlayerImages = async (players) => {
+        for (const player of players) {
+          const playerId = player.player.id;
+          try {
+            const name = playerId;
+            const folderName = "player";
+            const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+            // Check if the image URL already exists
+            try {
+              const response = await fetch(baseUrl);
+              if (response.status !== 200) {
+                throw new Error("Image not found");
+              }
+              player.player.image = baseUrl;
+              // console.log({ playerId }, "==> free");
+            } catch (error) {
+              const image = await service.getTopPlayersImage(playerId);
+              // console.log({ playerId }, "==> paid");
+              await uploadFile({
+                filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+                file: image,
+                ACL: "public-read",
+              });
+              const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+              player.player.image = imageUrl;
+            }
+          } catch (error) {
+            console.error(
+              `Failed to upload image for player ${playerId}:`,
+              error
+            );
+          }
+        }
+      };
+
+      const processAllPlayerImages = async (data) => {
+        const categories = ["home", "away"];
+        for (const category of categories) {
+          if (data[category] && data[category].players) {
+            await processPlayerImages(data[category].players);
+          }
+        }
+      };
+
+      await processAllPlayerImages(data);
+
       const squadEntry = new MatchesSquad({
-        matchId: matchId,
-        data: data,
+        matchId,
+        data,
       });
+
       await squadEntry.save();
     }
 
@@ -450,12 +497,17 @@ const getMatchesScreenDetailsById = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
     if (!data) {
-      const matchesData = await MatchesScreenMatches.findOne({customId: customId});
+      const matchesData = await MatchesScreenMatches.findOne({
+        customId: customId,
+      });
       if (matchesData) {
         data = matchesData?.data;
       } else {
         const apiData = await service.getMatches(customId);
-        const matchesEntry = new MatchesScreenMatches({ customId, data: apiData});
+        const matchesEntry = new MatchesScreenMatches({
+          customId,
+          data: apiData,
+        });
         await matchesEntry.save();
         data = matchesEntry.data;
         cacheService.setCache(key, data, cacheTTL.ONE_HOUR);

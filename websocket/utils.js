@@ -88,6 +88,7 @@ export const filterPlayerData = (players) => {
     bowling: player.player.cricketPlayerInfo.bowling || null,
     position: player.position || null,
     substitute: player.substitute || null,
+    image: player.player.image || null,
   }));
 };
 
