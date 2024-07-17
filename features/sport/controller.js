@@ -61,7 +61,7 @@ const getCountryLeagueList = async (req, res, next) => {
                   file: buffer,
                   ACL: "public-read",
                 });
-                const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}${identifier}.png`;
+                const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
                 item.image = imageUrl;
               }
             }
