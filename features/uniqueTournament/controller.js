@@ -18,19 +18,50 @@ const getTournamentById = async (req, res, next) => {
 
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
+    let image = cacheService.getCache(key);
 
     if (!data) {
       // Check if data exists in the database
       const tournament = await Tournament.findOne({ tournamentId: id });
       if (tournament) {
         data = tournament.data;
+        image = tournament.image;
       } else {
         // Fetch data from the API
         data = await service.getTournamentById(id);
+        const name = id;
+        const folderName = "tournaments";
+
+        let filename;
+        const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+        // Check if the image URL already exists
+        try {
+          const response = await fetch(baseUrl);
+          if (response.status !== 200) {
+            throw new Error("Image not found");
+          }
+          filename = baseUrl;
+          // console.log({ id }, "==> free");
+        } catch (error) {
+          image = await service.getTournamentImage(id);
+          // console.log({ id }, "==> paid");
+          await uploadFile({
+            filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+            file: image,
+            ACL: "public-read",
+          });
+          filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+        }
+
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
         // Store the fetched data in the database
-        const tournamentEntry = new Tournament({ tournamentId: id, data });
+        const tournamentEntry = new Tournament({
+          tournamentId: id,
+          data,
+          image: filename,
+        });
         await tournamentEntry.save();
       }
     }
@@ -39,6 +70,7 @@ const getTournamentById = async (req, res, next) => {
       { $match: { tournamentId: id } },
       {
         $project: {
+          image: 1,
           data: {
             $map: {
               input: "$data",
@@ -47,6 +79,29 @@ const getTournamentById = async (req, res, next) => {
                 name: "$$dataObj.name",
                 slug: "$$dataObj.slug",
                 id: "$$dataObj.id",
+                image: "$image",
+                titleHolder: "$$dataObj.titleHolder",
+                titleHolderTitles: {
+                  $ifNull: ["$$dataObj.titleHolderTitles", null],
+                },
+                mostTitles: { $ifNull: ["$$dataObj.mostTitles", null] },
+                mostTitlesTeams: {
+                  $ifNull: ["$$dataObj.mostTitlesTeams", null],
+                },
+                startDateTimestamp: {
+                  $ifNull: ["$$dataObj.startDateTimestamp", null],
+                },
+                endDateTimestamp: {
+                  $ifNull: ["$$dataObj.endDateTimestamp", null],
+                },
+                category: {
+                  name: { $ifNull: ["$$dataObj.category.name", null] },
+                  slug: { $ifNull: ["$$dataObj.category.slug", null] },
+                  flag: { $ifNull: ["$$dataObj.category.flag", null] },
+                  id: { $ifNull: ["$$dataObj.category.id", null] },
+                  sport: { $ifNull: ["$$dataObj.category.sport", null] },
+                  country: { $ifNull: ["$$dataObj.category.country", null] },
+                },
               },
             },
           },
@@ -56,12 +111,13 @@ const getTournamentById = async (req, res, next) => {
 
     return apiResponse({
       res,
-      body: modifyData,
+      body: modifyData[0]?.data[0],
       status: true,
       message: "unique tournament fetched successfully",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
@@ -137,6 +193,7 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
 
     let data = cacheService.getCache(key);
+    let image = cacheService.getCache(key);
 
     if (!data) {
       const featuredMatches = await FeaturedMatches.findOne({
@@ -145,10 +202,42 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
 
       if (featuredMatches) {
         data = featuredMatches.data;
+        image = featuredMatches.image;
       } else {
         data = await service.getLeagueFeaturedEventsByTournament(id);
+
+        const name = id;
+        const folderName = "tournaments";
+
+        let filename;
+        const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+        // Check if the image URL already exists
+        try {
+          const response = await fetch(baseUrl);
+          if (response.status !== 200) {
+            throw new Error("Image not found");
+          }
+          filename = baseUrl;
+          // console.log({ id }, "==> free");
+        } catch (error) {
+          image = await service.getTournamentImage(id);
+          // console.log({ id }, "==> paid");
+          await uploadFile({
+            filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+            file: image,
+            ACL: "public-read",
+          });
+          filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+        }
+
         cacheService.setCache(key, data, cacheTTL.ONE_MINUTE);
-        const featuredMatches = new FeaturedMatches({ tournamentId: id, data });
+
+        const featuredMatches = new FeaturedMatches({
+          tournamentId: id,
+          data,
+          image: filename,
+        });
         await featuredMatches.save();
       }
     }
@@ -159,6 +248,7 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
       {
         $project: {
           _id: 0,
+          image: 1,
           tournament: {
             name: { $ifNull: ["$data.tournament.name", null] },
             slug: { $ifNull: ["$data.tournament.slug", null] },
@@ -1100,6 +1190,34 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
     const count = Math.ceil(findMatches?.data?.length / 10);
     const adjustedPage = Math.floor((page - 1) / 3);
 
+    const getImageUrl = async (teamId) => {
+      const name = teamId;
+      const folderName = "team";
+      let filename;
+      const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+
+      // Check if the image URL already exists
+      try {
+        const response = await fetch(baseUrl);
+        if (response.status !== 200) {
+          throw new Error("Image not found");
+        }
+        // console.log({ teamId }, "==> free");
+        filename = baseUrl;
+      } catch (error) {
+        const image = await service.getTeamImages(teamId);
+        // console.log({ teamId }, "==> paid <==");
+        await uploadFile({
+          filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+          file: image,
+          ACL: "public-read",
+        });
+        filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+      }
+
+      return filename;
+    };
+
     if (!data || page > count) {
       if (leagueMatchesData) {
         if (findMatches) {
@@ -1138,27 +1256,21 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
           span,
           0
         );
-        if (leagueMatchesData) {
-          // Filter out duplicate events
-          const existingEvents = leagueMatchesData.seasons.map(
-            (season) => season.data
-          );
-          const uniqueEvents = newData.data.filter(
-            (event) => !existingEvents.includes(event.id)
-          );
-          // Push unique events to the existing data
-          leagueMatchesData.seasons.push(...uniqueEvents);
-          await leagueMatchesData.save();
-          data = leagueMatchesData;
-        } else {
-          // If no existing data, save the new data
-          const leagueMatchesEntry = new LeagueMatches({
-            tournamentId: id,
-            seasons: [{ seasonId: seasonId, data: newData.events }],
-          });
-          await leagueMatchesEntry.save();
-          data = leagueMatchesEntry;
+
+        const leagueMatchesEntry = new LeagueMatches({
+          tournamentId: id,
+          seasons: [{ seasonId: seasonId, data: newData.events }],
+        });
+
+        for (const match of newData.events) {
+          const homeTeamId = match.homeTeam.id;
+          const awayTeamId = match.awayTeam.id;
+          match.homeTeam.image = await getImageUrl(homeTeamId);
+          match.awayTeam.image = await getImageUrl(awayTeamId);
         }
+
+        await leagueMatchesEntry.save();
+        data = leagueMatchesEntry;
         cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
       }
     }
@@ -1199,6 +1311,7 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
             shortName: { $ifNull: ["$seasons.data.homeTeam.shortName", null] },
             nameCode: { $ifNull: ["$seasons.data.homeTeam.nameCode", null] },
             id: { $ifNull: ["$seasons.data.homeTeam.id", null] },
+            image: { $ifNull: ["$seasons.data.homeTeam.image", null] },
           },
           awayTeam: {
             name: { $ifNull: ["$seasons.data.awayTeam.name", null] },
@@ -1206,6 +1319,7 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
             shortName: { $ifNull: ["$seasons.data.awayTeam.shortName", null] },
             nameCode: { $ifNull: ["$seasons.data.awayTeam.nameCode", null] },
             id: { $ifNull: ["$seasons.data.awayTeam.id", null] },
+            image: { $ifNull: ["$seasons.data.awayTeam.image", null] },
           },
           homeScore: {
             current: { $ifNull: ["$seasons.data.homeScore.current", null] },
@@ -1278,6 +1392,7 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,

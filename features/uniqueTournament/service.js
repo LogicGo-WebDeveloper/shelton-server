@@ -18,7 +18,6 @@ const getLeagueFeaturedEventsByTournament = async (id) => {
   const { data } = await axiosInstance.get(
     `/api/v1/unique-tournament/${id}/featured-events`
   );
-  console.log("data____________", data);
 
   return data.featuredEvents ?? [];
 };
@@ -67,11 +66,34 @@ const getSeasonMatchesByTournament = async (id, seasonId, span, page) => {
   return data ?? [];
 };
 
+/**
+ * Get player images
+ */
 const getTopPlayersImage = async (playerId) => {
   const { data } = await axiosInstance.get(`/api/v1/player/${playerId}/image`);
 
-  return data?? [];
-}
+  return data ?? [];
+};
+
+/**
+ * Get tournament images
+ */
+const getTournamentImage = async (id) => {
+  const { data } = await axiosInstance.get(
+    `/api/v1/unique-tournament/${id}/image`
+  );
+
+  return data ?? [];
+};
+
+/**
+ * Get team images
+ */
+const getTeamImages = async (teamId) => {
+  const { data } = await axiosInstance.get(`/api/v1/team/${teamId}/image`);
+
+  return data ?? [];
+};
 
 export default {
   getTournamentById,
@@ -82,5 +104,7 @@ export default {
   getSeasonStandingByTournament,
   getSeasonTopPlayersByTournament,
   getSeasonMatchesByTournament,
-  getTopPlayersImage
+  getTopPlayersImage,
+  getTournamentImage,
+  getTeamImages,
 };

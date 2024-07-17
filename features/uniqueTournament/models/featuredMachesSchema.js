@@ -6,6 +6,9 @@ const FeaturedMatchesSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    image: {
+      type: String,
+    },
     data: {
       type: Object,
       required: true,
