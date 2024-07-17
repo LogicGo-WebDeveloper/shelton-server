@@ -17,6 +17,20 @@ const getSeasonStandingsByTeams = async (req, res, next) => {
       data = await service.getSeasonStandingsByTeams(id, seasonId);
 
       if (!data) {
+        const TeamseasonStanding = await TeamSeasonStanding.findOne({
+          tournamentId: id,
+          seasonId: seasonId,
+        });
+        if (TeamseasonStanding) {
+          const season = TeamseasonStanding.seasons.find(
+            (season) => season.seasonId === seasonId
+          );
+          if (season) {
+            data = season.data;
+          } else {
+            data = await service.getSeasonStandingsByTeams(id, seasonId);
+          }
+        }
       } else {
         data = await service.getSeasonStandingsByTeams(id, seasonId);
         cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
@@ -38,6 +52,12 @@ const getSeasonStandingsByTeams = async (req, res, next) => {
       {
         $project: {
           name: { $arrayElemAt: ["$seasons.data.tournament.name", 0] },
+          uniqueTournamentName: {
+            $arrayElemAt: ["$seasons.data.tournament.uniqueTournament.name", 0],
+          },
+          uniqueTournamentId: {
+            $arrayElemAt: ["$seasons.data.tournament.uniqueTournament.id", 0],
+          },
           id: { $arrayElemAt: ["$seasons.data.tournament.id", 0] },
           rows: {
             $map: {
