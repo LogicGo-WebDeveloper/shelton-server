@@ -1275,7 +1275,9 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
             const uniqueEvents = newData.events.filter(
               (event) => !existingEvents.includes(event.id)
             );
+
             findMatches.data.push(...uniqueEvents);
+
             await leagueMatchesData.save();
             data = findMatches.data;
           }
@@ -1287,6 +1289,14 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
             adjustedPage
           );
           cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
+
+          for (const match of data.events) {
+            const homeTeamId = match.homeTeam.id;
+            const awayTeamId = match.awayTeam.id;
+            match.homeTeam.image = await getImageUrl(homeTeamId);
+            match.awayTeam.image = await getImageUrl(awayTeamId);
+          }
+
           leagueMatchesData.seasons.push({ seasonId, data: data.events });
           await leagueMatchesData.save();
         }
