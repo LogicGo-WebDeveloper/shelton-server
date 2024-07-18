@@ -41,14 +41,13 @@ const getTournamentById = async (req, res, next) => {
           if (response.status !== 200) {
             filename = null;
           } else {
-            filename = baseUrl
+            filename = baseUrl;
           }
           // console.log({ id }, "==> free");
         } catch (error) {
-          
           image = await service.getTournamentImage(id);
           // console.log({ id }, "==> paid");
-          if(image){
+          if (image) {
             await uploadFile({
               filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
               file: image,
@@ -122,7 +121,7 @@ const getTournamentById = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    console.log(error); 
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
@@ -1291,6 +1290,14 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
             adjustedPage
           );
           cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
+
+          for (const match of data.events) {
+            const homeTeamId = match.homeTeam.id;
+            const awayTeamId = match.awayTeam.id;
+            match.homeTeam.image = await getImageUrl(homeTeamId);
+            match.awayTeam.image = await getImageUrl(awayTeamId);
+          }
+
           leagueMatchesData.seasons.push({ seasonId, data: data.events });
           await leagueMatchesData.save();
         }
