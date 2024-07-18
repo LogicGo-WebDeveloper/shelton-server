@@ -8,6 +8,7 @@ import PlayerMatches from "./models/playerMatchesSchema.js";
 import PlayerNationalTeamStatistics from "./models/playerNationalTeamStatisticsSchema.js";
 import config from "../../config/config.js";
 import { uploadFile } from "../../helper/aws_s3.js";
+import FavouritePlayerDetails from "../favourite/models/favouritePlayerDetails.js";
 const folderName = "player";
 
 const getPlayerDetailsById = async (req, res, next) => {
@@ -64,7 +65,15 @@ const getPlayerDetailsById = async (req, res, next) => {
     }
 
     const teamPlayerData = await PlayerDetails.aggregate([
-      { $match: { PlayerId: id } },
+      { $match: { PlayerId: id } }, // Match documents in PlayerDetails by PlayerId
+      {
+        $lookup: {
+          from: "FavouritePlayerDetails", // Collection name of FavouritePlayerDetails
+          localField: "_id", // Field from PlayerDetails collection to match
+          foreignField: "playerId", // Field from FavouritePlayerDetails collection to match
+          as: "favouritePlayerDetails",
+        },
+      },
       {
         $project: {
           players: {
@@ -72,7 +81,7 @@ const getPlayerDetailsById = async (req, res, next) => {
               input: "$data.player",
               as: "playerObj",
               in: {
-                _id: "$_id", // Include MongoDB _id here
+                _id: "$_id", // Include MongoDB _id of PlayerDetails here
                 playerName: "$$playerObj.name",
                 position: "$$playerObj.position",
                 id: "$$playerObj.id",
@@ -85,12 +94,18 @@ const getPlayerDetailsById = async (req, res, next) => {
                 nationality: "$$playerObj.country.alpha3",
                 image: "$image",
                 teamName: "$$playerObj.team.name",
+                // Include favourite player details if needed
               },
             },
           },
         },
       },
     ]);
+
+    // Assuming you want to retrieve the result
+    console.log(teamPlayerData);
+
+    // Assuming you want to retrieve the result
 
     return apiResponse({
       res,

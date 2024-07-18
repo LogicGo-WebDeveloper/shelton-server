@@ -582,6 +582,14 @@ const getTeamDetails = async (req, res, next) => {
       const aggregatedData = await TeamDetails.aggregate([
         { $match: { teamId: req.params.id } },
         {
+          $lookup: {
+            from: "FavouriteTeamDetails", // Collection name of FavouritePlayerDetails
+            localField: "_id", // Field from PlayerDetails collection to match
+            foreignField: "teamId", // Field from FavouritePlayerDetails collection to match
+            as: "favouriteTeamDetails",
+          },
+        },
+        {
           $project: {
             _id: 1,
             teamId: "$teamId",
