@@ -26,7 +26,6 @@ import { uploadFile } from "../../helper/aws_s3.js";
 const getOverDetailsById = async (req, res, next) => {
   try {
     const { matchId, homeTeamId, awayTeamId } = req.query;
-    console.log(req.query);
     let data;
 
     const teamTopPlayers = await MatchesOvers.findOne({
@@ -36,7 +35,7 @@ const getOverDetailsById = async (req, res, next) => {
     });
 
     if (teamTopPlayers) {
-      data = teamTopPlayers;
+      data = teamTopPlayers.data.incidents;
     } else {
       data = await service.getOvers(matchId);
 
@@ -47,12 +46,13 @@ const getOverDetailsById = async (req, res, next) => {
         data: data,
       });
       await overssEntry.save();
+      data = data.incidents;
     }
 
-    const filterHomeTeam = data.data.incidents?.filter(
+    const filterHomeTeam = data?.filter(
       (incident) => incident.battingTeamId == homeTeamId
     );
-    const filterAwayTeam = data.data.incidents?.filter(
+    const filterAwayTeam = data?.filter(
       (incident) => incident.battingTeamId == awayTeamId
     );
     const filteredOvers = {
@@ -151,7 +151,7 @@ const getSquadDetailsById = async (req, res, next) => {
     const scoreCard = await MatchesSquad.findOne({ matchId });
 
     if (scoreCard) {
-      data = scoreCard;
+      data = scoreCard.data;
     } else {
       data = await service.getSquad(matchId);
 
@@ -213,12 +213,12 @@ const getSquadDetailsById = async (req, res, next) => {
 
     const filteredSquad = {
       home: {
-        players: filterPlayerData(data.data.home.players),
-        supportStaff: data.data.home.supportStaff,
+        players: filterPlayerData(data.home.players),
+        supportStaff: data.home.supportStaff,
       },
       away: {
-        players: filterPlayerData(data.data.away.players),
-        supportStaff: data.data.away.supportStaff,
+        players: filterPlayerData(data.away.players),
+        supportStaff: data.away.supportStaff,
       },
     };
 
@@ -269,7 +269,6 @@ const getSingleMatchDetail = async (req, res, next) => {
       const folderName = "team";
       let filename;
       const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
-      console.log(baseUrl);
 
       // Check if the image URL already exists
       try {
@@ -334,11 +333,13 @@ const getSingleMatchDetail = async (req, res, next) => {
       }
     }
 
-    const filteredMatchDetails = filterLiveMatchData(data.data.event, data._id);
+    let allData = data.data ? data.data.event : data.event;
+
+    const filteredMatchDetails = filterLiveMatchData(allData, data._id);
     if (decodedToken?.userId) {
       await helper.storeRecentMatch(
         decodedToken?.userId,
-        data?.event?.tournament?.category?.sport?.slug,
+        data?.data?.event?.tournament?.category?.sport?.slug,
         filteredMatchDetails
       );
     }
