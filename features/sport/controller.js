@@ -72,19 +72,19 @@ const getCountryLeagueList = async (req, res, next) => {
 
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
-        const fetchAllCategories = async () => {
-          const promises = data.map(async (item) => {
-            const response = await sportService.getLeagueTournamentList(
-              item.id
-            );
-            item.tournamentlist = response;
-            return item;
-          });
+        // const fetchAllCategories = async () => {
+        //   const promises = data.map(async (item) => {
+        //     const response = await sportService.getLeagueTournamentList(
+        //       item.id
+        //     );
+        //     item.tournamentlist = response;
+        //     return item;
+        //   });
 
-          const results = await Promise.all(promises);
-          return results;
-        };
-        data = await fetchAllCategories();
+        //   const results = await Promise.all(promises);
+        //   return results;
+        // };
+        // data = await fetchAllCategories();
 
         const newCountryLeagueListEntry = new CountryLeagueList({
           sport,
