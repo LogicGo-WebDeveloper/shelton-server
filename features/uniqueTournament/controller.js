@@ -29,7 +29,7 @@ const getTournamentById = async (req, res, next) => {
       } else {
         // Fetch data from the API
         data = await service.getTournamentById(id);
-        const name = id;
+        const name = data?.id;
         const folderName = "tournaments";
 
         let filename;
