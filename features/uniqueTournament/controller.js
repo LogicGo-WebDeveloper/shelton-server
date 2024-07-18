@@ -47,12 +47,14 @@ const getTournamentById = async (req, res, next) => {
         } catch (error) {
           image = await service.getTournamentImage(id);
           // console.log({ id }, "==> paid");
-          await uploadFile({
-            filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-            file: image,
-            ACL: "public-read",
-          });
-          filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+          if (image) {
+            await uploadFile({
+              filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+              file: image,
+              ACL: "public-read",
+            });
+            filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+          }
         }
 
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
@@ -61,7 +63,7 @@ const getTournamentById = async (req, res, next) => {
         const tournamentEntry = new Tournament({
           tournamentId: id,
           data,
-          image: filename,
+          image: filename ? filename : null,
         });
         await tournamentEntry.save();
       }
@@ -113,7 +115,7 @@ const getTournamentById = async (req, res, next) => {
 
     return apiResponse({
       res,
-      body: modifyData[0]?.data[0],
+      data: modifyData[0]?.data[0],
       status: true,
       message: "unique tournament fetched successfully",
       statusCode: StatusCodes.OK,
@@ -1309,7 +1311,7 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
           id,
           seasonId,
           span,
-          0
+          adjustedPage
         );
 
         const leagueMatchesEntry = new LeagueMatches({
