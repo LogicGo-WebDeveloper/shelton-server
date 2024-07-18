@@ -21,7 +21,6 @@ const getPlayerDetailsById = async (req, res, next) => {
     let image = cacheService.getCache(key);
 
     if (!data) {
-      data = await service.getPlayerById(id);
       const players = await PlayerDetails.findOne({ PlayerId: id });
 
       if (players) {
@@ -51,6 +50,8 @@ const getPlayerDetailsById = async (req, res, next) => {
           });
           filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
         }
+
+        data = await service.getPlayerById(id);
 
         const playerEntry = new PlayerDetails({
           PlayerId: id,
@@ -108,7 +109,7 @@ const getPlayerDetailsById = async (req, res, next) => {
 
     return apiResponse({
       res,
-      data: teamPlayerData[0].players[0],
+      data: teamPlayerData[0]?.players[0],
       status: true,
       message: "Player details fetched successfully",
       statusCode: StatusCodes.OK,

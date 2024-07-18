@@ -729,6 +729,7 @@ const getTeamPLayers = async (req, res, next) => {
     };
 
     const processAllPlayerImages = async (data) => {
+
       const categories = ["players", "foreignPlayers", "nationalPlayers"];
       for (const category of categories) {
         if (data[category]) {
@@ -738,7 +739,7 @@ const getTeamPLayers = async (req, res, next) => {
     };
 
     if (!data) {
-      data = await service.getTeamPLayers(req.params);
+      // data = await service.getTeamPLayers(req.params);
 
       const teamPlayerData = await PlayerTeam.findOne({
         teamId: req.params.id,
@@ -749,6 +750,7 @@ const getTeamPLayers = async (req, res, next) => {
       } else {
         // Fetch data from the API
         data = await service.getTeamPLayers(req.params);
+        console.log("data", data)
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
         // Process player images
