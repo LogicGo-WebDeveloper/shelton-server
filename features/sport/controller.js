@@ -42,9 +42,10 @@ const getCountryLeagueList = async (req, res, next) => {
               try {
                 const response = await fetch(baseUrl);
                 if (response.status !== 200) {
-                  throw new Error("Image not found");
+                  item.image = null;
+                } else {
+                  item.image = baseUrl;
                 }
-                item.image = baseUrl;
                 // console.log({ identifier }, "==>> free");
               } catch (error) {
                 const response = await axiosInstance.get(
@@ -71,19 +72,19 @@ const getCountryLeagueList = async (req, res, next) => {
 
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
-        const fetchAllCategories = async () => {
-          const promises = data.map(async (item) => {
-            const response = await sportService.getLeagueTournamentList(
-              item.id
-            );
-            item.tournamentlist = response;
-            return item;
-          });
+        // const fetchAllCategories = async () => {
+        //   const promises = data.map(async (item) => {
+        //     const response = await sportService.getLeagueTournamentList(
+        //       item.id
+        //     );
+        //     item.tournamentlist = response;
+        //     return item;
+        //   });
 
-          const results = await Promise.all(promises);
-          return results;
-        };
-        data = await fetchAllCategories();
+        //   const results = await Promise.all(promises);
+        //   return results;
+        // };
+        // data = await fetchAllCategories();
 
         const newCountryLeagueListEntry = new CountryLeagueList({
           sport,
