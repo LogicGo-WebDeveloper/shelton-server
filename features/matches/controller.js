@@ -269,15 +269,15 @@ const getSingleMatchDetail = async (req, res, next) => {
       const folderName = "team";
       let filename;
       const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+      console.log(baseUrl);
 
       // Check if the image URL already exists
       try {
         const response = await fetch(baseUrl);
         if (response.status !== 200) {
           filename = null;
-        } else {
-          filename = baseUrl;
         }
+        filename = baseUrl;
         console.log({ teamId }, "==> free");
       } catch (error) {
         const image = await service.getTeamImages(teamId);
@@ -303,9 +303,22 @@ const getSingleMatchDetail = async (req, res, next) => {
       } else {
         const apiData = await service.getSingleMatchDetail(id);
 
+        // Check if apiData is valid before accessing its properties
+        if (
+          !apiData ||
+          !apiData.event ||
+          !apiData.event.homeTeam ||
+          !apiData.event.awayTeam
+        ) {
+          throw new Error("API data structure is incomplete or incorrect");
+        }
+
+        let homeId = apiData.event.homeTeam.id;
+        let awayId = apiData.event.awayTeam.id;
+
         // Fetch image URLs for home and away teams
-        const homeTeamImageUrl = await getImageUrl(apiData.event.homeTeam.id);
-        const awayTeamImageUrl = await getImageUrl(apiData.event.awayTeam.id);
+        const homeTeamImageUrl = await getImageUrl(homeId);
+        const awayTeamImageUrl = await getImageUrl(awayId);
 
         // Add image URLs to the team data
         apiData.event.homeTeam.image = homeTeamImageUrl;
@@ -321,7 +334,7 @@ const getSingleMatchDetail = async (req, res, next) => {
       }
     }
 
-    const filteredMatchDetails = filterLiveMatchData(data);
+    const filteredMatchDetails = filterLiveMatchData(data.data.event, data._id);
     if (decodedToken?.userId) {
       await helper.storeRecentMatch(
         decodedToken?.userId,
@@ -338,7 +351,7 @@ const getSingleMatchDetail = async (req, res, next) => {
     });
   } catch (error) {
     console.log(error);
-    if (error.response.status === 404) {
+    if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
         status: true,
@@ -547,6 +560,7 @@ const getStandingsDetailsById = async (req, res, next) => {
 };
 
 const getMatchesScreenDetailsById = async (req, res, next) => {
+  // console.log(11);
   try {
     const { customId } = req.params;
     const key = cacheService.getCacheKey(req);
@@ -591,6 +605,8 @@ const getMatchesScreenDetailsById = async (req, res, next) => {
         const apiData = await service.getMatches(customId);
 
         for (const event of apiData.events) {
+          // console.log("event", event);
+
           event.homeTeam.image = await getImageUrl(event.homeTeam.id);
           event.awayTeam.image = await getImageUrl(event.awayTeam.id);
         }
@@ -605,7 +621,8 @@ const getMatchesScreenDetailsById = async (req, res, next) => {
       }
     }
 
-    const filteredMatches = data.events.map(filterLiveMatchData);
+    const filteredMatches = data?.events?.map(filterLiveMatchData);
+    console.log(filteredMatches);
 
     return apiResponse({
       res,

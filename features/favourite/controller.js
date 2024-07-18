@@ -83,8 +83,8 @@ const favouriteMatcheslist = async (req, res, next) => {
 
     // Map through favoriteMatchList to reshape data
     const reshapedData = favoriteMatchList.map((favourite) => {
-      console.log(favourite);
       return {
+        _id: favourite.matchesId._id,
         tournament: {
           name: favourite.matchesId.data.event.tournament.name,
           slug: favourite.matchesId.data.event.tournament.slug,
@@ -159,6 +159,7 @@ const favouriteMatcheslist = async (req, res, next) => {
         umpire2Name: favourite.matchesId.data.event.umpire2Name,
         winnerCode: favourite.matchesId.data.event.winnerCode,
         id: favourite.matchesId.data.event.id,
+        is_favourite: favourite.status,
       };
     });
 
@@ -282,10 +283,12 @@ const favouritePlayerlist = async (req, res, next) => {
     const reshapedData = favoritePlayerList.map((favourite) => {
       return {
         player: {
+          _id: favourite.playerId._id,
           name: favourite.playerId.data[0].player.name,
           slug: favourite.playerId.data[0].player.slug,
           id: favourite.playerId.data[0].player.id,
           position: favourite.playerId.data[0].player.position,
+          is_favourite: favourite.status,
 
           // category: {
           //   name: favourite.playerId.data.player.category.name,
@@ -478,10 +481,12 @@ const favouriteTeamList = async (req, res, next) => {
     const reshapedData = favoriteTeamList.map((favourite) => {
       return {
         team: {
+          _id: favourite.teamId._id,
           name: favourite.teamId.data.team.name,
           slug: favourite.teamId.data.team.slug,
           id: favourite.teamId.data.team.id,
           shortName: favourite.teamId.data.team.shortName,
+          is_favourite: favourite.status,
           // category: {
           //   name: favourite.teamId.data.player.category.name,
           //   slug: favourite.playerId.data.player.category.slug,
@@ -672,13 +677,16 @@ const favouriteLeagueList = async (req, res, next) => {
 
     // Map through favoriteMatchList to reshape data
     const reshapedData = favoriteTeamList.map((favourite) => {
+      console.log(favourite);
       return {
-        team: {
+        league: {
+          _id: favourite.leagueId._id,
           name: favourite.leagueId.data[0].name,
           slug: favourite.leagueId.data[0].slug,
           id: favourite.leagueId.data[0].id,
           categoryName: favourite.leagueId.data[0].category.name,
           sportName: favourite.leagueId.data[0].category.sport.name,
+          is_favourite: favourite.status,
 
           // category: {
           //   name: favourite.teamId.data.player.category.name,
