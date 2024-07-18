@@ -1299,7 +1299,7 @@ const getSeasonMatchesByTournament = async (req, res, next) => {
           id,
           seasonId,
           span,
-          0
+          adjustedPage
         );
 
         const leagueMatchesEntry = new LeagueMatches({
