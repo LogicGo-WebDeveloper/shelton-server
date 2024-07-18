@@ -7,12 +7,9 @@ export const convertSportListToArray = (sportList) => {
   }));
 };
 
-export const filterLiveMatchData = (data) => {
-  // console.log(data.data.event);
-  let match = data.data.event;
-
+export const filterLiveMatchData = (match, _id) => {
   return {
-    _id: data._id,
+    _id: _id ? _id : undefined,
     tournament: {
       name: match?.tournament?.name || null,
       slug: match?.tournament?.slug || null,

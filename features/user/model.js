@@ -8,6 +8,11 @@ const schema = new mongoose.Schema(
       lowercase: true,
       default: null,
     },
+    name: {
+      type: String,
+      lowercase: true,
+      default: null,
+    },
     mobileNumber: {
       type: String,
       default: null,

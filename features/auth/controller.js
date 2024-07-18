@@ -30,8 +30,10 @@ const verifyToken = async (req, res) => {
 };
 
 const registerByEmail = async (req, res) => {
+  console.log(11);
   try {
-    const { email, password } = req.body;
+    const { email, password, name } = req.body;
+    console.log(name);
 
     // find user by email
     const user = await userService.findOne({
@@ -65,6 +67,7 @@ const registerByEmail = async (req, res) => {
       password: hashPassword,
       provider: enums.authProviderEnum.EMAIL,
       otp: otp,
+      name: name,
       otpExpiresAt: otpExpiresAt,
     };
 
@@ -133,7 +136,7 @@ const registerByMobile = async (req, res) => {
     console.log(error);
     return apiResponse({
       res,
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       status: false,
       message: "Internal server error",
     });
@@ -189,6 +192,7 @@ const loginByEmail = async (req, res) => {
         role: user.role,
         email: user.email,
         mobileNumber: user.mobileNumber,
+        name: user.name,
       },
     };
 
@@ -758,7 +762,6 @@ const resetPassword = async (req, res) => {
     });
   }
 };
-
 
 export default {
   registerByEmail,

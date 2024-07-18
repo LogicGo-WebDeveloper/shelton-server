@@ -599,7 +599,6 @@ const getRecentMatches = async (req, res, next) => {
         const userRecentMatches = userAllRecentMatches?.data?.find(
           (item) => item.sport === sport
         );
-        console.log("userRecentMatches", userRecentMatches?.data);
         recentMatches = userRecentMatches?.data;
       }
     }
