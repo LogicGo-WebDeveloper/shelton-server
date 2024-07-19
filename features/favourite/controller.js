@@ -79,7 +79,6 @@ const favouriteMatcheslist = async (req, res, next) => {
         select: "data",
       })
       .exec();
-    console.log(favoriteMatchList);
 
     // Map through favoriteMatchList to reshape data
     const reshapedData = favoriteMatchList.map((favourite) => {
@@ -677,7 +676,6 @@ const favouriteLeagueList = async (req, res, next) => {
 
     // Map through favoriteMatchList to reshape data
     const reshapedData = favoriteTeamList.map((favourite) => {
-      console.log(favourite);
       return {
         league: {
           _id: favourite.leagueId._id,

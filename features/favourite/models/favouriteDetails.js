@@ -1,7 +1,10 @@
 import mongoose from "mongoose";
 
 const FavouriteDetailsSchema = new mongoose.Schema({
-  matchesId: { type: String, required: true },
+  matchesId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "MatcheDetailsByMatchScreen",
+  },
   userId: { type: String, required: true },
   type: { type: String, required: true },
   status: { type: Boolean, required: true },

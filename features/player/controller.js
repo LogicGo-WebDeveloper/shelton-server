@@ -51,7 +51,7 @@ const getPlayerDetailsById = async (req, res, next) => {
       { $match: { PlayerId: id } }, // Match documents in PlayerDetails by PlayerId
       {
         $lookup: {
-          from: "FavouritePlayerDetails", // Collection name of FavouritePlayerDetails
+          from: "favouriteplayerdetails", // Collection name of FavouritePlayerDetails
           localField: "_id", // Field from PlayerDetails collection to match
           foreignField: "playerId", // Field from FavouritePlayerDetails collection to match
           as: "favouritePlayerDetails",
@@ -64,6 +64,21 @@ const getPlayerDetailsById = async (req, res, next) => {
               input: "$data.player",
               as: "playerObj",
               in: {
+                favouritePlayerDetails: {
+                  $arrayElemAt: [
+                    {
+                      $map: {
+                        input: "$favouritePlayerDetails",
+                        as: "favPlayer",
+                        in: {
+                          is_favourite: "$$favPlayer.status",
+                          // Include other fields from FavouritePlayerDetails if needed
+                        },
+                      },
+                    },
+                    0,
+                  ],
+                },
                 _id: "$_id", // Include MongoDB _id of PlayerDetails here
                 playerName: "$$playerObj.name",
                 position: "$$playerObj.position",
@@ -86,10 +101,6 @@ const getPlayerDetailsById = async (req, res, next) => {
     ]);
 
     // Assuming you want to retrieve the result
-    // console.log(teamPlayerData);
-
-    // Assuming you want to retrieve the result
-
     return apiResponse({
       res,
       data: teamPlayerData[0]?.players[0],

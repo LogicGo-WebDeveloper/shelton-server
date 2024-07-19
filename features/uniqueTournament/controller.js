@@ -13,6 +13,7 @@ import { uploadFile } from "../../helper/aws_s3.js";
 import config from "../../config/config.js";
 
 const getTournamentById = async (req, res, next) => {
+  console.log(11);
   try {
     const { id } = req.params;
 
@@ -29,7 +30,7 @@ const getTournamentById = async (req, res, next) => {
         file: image,
         ACL: "public-read",
       });
-      return filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+      return (filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`);
     };
 
     if (!data) {
@@ -37,12 +38,12 @@ const getTournamentById = async (req, res, next) => {
       const tournament = await Tournament.findOne({ tournamentId: id });
       if (tournament) {
         data = tournament.data;
-        image = tournament.image;
+        // image = tournament.image;
       } else {
         // Fetch data from the API
         data = await service.getTournamentById(id);
 
-        if(data){
+        if (data) {
           const tournamentId = data.id;
           data.image = await getImageUrl(tournamentId);
         }
@@ -62,6 +63,14 @@ const getTournamentById = async (req, res, next) => {
     const modifyData = await Tournament.aggregate([
       { $match: { tournamentId: id } },
       {
+        $lookup: {
+          from: "favouriteleaguedetails", // Collection name of FavouritePlayerDetails
+          localField: "_id", // Field from PlayerDetails collection to match
+          foreignField: "leagueId", // Field from FavouritePlayerDetails collection to match
+          as: "favouriteleaguedetails",
+        },
+      },
+      {
         $project: {
           image: 1,
           data: {
@@ -69,6 +78,21 @@ const getTournamentById = async (req, res, next) => {
               input: "$data",
               as: "dataObj",
               in: {
+                favouriteleaguedetails: {
+                  $arrayElemAt: [
+                    {
+                      $map: {
+                        input: "$favouriteleaguedetails",
+                        as: "favLeague",
+                        in: {
+                          is_favourite: "$$favLeague.status",
+                          // Include other fields from FavouritePlayerDetails if needed
+                        },
+                      },
+                    },
+                    0,
+                  ],
+                },
                 _id: "$_id",
                 name: "$$dataObj.name",
                 slug: "$$dataObj.slug",
@@ -102,6 +126,8 @@ const getTournamentById = async (req, res, next) => {
         },
       },
     ]);
+
+    console.log(modifyData);
 
     return apiResponse({
       res,
@@ -189,7 +215,6 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
     let data = cacheService.getCache(key);
     // let image = cacheService.getCache(key);
 
-
     const getImageUrl = async (teamId) => {
       const name = teamId;
       const folderName = "team";
@@ -226,7 +251,7 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
 
       if (featuredMatches) {
         data = featuredMatches.data;
-        image = featuredMatches.image;
+        // image = featuredMatches.image;
       } else {
         data = await service.getLeagueFeaturedEventsByTournament(id);
         for (const item of data) {
@@ -347,6 +372,7 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,

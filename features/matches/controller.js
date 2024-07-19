@@ -22,6 +22,7 @@ import MatchesScreenMatches from "./models/matchesDetails.js";
 import helper from "../../helper/common.js";
 import config from "../../config/config.js";
 import { uploadFile } from "../../helper/aws_s3.js";
+import FavouriteDetails from "../favourite/models/favouriteDetails.js";
 
 const getOverDetailsById = async (req, res, next) => {
   try {
@@ -343,6 +344,11 @@ const getSingleMatchDetail = async (req, res, next) => {
         filteredMatchDetails
       );
     }
+    const isFavourite = await FavouriteDetails.find({
+      matchesId: data._id,
+    });
+    console.log(isFavourite);
+
     return apiResponse({
       res,
       data: filteredMatchDetails,
