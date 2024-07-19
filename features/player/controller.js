@@ -24,16 +24,15 @@ const getPlayerDetailsById = async (req, res, next) => {
       if (players) {
         data = players.data;
       } else {
-        const image = await service.getPlayerImage(id);
+        const image = await helper.getPlayerImage(id);
         let imageUrl;
           const folderName = "player"
           if (image) {
             await helper.uploadImageInS3Bucket(`${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${id}/image`, folderName, id);
             imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${id}`
           } else {
-            imageUrl = null;
+            imageUrl = "";
           }
-
         data = await service.getPlayerById(id);
         data.player.image = imageUrl;
 

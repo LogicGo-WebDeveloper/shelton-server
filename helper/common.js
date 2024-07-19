@@ -7,6 +7,7 @@ import RecentMatch from "../features/sport/models/recentMatchesSchema.js";
 import { createCanvas, loadImage } from 'canvas';
 import { S3Client, PutObjectCommand, ListBucketsCommand } from '@aws-sdk/client-s3';
 import { s3Client } from "../config/aws.config.js";
+import axiosInstance from "../config/axios.config.js";
 
 const paginationDetails = ({ page = 1, totalItems, limit }) => {
   const totalPages = Math.ceil(totalItems / limit);
@@ -139,25 +140,32 @@ const storeRecentMatch = async (userId, sport, matchData) => {
 };
 
 
-const getTopPlayersImage = async (playerId) => {
-  const { data } = await axiosInstance.get(`/api/v1/player/${playerId}/image`);
-
-  return data ?? [];
+const getPlayerImage = async (id) => {
+  try {
+    const { data } = await axiosInstance.get(`/api/v1/player/${id}/image`);
+    return data ?? [];
+  } catch (error) {
+    return null
+  }
 };
 
 
 const getTeamImages = async (teamId) => {
-  const { data } = await axiosInstance.get(`/api/v1/team/${teamId}/image`);
-
-  return data ?? [];
+  try {
+    const { data } = await axiosInstance.get(`/api/v1/team/${teamId}/image`);
+    return data ?? [];
+  } catch (error) {
+    return null
+  }
 };
 
 const getTournamentImage = async (id) => {
-  const { data } = await axiosInstance.get(
-    `/api/v1/unique-tournament/${id}/image`
-  );
-
-  return data ?? [];
+  try {
+    const { data } = await axiosInstance.get(`/api/v1/unique-tournament/${id}/image`);
+    return data ?? [];
+  } catch (error) {
+    return null
+  }
 };
 
 
@@ -235,7 +243,7 @@ export default {
   extractFileKey,
   webSocketServer,
   storeRecentMatch,
-  getTopPlayersImage,
+  getPlayerImage,
   getTeamImages,
   getTournamentImage,
   uploadImageInS3Bucket

@@ -28,7 +28,6 @@ const getPlayerImage = async (id) => {
   } catch (error) {
     return null
   }
-
 };
 
 export default {

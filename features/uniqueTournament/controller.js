@@ -11,6 +11,7 @@ import SeasonStanding from "./models/standingSchema.js";
 import LeagueMatches from "./models/leagueMatchesSchema.js";
 import { uploadFile } from "../../helper/aws_s3.js";
 import config from "../../config/config.js";
+import helper from "../../helper/common.js";
 
 const getTournamentById = async (req, res, next) => {
   try {
@@ -19,18 +20,18 @@ const getTournamentById = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
 
-    const getImageUrl = async (tournamentId) => {
-      const name = tournamentId;
-      const folderName = "tournaments";
-      let filename;
-      const image = await service.getTournamentImage(tournamentId);
-      await uploadFile({
-        filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-        file: image,
-        ACL: "public-read",
-      });
-      return (filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`);
-    };
+    // const getImageUrl = async (tournamentId) => {
+    //   const name = tournamentId;
+    //   const folderName = "tournaments";
+    //   let filename;
+    //   const image = await service.getTournamentImage(tournamentId);
+    //   await uploadFile({
+    //     filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
+    //     file: image,
+    //     ACL: "public-read",
+    //   });
+    //   return (filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`);
+    // };
 
     if (!data) {
       // Check if data exists in the database
@@ -40,13 +41,28 @@ const getTournamentById = async (req, res, next) => {
         // image = tournament.image;
       } else {
         // Fetch data from the API
+
+
         data = await service.getTournamentById(id);
 
-        if (data) {
-          const tournamentId = data.id;
-          data.image = await getImageUrl(tournamentId);
+
+        const image = await helper.getTournamentImage(data.id);
+        let imageUrl;
+        const folderName = "tournaments"
+        console.log("callinggggggggggggggg", image)
+        if (image) {
+          await helper.uploadImageInS3Bucket(`${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${id}/image`, folderName, data.id);
+          imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${data.id}`
+        } else {
+          console.log("____________")
+          imageUrl = "";
         }
 
+        // if (data) {
+        //   const tournamentId = data.id;
+        // }
+        
+        data.image = imageUrl;
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
         // Store the fetched data in the database

@@ -648,7 +648,7 @@ const getRecentMatches = async (req, res, next) => {
 
 const globalSearch = async (req, res, next) => {
   try {
-    const { type, text } = req.body;
+    const { type, text } = req.body; // Changed from req.query or req.params to req.body
     let data;
     if (type === "player") {
       const players = await PlayerDetails.aggregate([
@@ -680,7 +680,6 @@ const globalSearch = async (req, res, next) => {
         {
           $project: {
             team: {
-              //This data only sending null  because of frontend side use standing model
               position: { $ifNull: ["$data.team.position", null] },
               matches: { $ifNull: ["$data.team.matches", null] },
               draws: { $ifNull: ["$data.team.draws", null] },
@@ -689,8 +688,6 @@ const globalSearch = async (req, res, next) => {
               netRunRate: { $ifNull: ["$data.team.netRunRate", null] },
               noResult: { $ifNull: ["$data.team.noResult", null] },
               wins: { $ifNull: ["$data.team.wins", null] },
-
-              //The data is coming from here
               id: { $ifNull: ["$data.team.id", null] },
               shortName: { $ifNull: ["$data.team.shortName", null] },
               teamName: { $ifNull: ["$data.team.name", null] },
