@@ -9,6 +9,7 @@ import PlayerNationalTeamStatistics from "./models/playerNationalTeamStatisticsS
 import config from "../../config/config.js";
 import { uploadFile } from "../../helper/aws_s3.js";
 import FavouritePlayerDetails from "../favourite/models/favouritePlayerDetails.js";
+import helper from "../../helper/common.js"
 const folderName = "player";
 
 const getPlayerDetailsById = async (req, res, next) => {
@@ -18,44 +19,26 @@ const getPlayerDetailsById = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
 
     let data = cacheService.getCache(key);
-    let image = cacheService.getCache(key);
-
     if (!data) {
       const players = await PlayerDetails.findOne({ PlayerId: id });
-
       if (players) {
         data = players.data;
       } else {
-        const name = id;
-        let filename;
-        const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
-
-        // Check if the image URL already exists
-        try {
-          const response = await fetch(baseUrl);
-          if (response.status !== 200) {
-            filename = null;
+        const image = await service.getPlayerImage(id);
+        let imageUrl;
+          const folderName = "player"
+          if (image) {
+            await helper.uploadImageInS3Bucket(`${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${id}/image`, folderName, id);
+            imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${id}`
           } else {
-            filename = baseUrl;
+            imageUrl = null;
           }
 
-          // console.log({ id }, "==> free");
-        } catch (error) {
-          image = await service.getPlayerImage(id);
-          // console.log({ id }, "==> paid");
-          await uploadFile({
-            filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-            file: image,
-            ACL: "public-read",
-          });
-          filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
-        }
-
         data = await service.getPlayerById(id);
+        data.player.image = imageUrl;
 
         const playerEntry = new PlayerDetails({
           PlayerId: id,
-          image: filename,
           data,
         });
         await playerEntry.save();
@@ -92,7 +75,7 @@ const getPlayerDetailsById = async (req, res, next) => {
                 playerQuality: "$$playerObj.cricketPlayerInfo.bowling",
                 battingQuality: "$$playerObj.cricketPlayerInfo.batting",
                 nationality: "$$playerObj.country.alpha3",
-                image: "$image",
+                image: "$$playerObj.image",
                 teamName: "$$playerObj.team.name",
                 // Include favourite player details if needed
               },
@@ -103,7 +86,7 @@ const getPlayerDetailsById = async (req, res, next) => {
     ]);
 
     // Assuming you want to retrieve the result
-    console.log(teamPlayerData);
+    // console.log(teamPlayerData);
 
     // Assuming you want to retrieve the result
 

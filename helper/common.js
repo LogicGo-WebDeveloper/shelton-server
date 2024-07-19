@@ -4,6 +4,9 @@ import moment from "moment";
 import enums from "../config/enum.js";
 import WebSocket from "ws";
 import RecentMatch from "../features/sport/models/recentMatchesSchema.js";
+import { createCanvas, loadImage } from 'canvas';
+import { S3Client, PutObjectCommand, ListBucketsCommand } from '@aws-sdk/client-s3';
+import { s3Client } from "../config/aws.config.js";
 
 const paginationDetails = ({ page = 1, totalItems, limit }) => {
   const totalPages = Math.ceil(totalItems / limit);
@@ -136,6 +139,91 @@ const storeRecentMatch = async (userId, sport, matchData) => {
 };
 
 
+const getTopPlayersImage = async (playerId) => {
+  const { data } = await axiosInstance.get(`/api/v1/player/${playerId}/image`);
+
+  return data ?? [];
+};
+
+
+const getTeamImages = async (teamId) => {
+  const { data } = await axiosInstance.get(`/api/v1/team/${teamId}/image`);
+
+  return data ?? [];
+};
+
+const getTournamentImage = async (id) => {
+  const { data } = await axiosInstance.get(
+    `/api/v1/unique-tournament/${id}/image`
+  );
+
+  return data ?? [];
+};
+
+
+async function checkBucketExists(bucketName) {
+  try {
+    const data = await s3Client.send(new ListBucketsCommand({}));
+    const bucketExists = data.Buckets.some(bucket => bucket.Name === bucketName);
+    if (!bucketExists) {
+      return false;
+    }
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+// Function to convert image from URL to PNG or JPEG and upload to S3
+async function uploadImageInS3Bucket(url, folderName, id) {
+  const format = "png"
+  const bucketName = "guardianshot"
+  const key = `shelton-score-app/${folderName}/${id}`
+  try {
+    const bucketExists = await checkBucketExists(bucketName);
+    if (!bucketExists) return;
+    // Load image from URL
+
+    const img = await loadImage(url);
+    
+    // Create a canvas element
+    const canvas = createCanvas(img.width, img.height);
+    const ctx = canvas.getContext('2d');
+    
+    // Draw image onto canvas
+    ctx.drawImage(img, 0, 0);
+    
+    // Convert canvas to PNG or JPEG
+    let buffer;
+    if (format === 'png') {
+      buffer = canvas.toBuffer('image/png');
+    } else if (format === 'jpeg' || format === 'jpg') {
+      buffer = canvas.toBuffer('image/jpeg');
+    } else {
+      console.error('Unsupported format:', format);
+      return;
+    }
+    
+    // Upload to S3 with public read access
+    const params = {
+      Bucket: bucketName,
+      Key: key,
+      Body: buffer,
+      ContentType: format === 'png' ? 'image/png' : 'image/jpeg',
+      ACL: 'public-read'
+    };
+
+    const command = new PutObjectCommand(params);
+    await s3Client.send(command);
+  } catch (err) {
+    if (err.Code === 'NoSuchBucket') {
+      console.error(`Bucket "${bucketName}" does not exist. Please create the bucket or check the bucket name.`);
+    } else {
+      console.error('Error:', err);
+    }
+  }
+}
+
 
 export default {
   generateOTP,
@@ -146,5 +234,9 @@ export default {
   calculatePrice,
   extractFileKey,
   webSocketServer,
-  storeRecentMatch
+  storeRecentMatch,
+  getTopPlayersImage,
+  getTeamImages,
+  getTournamentImage,
+  uploadImageInS3Bucket
 };
