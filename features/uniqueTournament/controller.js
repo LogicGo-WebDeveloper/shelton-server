@@ -94,37 +94,21 @@ const getTournamentById = async (req, res, next) => {
               as: "dataObj",
               in: {
                 favouriteleaguedetails: {
-                  $arrayElemAt: [
-                    {
-                      $map: {
-                        input: "$favouriteleaguedetails",
-                        as: "favLeague",
-                        in: {
-                          is_favourite: "$$favLeague.status",
-                          // Include other fields from FavouritePlayerDetails if needed
-                        },
-                      },
+                  $cond: {
+                    if: {
+                      $gt: [{ $size: "$favouriteleaguedetails" }, 0],
                     },
-                    0,
-                  ],
+                    then: {
+                      is_favourite: {
+                        $arrayElemAt: ["$favouriteleaguedetails.status", 0],
+                      },
+                      // Include other fields from FavouritePlayerDetails if needed
+                    },
+                    else: {
+                      is_favourite: false,
+                    },
+                  },
                 },
-
-                // favouriteTeamDetails: {
-                //   $cond: {
-                //     if: {
-                //       $gt: [{ $size: "$favouriteleaguedetails" }, 0],
-                //     },
-                //     then: {
-                //       is_favourite: {
-                //         $arrayElemAt: ["$favouriteleaguedetails.status", 0],
-                //       },
-                //       // Include other fields from FavouritePlayerDetails if needed
-                //     },
-                //     else: {
-                //       is_favourite: false,
-                //     },
-                //   },
-                // },
                 _id: "$_id",
                 name: "$$dataObj.name",
                 slug: "$$dataObj.slug",

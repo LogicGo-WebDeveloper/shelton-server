@@ -7,7 +7,8 @@ export const convertSportListToArray = (sportList) => {
   }));
 };
 
-export const filterLiveMatchData = (match, _id) => {
+export const filterLiveMatchData = (match, _id, isFavourite) => {
+  let isAllfavourite = isFavourite ? isFavourite.status : false;
   return {
     _id: _id ? _id : undefined,
     tournament: {
@@ -20,6 +21,9 @@ export const filterLiveMatchData = (match, _id) => {
         country: match?.tournament?.category?.country || null,
       },
       id: match?.tournament?.id || null,
+    },
+    favouriteMatchDetails: {
+      is_favourite: isAllfavourite ? isAllfavourite : false,
     },
     customId: match?.customId || null,
     season: {

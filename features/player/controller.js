@@ -9,7 +9,7 @@ import PlayerNationalTeamStatistics from "./models/playerNationalTeamStatisticsS
 import config from "../../config/config.js";
 import { uploadFile } from "../../helper/aws_s3.js";
 import FavouritePlayerDetails from "../favourite/models/favouritePlayerDetails.js";
-import helper from "../../helper/common.js"
+import helper from "../../helper/common.js";
 const folderName = "player";
 
 const getPlayerDetailsById = async (req, res, next) => {
