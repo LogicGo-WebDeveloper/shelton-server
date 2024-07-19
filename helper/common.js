@@ -186,7 +186,7 @@ async function checkBucketExists(bucketName) {
 async function uploadImageInS3Bucket(url, folderName, id) {
   const format = "png"
   const bucketName = "guardianshot"
-  const key = `shelton-score-app/${folderName}/${id}`
+  const key = `${process.env.DIGITAL_OCEAN_DIRNAME}/${folderName}/${id}`
   try {
     const bucketExists = await checkBucketExists(bucketName);
     if (!bucketExists) return;

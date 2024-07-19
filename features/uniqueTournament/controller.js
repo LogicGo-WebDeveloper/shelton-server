@@ -20,48 +20,24 @@ const getTournamentById = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
 
-    // const getImageUrl = async (tournamentId) => {
-    //   const name = tournamentId;
-    //   const folderName = "tournaments";
-    //   let filename;
-    //   const image = await service.getTournamentImage(tournamentId);
-    //   await uploadFile({
-    //     filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-    //     file: image,
-    //     ACL: "public-read",
-    //   });
-    //   return (filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`);
-    // };
-
     if (!data) {
       // Check if data exists in the database
       const tournament = await Tournament.findOne({ tournamentId: id });
       if (tournament) {
         data = tournament.data;
-        // image = tournament.image;
       } else {
-        // Fetch data from the API
-
-
         data = await service.getTournamentById(id);
-
 
         const image = await helper.getTournamentImage(data.id);
         let imageUrl;
         const folderName = "tournaments"
-        console.log("callinggggggggggggggg", image)
         if (image) {
           await helper.uploadImageInS3Bucket(`${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${id}/image`, folderName, data.id);
           imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${data.id}`
         } else {
-          console.log("____________")
           imageUrl = "";
         }
 
-        // if (data) {
-        //   const tournamentId = data.id;
-        // }
-        
         data.image = imageUrl;
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
@@ -69,7 +45,6 @@ const getTournamentById = async (req, res, next) => {
         const tournamentEntry = new Tournament({
           tournamentId: id,
           data,
-          // image: filename ? filename : null,
         });
         await tournamentEntry.save();
       }
