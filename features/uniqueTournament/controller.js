@@ -13,7 +13,6 @@ import { uploadFile } from "../../helper/aws_s3.js";
 import config from "../../config/config.js";
 
 const getTournamentById = async (req, res, next) => {
-  console.log(11);
   try {
     const { id } = req.params;
 
@@ -93,6 +92,23 @@ const getTournamentById = async (req, res, next) => {
                     0,
                   ],
                 },
+
+                // favouriteTeamDetails: {
+                //   $cond: {
+                //     if: {
+                //       $gt: [{ $size: "$favouriteleaguedetails" }, 0],
+                //     },
+                //     then: {
+                //       is_favourite: {
+                //         $arrayElemAt: ["$favouriteleaguedetails.status", 0],
+                //       },
+                //       // Include other fields from FavouritePlayerDetails if needed
+                //     },
+                //     else: {
+                //       is_favourite: false,
+                //     },
+                //   },
+                // },
                 _id: "$_id",
                 name: "$$dataObj.name",
                 slug: "$$dataObj.slug",

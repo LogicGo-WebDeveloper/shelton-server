@@ -475,9 +475,13 @@ const favouriteTeamList = async (req, res, next) => {
         select: "data",
       })
       .exec();
+    // console.log(
+    //   favoriteTeamList[0].teamId.data.team.tournament.uniqueTournament.id
+    // );
 
     // Map through favoriteMatchList to reshape data
     const reshapedData = favoriteTeamList.map((favourite) => {
+      // console.log(favourite);
       return {
         team: {
           _id: favourite.teamId._id,
@@ -486,6 +490,10 @@ const favouriteTeamList = async (req, res, next) => {
           id: favourite.teamId.data.team.id,
           shortName: favourite.teamId.data.team.shortName,
           is_favourite: favourite.status,
+          tournamentId: favourite.teamId.data.team.tournament.id,
+          uniquetournamentId:
+            favourite.teamId.data.team.tournament.uniqueTournament.id,
+
           // category: {
           //   name: favourite.teamId.data.player.category.name,
           //   slug: favourite.playerId.data.player.category.slug,

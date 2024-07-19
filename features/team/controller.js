@@ -592,19 +592,20 @@ const getTeamDetails = async (req, res, next) => {
         {
           $project: {
             favouriteTeamDetails: {
-              $arrayElemAt: [
-                {
-                  $map: {
-                    input: "$favouriteTeamDetails",
-                    as: "favTeam",
-                    in: {
-                      is_favourite: "$$favTeam.status",
-                      // Include other fields from FavouritePlayerDetails if needed
-                    },
-                  },
+              $cond: {
+                if: {
+                  $gt: [{ $size: "$favouriteTeamDetails" }, 0],
                 },
-                0,
-              ],
+                then: {
+                  is_favourite: {
+                    $arrayElemAt: ["$favouriteTeamDetails.status", 0],
+                  },
+                  // Include other fields from FavouritePlayerDetails if needed
+                },
+                else: {
+                  is_favourite: false,
+                },
+              },
             },
             _id: 1,
             teamId: "$teamId",

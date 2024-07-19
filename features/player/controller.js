@@ -38,11 +38,8 @@ const getPlayerDetailsById = async (req, res, next) => {
           } else {
             filename = baseUrl;
           }
-
-          // console.log({ id }, "==> free");
         } catch (error) {
           image = await service.getPlayerImage(id);
-          // console.log({ id }, "==> paid");
           await uploadFile({
             filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
             file: image,
@@ -65,12 +62,12 @@ const getPlayerDetailsById = async (req, res, next) => {
     }
 
     const teamPlayerData = await PlayerDetails.aggregate([
-      { $match: { PlayerId: id } }, // Match documents in PlayerDetails by PlayerId
+      { $match: { PlayerId: id } },
       {
         $lookup: {
-          from: "favouriteplayerdetails", // Collection name of FavouritePlayerDetails
-          localField: "_id", // Field from PlayerDetails collection to match
-          foreignField: "playerId", // Field from FavouritePlayerDetails collection to match
+          from: "favouriteplayerdetails",
+          localField: "_id",
+          foreignField: "playerId",
           as: "favouritePlayerDetails",
         },
       },
@@ -82,21 +79,22 @@ const getPlayerDetailsById = async (req, res, next) => {
               as: "playerObj",
               in: {
                 favouritePlayerDetails: {
-                  $arrayElemAt: [
-                    {
-                      $map: {
-                        input: "$favouritePlayerDetails",
-                        as: "favPlayer",
-                        in: {
-                          is_favourite: "$$favPlayer.status",
-                          // Include other fields from FavouritePlayerDetails if needed
-                        },
-                      },
+                  $cond: {
+                    if: {
+                      $gt: [{ $size: "$favouritePlayerDetails" }, 0],
                     },
-                    0,
-                  ],
+                    then: {
+                      is_favourite: {
+                        $arrayElemAt: ["$favouritePlayerDetails.status", 0],
+                      },
+                      // Include other fields from FavouritePlayerDetails if needed
+                    },
+                    else: {
+                      is_favourite: false,
+                    },
+                  },
                 },
-                _id: "$_id", // Include MongoDB _id of PlayerDetails here
+                _id: "$_id",
                 playerName: "$$playerObj.name",
                 position: "$$playerObj.position",
                 id: "$$playerObj.id",
@@ -109,7 +107,6 @@ const getPlayerDetailsById = async (req, res, next) => {
                 nationality: "$$playerObj.country.alpha3",
                 image: "$image",
                 teamName: "$$playerObj.team.name",
-                // Include favourite player details if needed
               },
             },
           },
@@ -118,9 +115,7 @@ const getPlayerDetailsById = async (req, res, next) => {
     ]);
 
     // Assuming you want to retrieve the result
-    console.log(teamPlayerData[0].favouritePlayerDetails);
-
-    // Assuming you want to retrieve the result
+    console.log(teamPlayerData[0]?.players[0]?.favouritePlayerDetails);
 
     return apiResponse({
       res,
@@ -130,7 +125,7 @@ const getPlayerDetailsById = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
