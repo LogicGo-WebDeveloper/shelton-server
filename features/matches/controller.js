@@ -252,6 +252,7 @@ const getSquadDetailsById = async (req, res, next) => {
 };
 
 const getSingleMatchDetail = async (req, res, next) => {
+  console.log(11);
   try {
     const { id } = req.params;
     const key = cacheService.getCacheKey(req);
@@ -336,7 +337,16 @@ const getSingleMatchDetail = async (req, res, next) => {
 
     let allData = data.data ? data.data.event : data.event;
 
-    const filteredMatchDetails = filterLiveMatchData(allData, data._id);
+    const isFavourite = await FavouriteDetails.findOne({
+      matchesId: data._id,
+    });
+
+    const filteredMatchDetails = filterLiveMatchData(
+      allData,
+      data._id,
+      isFavourite
+    );
+
     if (decodedToken?.userId) {
       await helper.storeRecentMatch(
         decodedToken?.userId,
@@ -344,10 +354,6 @@ const getSingleMatchDetail = async (req, res, next) => {
         filteredMatchDetails
       );
     }
-    const isFavourite = await FavouriteDetails.find({
-      matchesId: data._id,
-    });
-    console.log(isFavourite);
 
     return apiResponse({
       res,

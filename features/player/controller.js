@@ -9,7 +9,7 @@ import PlayerNationalTeamStatistics from "./models/playerNationalTeamStatisticsS
 import config from "../../config/config.js";
 import { uploadFile } from "../../helper/aws_s3.js";
 import FavouritePlayerDetails from "../favourite/models/favouritePlayerDetails.js";
-import helper from "../../helper/common.js"
+import helper from "../../helper/common.js";
 const folderName = "player";
 
 const getPlayerDetailsById = async (req, res, next) => {
@@ -26,13 +26,17 @@ const getPlayerDetailsById = async (req, res, next) => {
       } else {
         const image = await service.getPlayerImage(id);
         let imageUrl;
-          const folderName = "player"
-          if (image) {
-            await helper.uploadImageInS3Bucket(`${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${id}/image`, folderName, id);
-            imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${id}`
-          } else {
-            imageUrl = null;
-          }
+        const folderName = "player";
+        if (image) {
+          await helper.uploadImageInS3Bucket(
+            `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${id}/image`,
+            folderName,
+            id
+          );
+          imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${id}`;
+        } else {
+          imageUrl = null;
+        }
 
         data = await service.getPlayerById(id);
         data.player.image = imageUrl;
