@@ -583,7 +583,7 @@ const getTeamDetails = async (req, res, next) => {
         { $match: { teamId: req.params.id } },
         {
           $lookup: {
-            from: "FavouriteTeamDetails", // Collection name of FavouritePlayerDetails
+            from: "favouriteteamdetails", // Collection name of FavouritePlayerDetails
             localField: "_id", // Field from PlayerDetails collection to match
             foreignField: "teamId", // Field from FavouritePlayerDetails collection to match
             as: "favouriteTeamDetails",
@@ -591,6 +591,21 @@ const getTeamDetails = async (req, res, next) => {
         },
         {
           $project: {
+            favouriteTeamDetails: {
+              $arrayElemAt: [
+                {
+                  $map: {
+                    input: "$favouriteTeamDetails",
+                    as: "favTeam",
+                    in: {
+                      is_favourite: "$$favTeam.status",
+                      // Include other fields from FavouritePlayerDetails if needed
+                    },
+                  },
+                },
+                0,
+              ],
+            },
             _id: 1,
             teamId: "$teamId",
             image: 1,
@@ -729,7 +744,6 @@ const getTeamPLayers = async (req, res, next) => {
     };
 
     const processAllPlayerImages = async (data) => {
-
       const categories = ["players", "foreignPlayers", "nationalPlayers"];
       for (const category of categories) {
         if (data[category]) {
@@ -750,7 +764,7 @@ const getTeamPLayers = async (req, res, next) => {
       } else {
         // Fetch data from the API
         data = await service.getTeamPLayers(req.params);
-        console.log("data", data)
+        console.log("data", data);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
         // Process player images
