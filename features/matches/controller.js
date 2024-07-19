@@ -273,12 +273,11 @@ const getSingleMatchDetail = async (req, res, next) => {
       // Check if the image URL already exists
       try {
         const response = await fetch(baseUrl);
-        if (response.status !== 200) {
-          filename = null;
-        } else {
+        if (response.status === 200) {
           filename = baseUrl;
+        } else {
+          filename = null;
         }
-        console.log({ teamId }, "==> free");
       } catch (error) {
         const image = await service.getTeamImages(teamId);
         console.log({ teamId }, "==> paid <==");
