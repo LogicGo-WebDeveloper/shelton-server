@@ -449,10 +449,10 @@ const getAllScheduleMatches = async (req, res, next) => {
       );
       filteredStatusData = filterSameDateData.sort(
         (a, b) =>
-          ["notstarted", "inprogress", "finished", "canceled"].indexOf(
+          ["finished", "notstarted", "inprogress", "canceled"].indexOf(
             a.status.type
           ) -
-          ["notstarted", "inprogress", "finished", "canceled"].indexOf(
+          ["finished", "notstarted", "inprogress", "canceled"].indexOf(
             b.status.type
           )
       );

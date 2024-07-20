@@ -38,6 +38,26 @@ const getTournamentById = async (req, res, next) => {
           imageUrl = "";
         }
 
+
+        let alpha2 = data.category.alpha2 || undefined;
+        const flag = data.category.flag || undefined;
+        const identifier = (alpha2 || flag).toLowerCase();
+
+        if (identifier) {
+          const countryFolderName = "country";
+          const image = await helper.getFlagsOfCountry(identifier);
+          if (image) {
+            await helper.uploadImageInS3Bucket(
+              `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+              countryFolderName,
+              identifier
+            );
+            data.countryImage = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${countryFolderName}/${identifier}`;
+          } else {
+            data.countryImage = null;
+          }
+        }
+
         data.image = imageUrl;
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
@@ -89,6 +109,7 @@ const getTournamentById = async (req, res, next) => {
                 slug: "$$dataObj.slug",
                 id: "$$dataObj.id",
                 image: "$$dataObj.image",
+                countryImage: "$$dataObj.countryImage",
                 titleHolder: "$$dataObj.titleHolder",
                 titleHolderTitles: {
                   $ifNull: ["$$dataObj.titleHolderTitles", null],
