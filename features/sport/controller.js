@@ -80,39 +80,39 @@ const getCountryLeagueList = async (req, res, next) => {
                 const tournamentId = tournament?.id;
                 const folderName = "tournaments";
 
-                const Tournamentimage = await service.getUniqueTournamentImage(
-                  tournamentId
-                );
+                // const Tournamentimage = await service.getUniqueTournamentImage(
+                //   tournamentId
+                // );
 
-                const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${tournamentId}`;
-                await uploadFile({
-                  filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${tournamentId}`,
-                  file: Tournamentimage,
-                  ACL: "public-read",
-                });
+                // const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${tournamentId}`;
+                // await uploadFile({
+                //   filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${tournamentId}`,
+                //   file: Tournamentimage,
+                //   ACL: "public-read",
+                // });
 
-                try {
-                  const response = await fetch(imageUrl);
-                  if (response.status !== 200) {
-                    tournament.image = null;
-                  } else {
-                    tournament.image = imageUrl;
-                  }
-                } catch (error) {
-                  console.log(error);
-                  const image = await service.getUniqueTournamentImage(
-                    tournamentId
-                  );
-                  if (image) {
-                    await uploadFile({
-                      filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${tournamentId}`,
-                      file: image,
-                      ACL: "public-read",
-                    });
-                    const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${tournamentId}`;
-                    tournament.image = imageUrl;
-                  }
-                }
+                // try {
+                //   const response = await fetch(imageUrl);
+                //   if (response.status !== 200) {
+                //     tournament.image = null;
+                //   } else {
+                //     tournament.image = imageUrl;
+                //   }
+                // } catch (error) {
+                //   console.log(error);
+                //   const image = await service.getUniqueTournamentImage(
+                //     tournamentId
+                //   );
+                //   if (image) {
+                //     await uploadFile({
+                //       filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${tournamentId}`,
+                //       file: image,
+                //       ACL: "public-read",
+                //     });
+                //     const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${tournamentId}`;
+                //     tournament.image = imageUrl;
+                //   }
+                // }
                 return tournament;
               })
             );

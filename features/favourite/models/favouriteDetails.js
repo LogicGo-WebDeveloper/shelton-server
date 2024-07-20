@@ -5,7 +5,10 @@ const FavouriteDetailsSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "MatcheDetailsByMatchScreen",
   },
-  userId: { type: String, required: true },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "users",
+  },
   type: { type: String, required: true },
   status: { type: Boolean, required: true },
 });

@@ -44,7 +44,7 @@ const favouriteMatchesadd = async (req, res, next) => {
       // If document does not exist, create a new one with status 1
       const newFavourite = await FavouriteDetails.create({
         matchesId: matchesId,
-        userId: userId,
+        userId: req.user ? req.user._id : userId,
         status: 1, // Set initial status to 1
         type: type,
         // Additional fields can be added here
@@ -72,7 +72,10 @@ const favouriteMatchesadd = async (req, res, next) => {
 const favouriteMatcheslist = async (req, res, next) => {
   try {
     // Fetch data using populate and select
-    const favoriteMatchList = await FavouriteDetails.find({ status: 1 })
+    const favoriteMatchList = await FavouriteDetails.find({
+      status: 1,
+      userId: req.user._id,
+    })
       .populate({
         path: "matchesId",
         model: "MatcheDetailsByMatchScreen",
@@ -113,28 +116,28 @@ const favouriteMatcheslist = async (req, res, next) => {
         homeScore: {
           current: favourite.matchesId.data.event.homeScore.current,
           display: favourite.matchesId.data.event.homeScore.display,
-          innings: Object.entries(
-            favourite.matchesId.data.event.homeScore.innings
-          ).map(([key, value]) => ({
-            key,
-            score: value.score,
-            wickets: value.wickets,
-            overs: value.overs,
-            runRate: value.runRate,
-          })),
+          // innings: Object.entries(
+          //   favourite.matchesId.data.event.homeScore.innings
+          // ).map(([key, value]) => ({
+          //   key,
+          //   score: value.score,
+          //   wickets: value.wickets,
+          //   overs: value.overs,
+          //   runRate: value.runRate,
+          // })),
         },
         awayScore: {
           current: favourite.matchesId.data.event.awayScore.current,
           display: favourite.matchesId.data.event.awayScore.display,
-          innings: Object.entries(
-            favourite.matchesId.data.event.awayScore.innings
-          ).map(([key, value]) => ({
-            key,
-            score: value.score,
-            wickets: value.wickets,
-            overs: value.overs,
-            runRate: value.runRate,
-          })),
+          // innings: Object.entries(
+          //   favourite.matchesId.data.event.awayScore.innings
+          // ).map(([key, value]) => ({
+          //   key,
+          //   score: value.score,
+          //   wickets: value.wickets,
+          //   overs: value.overs,
+          //   runRate: value.runRate,
+          // })),
         },
         status: {
           code: favourite.matchesId.data.event.status.code,
@@ -197,6 +200,7 @@ const favouritePlayersadd = async (req, res, next) => {
     const playerId = req.body.playerId;
     const userId = req.body.userId;
     const type = req.body.type;
+    console.log(req.user._id);
 
     const existingFavourite = await FavouritePlayerDetails.findOne({
       playerId: playerId,
@@ -230,7 +234,7 @@ const favouritePlayersadd = async (req, res, next) => {
       // If document does not exist, create a new one with status 1
       const newFavourite = await FavouritePlayerDetails.create({
         playerId: playerId,
-        userId: userId,
+        userId: req.user ? req.user._id : userId,
         status: 1, // Set initial status to 1
         type: type,
         // Additional fields can be added here
@@ -266,10 +270,12 @@ const favouritePlayersadd = async (req, res, next) => {
 };
 
 const favouritePlayerlist = async (req, res, next) => {
+  console.log(req.user._id);
   try {
     // Fetch data using populate and select
     const favoritePlayerList = await FavouritePlayerDetails.find({
       status: true,
+      userId: req.user._id,
     })
       .populate({
         path: "playerId",
@@ -430,7 +436,7 @@ const favouriteTeamsadd = async (req, res, next) => {
       // If document does not exist, create a new one with status 1
       const newFavourite = await FavouriteTeamDetails.create({
         teamId: teamId,
-        userId: userId,
+        userId: req.user ? req.user._id : userId,
         status: 1, // Set initial status to 1
         type: type,
         // Additional fields can be added here
@@ -468,20 +474,20 @@ const favouriteTeamsadd = async (req, res, next) => {
 const favouriteTeamList = async (req, res, next) => {
   try {
     // Fetch data using populate and select
-    const favoriteTeamList = await FavouriteTeamDetails.find({ status: 1 })
+
+    const favoriteTeamList = await FavouriteTeamDetails.find({
+      status: 1,
+      userId: req.user._id,
+    })
       .populate({
         path: "teamId",
         model: "TeamDetails",
         select: "data",
       })
       .exec();
-    // console.log(
-    //   favoriteTeamList[0].teamId.data.team.tournament.uniqueTournament.id
-    // );
 
     // Map through favoriteMatchList to reshape data
     const reshapedData = favoriteTeamList.map((favourite) => {
-      // console.log(favourite);
       return {
         team: {
           _id: favourite.teamId._id,
@@ -635,7 +641,7 @@ const favouriteLeagueadd = async (req, res, next) => {
       // If document does not exist, create a new one with status 1
       const newFavourite = await favouriteLeagueDetails.create({
         leagueId: leagueId,
-        userId: userId,
+        userId: req.user ? req.user._id : userId,
         status: 1, // Set initial status to 1
         type: type,
         // Additional fields can be added here
@@ -674,7 +680,7 @@ const favouriteLeagueList = async (req, res, next) => {
   try {
     // Fetch data using populate and select
     const favoriteTeamList = await favouriteLeagueDetails
-      .find({ status: 1 })
+      .find({ status: 1, userId: req.user._id })
       .populate({
         path: "leagueId",
         model: "Tournament",
