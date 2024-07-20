@@ -699,6 +699,25 @@ const getTeamPLayers = async (req, res, next) => {
         } else {
           player.player.image = null;
         }
+
+        let alpha2 = player.player.country.alpha2 || undefined;
+        const flag = player.player.country.flag || undefined;
+        const identifier = (alpha2 || flag).toLowerCase();
+
+        if (identifier) {
+          const countryFolderName = "country";
+          const image = await helper.getFlagsOfCountry(identifier);
+          if (image) {
+            await helper.uploadImageInS3Bucket(
+              `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+              countryFolderName,
+              identifier
+            );
+            player.player.countryImage = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${countryFolderName}/${identifier}`;
+          } else {
+            player.player.countryImage = null;
+          }
+        }
       }
     };
 
@@ -752,6 +771,7 @@ const getTeamPLayers = async (req, res, next) => {
                 image: "$$playerObj.player.image",
                 country: "$$playerObj.player.country.name",
                 dateOfBirthTimestamp: "$$playerObj.player.dateOfBirthTimestamp",
+                countryImage: "$$playerObj.player.countryImage",
               },
             },
           },
@@ -766,6 +786,7 @@ const getTeamPLayers = async (req, res, next) => {
                 image: "$$playerObj.player.image",
                 country: "$$playerObj.player.country.name",
                 dateOfBirthTimestamp: "$$playerObj.player.dateOfBirthTimestamp",
+                countryImage: "$$playerObj.player.countryImage",
               },
             },
           },
@@ -780,6 +801,7 @@ const getTeamPLayers = async (req, res, next) => {
                 image: "$$playerObj.player.image",
                 country: "$$playerObj.player.country.name",
                 dateOfBirthTimestamp: "$$playerObj.player.dateOfBirthTimestamp",
+                countryImage: "$$playerObj.player.countryImage",
               },
             },
           },
@@ -792,6 +814,7 @@ const getTeamPLayers = async (req, res, next) => {
                 role: "$$playerObj.role",
                 id: "$$playerObj.id",
                 image: "$$playerObj.image",
+                countryImage: "$$playerObj.countryImage",
               },
             },
           },
