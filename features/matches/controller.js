@@ -334,7 +334,6 @@ const getSingleMatchDetail = async (req, res, next) => {
       data._id,
       isFavourite
     );
-
     if (decodedToken?.userId) {
       await helper.storeRecentMatch(
         decodedToken?.userId,
