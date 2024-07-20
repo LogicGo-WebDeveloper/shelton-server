@@ -204,35 +204,22 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
 
     let data = cacheService.getCache(key);
-    // let image = cacheService.getCache(key);
 
     const getImageUrl = async (teamId) => {
-      const name = teamId;
       const folderName = "team";
-      let filename;
-      const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
-
-      // Check if the image URL already exists
-      try {
-        const response = await fetch(baseUrl);
-        if (response.status !== 200) {
-          filename = null;
-        } else {
-          filename = baseUrl;
-        }
-        // console.log({ teamId }, "==> free");
-      } catch (error) {
-        const image = await service.getTeamImages(teamId);
-        // console.log({ teamId }, "==> paid <==");
-        await uploadFile({
-          filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-          file: image,
-          ACL: "public-read",
-        });
-        filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+      let imageUrl;
+      const image = await helper.getTeamImages(teamId);
+      if (image) {
+        await helper.uploadImageInS3Bucket(
+          `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${teamId}/image`,
+          folderName,
+          teamId
+        );
+        imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${teamId}`;
+      } else {
+        imageUrl = null;
       }
-
-      return filename;
+      return imageUrl;
     };
 
     if (!data) {
@@ -242,7 +229,6 @@ const getLeagueFeaturedEventsByTournament = async (req, res, next) => {
 
       if (featuredMatches) {
         data = featuredMatches.data;
-        // image = featuredMatches.image;
       } else {
         data = await service.getLeagueFeaturedEventsByTournament(id);
         for (const item of data) {
