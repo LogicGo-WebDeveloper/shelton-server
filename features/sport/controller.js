@@ -506,7 +506,7 @@ const getRecentMatches = async (req, res, next) => {
 
 const globalSearch = async (req, res, next) => {
   try {
-    const { type, text } = req.body; // Changed from req.query or req.params to req.body
+    const { type, text } = req.body;
     let data;
     if (type === "player") {
       const players = await PlayerDetails.aggregate([
@@ -522,6 +522,8 @@ const globalSearch = async (req, res, next) => {
                   player: { $ifNull: ["$$dataObj.player.name", null] },
                   position: { $ifNull: ["$$dataObj.player.position", null] },
                   playerId: { $ifNull: ["$$dataObj.player.id", null] },
+                  image: { $ifNull: ["$$dataObj.player.image", null] },
+                  countryName: { $ifNull: ["$$dataObj.player.country.name", null] },
                   sport: {
                     $ifNull: ["$$dataObj.player.team.sport.name", null],
                   },
@@ -550,6 +552,8 @@ const globalSearch = async (req, res, next) => {
               shortName: { $ifNull: ["$data.team.shortName", null] },
               teamName: { $ifNull: ["$data.team.name", null] },
               sport: { $ifNull: ["$data.team.sport.name", null] },
+              image: { $ifNull: ["$data.team.image", null] },
+              countryName: { $ifNull: ["$data.team.country.name", null] },
             },
           },
         },
@@ -559,11 +563,7 @@ const globalSearch = async (req, res, next) => {
       const tournaments = await CountryLeagueList.aggregate([
         { $unwind: "$data" },
         { $unwind: "$data.tournamentlist" },
-        {
-          $match: {
-            "data.tournamentlist.name": { $regex: text, $options: "i" },
-          },
-        },
+        { $match: { "data.tournamentlist.name": { $regex: text, $options: "i" } } },
         {
           $project: {
             name: "$data.tournamentlist.name",

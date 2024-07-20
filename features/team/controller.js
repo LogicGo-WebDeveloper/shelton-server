@@ -539,12 +539,12 @@ const getTeamDetails = async (req, res, next) => {
         }
 
         const apiData = await service.getTeamDetails(req.params);
+        apiData.team.image = filename
 
         // Store the fetched data in the database
         const teamDetailsEntry = new TeamDetails({
           teamId: req.params.id,
           data: apiData,
-          image: filename,
         });
         await teamDetailsEntry.save();
         // Set the data to be used for aggregation
@@ -638,6 +638,7 @@ const getTeamDetails = async (req, res, next) => {
                 name: { $ifNull: ["$data.team.country.name", null] },
               },
               fullName: { $ifNull: ["$data.team.fullName", null] },
+              image: { $ifNull: ["$data.team.image", null] },
             },
           },
         },
