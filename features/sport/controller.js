@@ -269,21 +269,90 @@ const getAllScheduleMatches = async (req, res, next) => {
     const { sport, date } = req.params;
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
+
     if (!data) {
       const matches = await ScheduleMatches.findOne({ sport: sport });
+      const folderName = "team";
       if (matches) {
         const matchesData = matches.data.find((match) => match.date === date);
         if (matchesData) {
           data = matchesData.matches;
         } else {
           data = await sportService.getAllScheduleMatches(sport, date);
+          data.events.forEach((event) => {
+            const homeTeamId = event.homeTeam.id;
+            const awayTeamId = event.homeTeam.id;
+            if (homeTeamId) {
+              const image = helper.getTeamImages(homeTeamId);
+
+              if (image) {
+                helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${homeTeamId}/image`,
+                  folderName,
+                  homeTeamId
+                );
+                event.homeTeam.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${homeTeamId}`;
+              } else {
+                event.homeTeam.image = null;
+              }
+            }
+
+            if (awayTeamId) {
+              const image = helper.getTeamImages(awayTeamId);
+
+              if (image) {
+                helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${awayTeamId}/image`,
+                  folderName,
+                  awayTeamId
+                );
+                event.awayTeam.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${awayTeamId}`;
+              } else {
+                event.awayTeam.image = null;
+              }
+            }
+          });
           cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
           matches.data.push({ date, matches: data });
           await matches.save();
         }
       } else {
         data = await sportService.getAllScheduleMatches(sport, date);
+        data.events.forEach((event) => {
+          const homeTeamId = event.homeTeam.id;
+          const awayTeamId = event.homeTeam.id;
+          if (homeTeamId) {
+            const image = helper.getTeamImages(homeTeamId);
+
+            if (image) {
+              helper.uploadImageInS3Bucket(
+                `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${homeTeamId}/image`,
+                folderName,
+                homeTeamId
+              );
+              event.homeTeam.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${homeTeamId}`;
+            } else {
+              event.homeTeam.image = null;
+            }
+          }
+
+          if (awayTeamId) {
+            const image = helper.getTeamImages(awayTeamId);
+
+            if (image) {
+              helper.uploadImageInS3Bucket(
+                `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${awayTeamId}/image`,
+                folderName,
+                awayTeamId
+              );
+              event.awayTeam.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${awayTeamId}`;
+            } else {
+              event.awayTeam.image = null;
+            }
+          }
+        });
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
+
         const matchesEntry = new ScheduleMatches({
           sport: sport,
           data: [{ date: date, matches: data }],
@@ -310,6 +379,7 @@ const getAllScheduleMatches = async (req, res, next) => {
         slug: match.homeTeam?.slug || null,
         shortName: match.homeTeam?.shortName || null,
         nameCode: match.homeTeam?.nameCode || null,
+        image: match.homeTeam?.image || null,
         id: match.homeTeam?.id || null,
       },
       awayTeam: {
@@ -317,6 +387,7 @@ const getAllScheduleMatches = async (req, res, next) => {
         slug: match.awayTeam?.slug || null,
         shortName: match.awayTeam?.shortName || null,
         nameCode: match.awayTeam?.nameCode || null,
+        image: match.awayTeam?.image || null,
         id: match.awayTeam?.id || null,
       },
       homeScore: {
@@ -412,6 +483,7 @@ const getAllScheduleMatches = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     return apiResponse({
       res,
       status: false,

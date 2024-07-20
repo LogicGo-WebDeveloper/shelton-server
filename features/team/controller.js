@@ -12,7 +12,6 @@ import TeamSeasons from "./models/teamSeasons.js";
 import TeamFeaturedMatches from "./models/teamFeaturedMatchesSchema.js";
 import TeamSeasonsStanding from "./models/teamSeasonsStandingSchema.js";
 import config from "../../config/config.js";
-import { uploadFile } from "../../helper/aws_s3.js";
 import helper from "../../helper/common.js";
 
 const getTeamPerformance = async (req, res, next) => {
@@ -79,7 +78,7 @@ const getTopPlayers = async (req, res, next) => {
             const playerId = stat.player.id;
             const folderName = "player";
 
-            const image = await helper.getTopPlayersImage(playerId);
+            const image = await helper.getPlayerImage(playerId);
             if (image) {
               await helper.uploadImageInS3Bucket(
                 `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${playerId}/image`,
@@ -686,7 +685,7 @@ const getTeamPLayers = async (req, res, next) => {
         const playerId = player.player.id;
 
         const folderName = "player";
-        const image = await helper.getTopPlayersImage(playerId);
+        const image = await helper.getPlayerImage(playerId);
 
         if (image) {
           await helper.uploadImageInS3Bucket(
@@ -1174,7 +1173,7 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
       let filename;
 
       const image = await helper.getTeamImages(teamId);
-      
+
       if (image) {
         await helper.uploadImageInS3Bucket(
           `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${teamId}/image`,
