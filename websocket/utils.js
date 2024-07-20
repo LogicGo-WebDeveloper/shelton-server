@@ -1,3 +1,6 @@
+import helper from "../helper/common.js";
+import config from "../config/config.js";
+
 export const convertSportListToArray = (sportList) => {
   return Object.keys(sportList).map((key) => ({
     id: key,
@@ -148,16 +151,30 @@ export const fractionalOddsToDecimal = (fractionalOdds) => {
   return numerator / denominator + 1;
 };
 
-export const filteredOversData = (data) => {
+const getImageUrl = async (playerId) => {
+  const folderName = "player";
+  let imageUrl;
+  const image = await helper.getPlayerImage(playerId);
+  if (image) {
+    await helper.uploadImageInS3Bucket(`${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${playerId}/image`, folderName, playerId);
+    imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${playerId}`;
+  } else {
+    imageUrl = null;
+  }
+  return imageUrl;
+};
+
+export const filteredOversData = async (data) => {
   const result = [];
   const overMap = {};
 
-  data.forEach((item) => {
+  for (const item of data) {
     const over = item.over;
     if (!overMap[over]) {
       overMap[over] = {
         over: over.toString(),
         total_runs_in_this_over: 0,
+        image: await getImageUrl(item?.bowler?.id) || null,
         balls: [],
       };
       result.push(overMap[over]);
@@ -204,7 +221,7 @@ export const filteredOversData = (data) => {
       incidentClassLabel: item?.incidentClassLabel || null,
       zone: item?.zone || null,
     });
-  });
+  }
 
   return result;
 };

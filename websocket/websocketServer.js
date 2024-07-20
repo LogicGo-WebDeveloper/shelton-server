@@ -243,11 +243,11 @@ const setupWebSocket = (server) => {
             );
             const filteredOvers = {
               homeTeam: {
-                data: filteredOversData(filterHomeTeam),
+                data: await filteredOversData(filterHomeTeam),
                 teamId: data.homeTeamId,
               },
               awayTeam: {
-                data: filteredOversData(filterAwayTeam),
+                data: await filteredOversData(filterAwayTeam),
                 teamId: data.awayTeamId,
               },
             };
