@@ -70,6 +70,7 @@ const favouriteMatchesadd = async (req, res, next) => {
 };
 
 const favouriteMatcheslist = async (req, res, next) => {
+  console.log(req.user._id);
   try {
     // Fetch data using populate and select
     const favoriteMatchList = await FavouriteDetails.find({
@@ -105,6 +106,7 @@ const favouriteMatcheslist = async (req, res, next) => {
           shortName: favourite.matchesId.data.event.homeTeam.shortName,
           nameCode: favourite.matchesId.data.event.homeTeam.nameCode,
           id: favourite.matchesId.data.event.homeTeam.id,
+          image: favourite.matchesId.data.event.homeTeam.image,
         },
         awayTeam: {
           name: favourite.matchesId.data.event.awayTeam.name,
@@ -112,6 +114,7 @@ const favouriteMatcheslist = async (req, res, next) => {
           shortName: favourite.matchesId.data.event.awayTeam.shortName,
           nameCode: favourite.matchesId.data.event.awayTeam.nameCode,
           id: favourite.matchesId.data.event.awayTeam.id,
+          image: favourite.matchesId.data.event.awayTeam.image,
         },
         homeScore: {
           current: favourite.matchesId.data.event.homeScore.current,
@@ -294,6 +297,7 @@ const favouritePlayerlist = async (req, res, next) => {
           id: favourite.playerId.data[0].player.id,
           position: favourite.playerId.data[0].player.position,
           is_favourite: favourite.status,
+          image: favourite.playerId.data[0].player.image,
 
           // category: {
           //   name: favourite.playerId.data.player.category.name,
@@ -499,6 +503,7 @@ const favouriteTeamList = async (req, res, next) => {
           tournamentId: favourite.teamId.data.team.tournament.id,
           uniquetournamentId:
             favourite.teamId.data.team.tournament.uniqueTournament.id,
+          image: favourite.teamId.data.team.image,
 
           // category: {
           //   name: favourite.teamId.data.player.category.name,
@@ -699,6 +704,7 @@ const favouriteLeagueList = async (req, res, next) => {
           categoryName: favourite.leagueId.data[0].category.name,
           sportName: favourite.leagueId.data[0].category.sport.name,
           is_favourite: favourite.status,
+          image: favourite.leagueId.data[0].image,
 
           // category: {
           //   name: favourite.teamId.data.player.category.name,
