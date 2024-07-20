@@ -172,6 +172,20 @@ const getTournamentImage = async (id) => {
   } catch (error) {
     return null;
   }
+<<<<<<< HEAD
+=======
+};
+
+const getFlagsOfCountry = async (identifier) => {
+  try {
+    const { data } = await axiosInstance.get(
+      `/static/images/flags/${identifier}.png`
+    );
+    return data ?? [];
+  } catch (error) {
+    return null;
+  }
+>>>>>>> b74178259bd9ddd6b70e8d6eb738d43027ef66aa
 };
 
 async function checkBucketExists(bucketName) {
@@ -257,4 +271,5 @@ export default {
   getTeamImages,
   getTournamentImage,
   uploadImageInS3Bucket,
+  getFlagsOfCountry
 };
