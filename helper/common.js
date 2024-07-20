@@ -4,8 +4,12 @@ import moment from "moment";
 import enums from "../config/enum.js";
 import WebSocket from "ws";
 import RecentMatch from "../features/sport/models/recentMatchesSchema.js";
-import { createCanvas, loadImage } from 'canvas';
-import { S3Client, PutObjectCommand, ListBucketsCommand } from '@aws-sdk/client-s3';
+import { createCanvas, loadImage } from "canvas";
+import {
+  S3Client,
+  PutObjectCommand,
+  ListBucketsCommand,
+} from "@aws-sdk/client-s3";
 import { s3Client } from "../config/aws.config.js";
 import axiosInstance from "../config/axios.config.js";
 
@@ -87,12 +91,12 @@ const calculatePrice = ({
 const webSocketServer = (server) => {
   const wss = new WebSocket.Server({ server });
 
-  wss.on('connection', function connection(ws) {
-    ws.on('message', function incoming(message) {
-      console.log('received: %s', message);
+  wss.on("connection", function connection(ws) {
+    ws.on("message", function incoming(message) {
+      console.log("received: %s", message);
     });
 
-    ws.send('something');
+    ws.send("something");
   });
 
   return wss;
@@ -105,29 +109,31 @@ const storeRecentMatch = async (userId, sport, matchData) => {
     if (!userEntry) {
       userEntry = new RecentMatch({
         userId,
-        data: [{ sport, data: [matchData] }]
+        data: [{ sport, data: [matchData] }],
       });
     } else {
       // If user entry exists, find the sport entry
-      const sportEntry = userEntry.data.find(entry => entry.sport === sport);
+      const sportEntry = userEntry.data.find((entry) => entry.sport === sport);
 
       if (sportEntry) {
-          // Check for duplicate matchId
-          const isDuplicate = sportEntry.data.some(match => match.id === matchData.id);
+        // Check for duplicate matchId
+        const isDuplicate = sportEntry.data.some(
+          (match) => match.id === matchData.id
+        );
 
-          if (!isDuplicate) {
-            // If not a duplicate, push the new match data
-            sportEntry.data.push(matchData);
-            // Ensure the sport data array does not exceed 10 entries
-            if (sportEntry.data.length > 10) {
-              sportEntry.data.shift();
-            }
+        if (!isDuplicate) {
+          // If not a duplicate, push the new match data
+          sportEntry.data.push(matchData);
+          // Ensure the sport data array does not exceed 10 entries
+          if (sportEntry.data.length > 10) {
+            sportEntry.data.shift();
           }
+        }
       } else {
         // If sport entry does not exist, create a new one
         userEntry.data.push({
           sport,
-          data: [matchData]
+          data: [matchData],
         });
       }
     }
@@ -135,7 +141,7 @@ const storeRecentMatch = async (userId, sport, matchData) => {
     // Save the user entry
     await userEntry.save();
   } catch (error) {
-    console.error('Error storing recent match:', error);
+    console.error("Error storing recent match:", error);
   }
 };
 
@@ -148,7 +154,6 @@ const getPlayerImage = async (id) => {
     return null
   }
 };
-
 
 const getTeamImages = async (teamId) => {
   try {
@@ -168,11 +173,12 @@ const getTournamentImage = async (id) => {
   }
 };
 
-
 async function checkBucketExists(bucketName) {
   try {
     const data = await s3Client.send(new ListBucketsCommand({}));
-    const bucketExists = data.Buckets.some(bucket => bucket.Name === bucketName);
+    const bucketExists = data.Buckets.some(
+      (bucket) => bucket.Name === bucketName
+    );
     if (!bucketExists) {
       return false;
     }
@@ -193,45 +199,46 @@ async function uploadImageInS3Bucket(url, folderName, id) {
     // Load image from URL
 
     const img = await loadImage(url);
-    
+
     // Create a canvas element
     const canvas = createCanvas(img.width, img.height);
-    const ctx = canvas.getContext('2d');
-    
+    const ctx = canvas.getContext("2d");
+
     // Draw image onto canvas
     ctx.drawImage(img, 0, 0);
-    
+
     // Convert canvas to PNG or JPEG
     let buffer;
-    if (format === 'png') {
-      buffer = canvas.toBuffer('image/png');
-    } else if (format === 'jpeg' || format === 'jpg') {
-      buffer = canvas.toBuffer('image/jpeg');
+    if (format === "png") {
+      buffer = canvas.toBuffer("image/png");
+    } else if (format === "jpeg" || format === "jpg") {
+      buffer = canvas.toBuffer("image/jpeg");
     } else {
-      console.error('Unsupported format:', format);
+      console.error("Unsupported format:", format);
       return;
     }
-    
+
     // Upload to S3 with public read access
     const params = {
       Bucket: bucketName,
       Key: key,
       Body: buffer,
-      ContentType: format === 'png' ? 'image/png' : 'image/jpeg',
-      ACL: 'public-read'
+      ContentType: format === "png" ? "image/png" : "image/jpeg",
+      ACL: "public-read",
     };
 
     const command = new PutObjectCommand(params);
     await s3Client.send(command);
   } catch (err) {
-    if (err.Code === 'NoSuchBucket') {
-      console.error(`Bucket "${bucketName}" does not exist. Please create the bucket or check the bucket name.`);
+    if (err.Code === "NoSuchBucket") {
+      console.error(
+        `Bucket "${bucketName}" does not exist. Please create the bucket or check the bucket name.`
+      );
     } else {
-      console.error('Error:', err);
+      console.error("Error:", err);
     }
   }
 }
-
 
 export default {
   generateOTP,
@@ -246,5 +253,5 @@ export default {
   getPlayerImage,
   getTeamImages,
   getTournamentImage,
-  uploadImageInS3Bucket
+  uploadImageInS3Bucket,
 };
