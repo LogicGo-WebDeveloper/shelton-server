@@ -25,6 +25,7 @@ import { uploadFile } from "../../helper/aws_s3.js";
 import FavouriteDetails from "../favourite/models/favouriteDetails.js";
 
 const getOverDetailsById = async (req, res, next) => {
+  
   try {
     const { matchId, homeTeamId, awayTeamId } = req.query;
     let data;
