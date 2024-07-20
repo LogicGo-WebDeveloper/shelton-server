@@ -281,7 +281,7 @@ const getAllScheduleMatches = async (req, res, next) => {
           data = await sportService.getAllScheduleMatches(sport, date);
           data.events.forEach((event) => {
             const homeTeamId = event.homeTeam.id;
-            const awayTeamId = event.homeTeam.id;
+            const awayTeamId = event.awayTeam.id;
             if (homeTeamId) {
               const image = helper.getTeamImages(homeTeamId);
 
@@ -443,7 +443,7 @@ const getAllScheduleMatches = async (req, res, next) => {
     let filteredStatusData;
     if (currentDate === date) {
       const filterSameDateData = formattedData.filter((item) =>
-        ["notstarted", "inprogress", "finished", "canceled"].includes(
+        ["finished", "notstarted", "inprogress","canceled"].includes(
           item.status.type
         )
       );

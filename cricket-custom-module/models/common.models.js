@@ -38,6 +38,15 @@ const CustomTournamentWinningPrize = mongoose.model(
   "CustomTournamentWinningPrize",
   tournamentWinningPrizeSchema
 );
+const playerRoleSchema = new mongoose.Schema({
+  role: String,
+});
+const matchStatusSchema = new mongoose.Schema({
+  status: String,
+});
+
+const CustomMatchStatus = mongoose.model("CustomMatchStatus", matchStatusSchema);
+const CustomPlayerRole = mongoose.model("CustomPlayerRole", playerRoleSchema);
 const CustomMatchType = mongoose.model("CustomMatchType", matchTypeSchema);
 const CustomMatchOn = mongoose.model("CustomMatchOn", matchOnSchema);
 const CustomPitchType = mongoose.model("CustomPitchType", pitchTypeSchema);
@@ -47,8 +56,10 @@ export {
   CustomCityList,
   CustomTournamentCategory,
   CustomTournamentWinningPrize,
+  CustomPlayerRole,
   CustomMatchType,
   CustomMatchOn,
   CustomPitchType,
   CustomBallType,
+  CustomMatchStatus,
 };

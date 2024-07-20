@@ -8,6 +8,8 @@ import {
   CustomTournamentWinningPrize,
   CustomPitchType,
   CustomBallType,
+  CustomPlayerRole,
+  CustomMatchStatus,
 } from "../cricket-custom-module/models/common.models.js";
 import CustomSportList from "../cricket-custom-module/models/sport.models.js";
 import BannerSportList from "../features/sport/models/BannerList.js";
@@ -45,6 +47,8 @@ const ballTypeList = await readJsonFile(
 );
 
 const BannerList = await readJsonFile(path.resolve("json/banner-list.json"));
+const roleList = await readJsonFile(path.resolve("json/roles.player.json"));
+const statusList = await readJsonFile(path.resolve("json/status.match.json"));
 
 export const InsertSportList = async () => {
   const sportNamesInJson = sportList.map((sport) => sport.sportName);
@@ -190,4 +194,30 @@ export const InsertBannerList = async () => {
   await BannerSportList.deleteMany({
     bannerImage: { $nin: bannerNamesInJson },
   });
+};
+
+export const InsertPlayerRole = async () => {
+  const roleNamesInJson = roleList.map((role) => role.role);
+  for (const role of roleList) {
+    const exists = await CustomPlayerRole.findOne({ role: role.role });
+    if (!exists) {
+      const newRole = new CustomPlayerRole(role);
+      await newRole.save();
+    }
+  }
+  // Delete roles not in JSON
+  await CustomPlayerRole.deleteMany({ role: { $nin: roleNamesInJson } });
+};
+
+export const InsertMatchStatus = async () => {
+  const statusNamesInJson = statusList.map((status) => status.status);
+  for (const status of statusList) {
+    const exists = await CustomMatchStatus.findOne({ status: status.status });
+    if (!exists) {
+      const newStatus = new CustomMatchStatus(status);
+      await newStatus.save();
+    }
+  }
+  // Delete status not in JSON
+  await CustomMatchStatus.deleteMany({ status: { $nin: statusNamesInJson } });
 };

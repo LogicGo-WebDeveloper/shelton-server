@@ -1,6 +1,6 @@
 import { apiResponse } from "../../helper/apiResponse.js";
 import { StatusCodes } from "http-status-codes";
-import { CustomBallType, CustomCityList, CustomMatchOn, CustomMatchType, CustomPitchType, CustomTournamentCategory, CustomTournamentWinningPrize } from "../models/common.models.js";
+import { CustomBallType, CustomCityList, CustomMatchOn, CustomMatchStatus, CustomMatchType, CustomPitchType, CustomPlayerRole, CustomTournamentCategory, CustomTournamentWinningPrize } from "../models/common.models.js";
 
 const getCityList = async (req, res, next) => {
   const { page = 1, city } = req.query;
@@ -162,7 +162,65 @@ const getPitchTypes = async (req, res, next) => {
       message: "Internal server error", 
       status: false 
     });
+  }
+};
+
+const getPlayerRoles = async (req, res, next) => {
+  try {
+    const playerRoles = await CustomPlayerRole.find();
+    return apiResponse({ 
+      res, 
+      statusCode: StatusCodes.OK, 
+      message: "Player roles fetched successfully", 
+      status: true, 
+      data: playerRoles 
+    });
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        statusCode: StatusCodes.NOT_FOUND,
+        status: true,
+        message: "Player roles not found",
+      });
+    } else {
+      return apiResponse({ 
+        res, 
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR, 
+        message: "Internal server error", 
+        status: false 
+      });
     }
+  }
+};
+
+const getMatchStatus = async (req, res, next) => {
+  try {
+    const matchStatus = await CustomMatchStatus.find();
+    return apiResponse({ 
+      res, 
+      statusCode: StatusCodes.OK, 
+      message: "Match status fetched successfully", 
+      status: true, 
+      data: matchStatus 
+    });
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        statusCode: StatusCodes.NOT_FOUND,
+        status: true,
+        message: "Match status not found",
+      });
+    } else {
+    return apiResponse({ 
+      res, 
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR, 
+      message: "Internal server error", 
+        status: false 
+      });
+    }
+  }
 };
 
 export default {
@@ -172,5 +230,7 @@ export default {
   getMatchTypes,
   getMatchOn,
   getBallTypes,
-  getPitchTypes
+  getPitchTypes,
+  getPlayerRoles,
+  getMatchStatus
 };

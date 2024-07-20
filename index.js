@@ -12,8 +12,10 @@ import {
   InsertBannerList,
   InsertCityList,
   InsertMatchOn,
+  InsertMatchStatus,
   InsertMatchType,
   InsertPitchType,
+  InsertPlayerRole,
   InsertSportList,
   InsertTournamentCategory,
   InsertTournamentWinningPrize,
@@ -48,6 +50,8 @@ InsertTournamentWinningPrize();
 InsertPitchType();
 InsertBallType();
 InsertBannerList();
+InsertPlayerRole();
+InsertMatchStatus();
 
 app.use("/api/auth", route.authRoute);
 app.use("/api/v1/sport", route.sportRoute);

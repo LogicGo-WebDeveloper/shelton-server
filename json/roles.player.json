@@ -1,0 +1,20 @@
+[
+    {
+        "role": "Admin"
+    },
+    {
+        "role": "Captain"
+    },
+    {
+        "role": "Wicket Keeper"
+    },
+    {
+        "role": "Batter"
+    },
+    {
+        "role": "Bowler"
+    },
+    {
+        "role": "All-Rounder"
+    }
+]
