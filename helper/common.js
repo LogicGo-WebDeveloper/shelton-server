@@ -172,8 +172,6 @@ const getTournamentImage = async (id) => {
   } catch (error) {
     return null;
   }
-<<<<<<< HEAD
-=======
 };
 
 const getFlagsOfCountry = async (identifier) => {
@@ -185,7 +183,6 @@ const getFlagsOfCountry = async (identifier) => {
   } catch (error) {
     return null;
   }
->>>>>>> b74178259bd9ddd6b70e8d6eb738d43027ef66aa
 };
 
 async function checkBucketExists(bucketName) {
