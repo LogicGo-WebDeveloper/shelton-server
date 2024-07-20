@@ -60,11 +60,11 @@ const getOverDetailsById = async (req, res, next) => {
 
     const filteredOvers = {
       homeTeam: {
-        data: filteredOversData(filterHomeTeam),
+        data: await filteredOversData(filterHomeTeam),
         teamId: homeTeamId,
       },
       awayTeam: {
-        data: filteredOversData(filterAwayTeam),
+        data: await filteredOversData(filterAwayTeam),
         teamId: awayTeamId,
       },
     };
