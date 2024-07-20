@@ -1174,6 +1174,7 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
       let filename;
 
       const image = await helper.getTeamImages(teamId);
+      
       if (image) {
         await helper.uploadImageInS3Bucket(
           `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${teamId}/image`,
