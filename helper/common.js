@@ -145,24 +145,44 @@ const storeRecentMatch = async (userId, sport, matchData) => {
   }
 };
 
-const getTopPlayersImage = async (playerId) => {
-  const { data } = await axiosInstance.get(`/api/v1/player/${playerId}/image`);
-
-  return data ?? [];
+const getPlayerImage = async (id) => {
+  try {
+    const { data } = await axiosInstance.get(`/api/v1/player/${id}/image`);
+    return data ?? [];
+  } catch (error) {
+    return null;
+  }
 };
 
 const getTeamImages = async (teamId) => {
-  const { data } = await axiosInstance.get(`/api/v1/team/${teamId}/image`);
-
-  return data ?? [];
+  try {
+    const { data } = await axiosInstance.get(`/api/v1/team/${teamId}/image`);
+    return data ?? [];
+  } catch (error) {
+    return null;
+  }
 };
 
 const getTournamentImage = async (id) => {
-  const { data } = await axiosInstance.get(
-    `/api/v1/unique-tournament/${id}/image`
-  );
+  try {
+    const { data } = await axiosInstance.get(
+      `/api/v1/unique-tournament/${id}/image`
+    );
+    return data ?? [];
+  } catch (error) {
+    return null;
+  }
+};
 
-  return data ?? [];
+const getFlagsOfCountry = async (identifier) => {
+  try {
+    const { data } = await axiosInstance.get(
+      `/static/images/flags/${identifier}.png`
+    );
+    return data ?? [];
+  } catch (error) {
+    return null;
+  }
 };
 
 async function checkBucketExists(bucketName) {
@@ -242,8 +262,9 @@ export default {
   extractFileKey,
   webSocketServer,
   storeRecentMatch,
-  getTopPlayersImage,
+  getPlayerImage,
   getTeamImages,
   getTournamentImage,
   uploadImageInS3Bucket,
+  getFlagsOfCountry
 };

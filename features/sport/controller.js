@@ -8,158 +8,11 @@ import CountryLeagueList from "./models/countryLeagueListSchema.js";
 import BannerSportList from "./models/BannerList.js";
 import ScheduleMatches from "./models/sheduleMatchesSchema.js";
 import service from "./service.js";
-import { uploadFile } from "../../helper/aws_s3.js";
 import config from "../../config/config.js";
-import axiosInstance from "../../config/axios.config.js";
 import RecentMatch from "./models/recentMatchesSchema.js";
-// import { verifyToken } from "../../middleware/verifyToken.js";
 import helper from "../../helper/common.js";
 import PlayerDetails from "../player/models/playerDetailsSchema.js";
 import TeamDetails from "../team/models/teamDetailsSchema.js";
-
-const folderName = "country";
-
-// const getCountryLeagueList = async (req, res, next) => {
-//   try {
-//     const { sport } = req.params;
-//     const key = cacheService.getCacheKey(req);
-
-//     let data = cacheService.getCache(key);
-//     if (!data) {
-//       const countryLeagueListEntry = await CountryLeagueList.findOne({ sport });
-//       if (countryLeagueListEntry) {
-//         data = countryLeagueListEntry.data;
-//       } else {
-//         data = await service.getCountryLeagueList(sport);
-//         await Promise.all(
-//           data.map(async (item) => {
-//             let alpha2 = item.alpha2 || undefined;
-//             const flag = item.flag || undefined;
-//             const identifier = (alpha2 || flag).toLowerCase();
-
-//             if (identifier) {
-//               const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
-//               try {
-//                 const response = await fetch(baseUrl);
-//                 if (response.status !== 200) {
-//                   item.image = null;
-//                 } else {
-//                   item.image = baseUrl;
-//                 }
-//                 // console.log({ identifier }, "==>> free");
-//               } catch (error) {
-//                 const response = await axiosInstance.get(
-//                   `/static/images/flags/${identifier}.png`,
-//                   {
-//                     responseType: "arraybuffer",
-//                   }
-//                 );
-//                 // console.log({ identifier }, "==>> paid");
-//                 const buffer = Buffer.from(response.data, "binary");
-
-//                 await uploadFile({
-//                   filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`,
-//                   file: buffer,
-//                   ACL: "public-read",
-//                 });
-//                 const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
-//                 item.image = imageUrl;
-//               }
-//             }
-//             return item;
-//           })
-//         );
-
-//         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
-
-//         const fetchAllCategories = async () => {
-//           const promises = data.map(async (item) => {
-//             const response = await sportService.getLeagueTournamentList(
-//               item.id
-//             );
-//             item.tournamentlist = response;
-//             return item;
-//           });
-
-//           const results = await Promise.all(promises);
-//           return results;
-//         };
-//         data = await fetchAllCategories();
-
-//         const newCountryLeagueListEntry = new CountryLeagueList({
-//           sport,
-//           data,
-//         });
-//         await newCountryLeagueListEntry.save();
-//       }
-//     }
-
-//     const modifyData = await CountryLeagueList.aggregate([
-//       { $match: { sport: sport } },
-//       {
-//         $project: {
-//           data: {
-//             $map: {
-//               input: "$data",
-//               as: "dataObj",
-//               in: {
-//                 name: "$$dataObj.name",
-//                 slug: "$$dataObj.slug",
-//                 image: "$$dataObj.image",
-//                 id: "$$dataObj.id",
-//                 tournamentlist: {
-//                   $map: {
-//                     input: "$$dataObj.tournamentlist",
-//                     as: "tournament",
-//                     in: {
-//                       name: "$$tournament.name",
-//                       slug: "$$tournament.slug",
-//                       category: {
-//                         name: "$$tournament.category.name",
-//                         slug: "$$tournament.category.slug",
-//                         id: "$$tournament.category.id",
-//                         flag: "$$tournament.category.flag",
-//                       },
-//                       userCount: "$$tournament.userCount",
-//                       id: "$$tournament.id",
-//                     },
-//                   },
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       },
-//     ]);
-
-//     return apiResponse({
-//       res,
-//       data: modifyData[0],
-//       // data:  modifyData[0].data.sort((a, b) => a.name.localeCompare(b.name)),
-//       status: true,
-//       message: "Country league list fetched successfully",
-//       statusCode: StatusCodes.OK,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     if (error.response && error.response.status === 404) {
-//       return apiResponse({
-//         res,
-//         data: null,
-//         status: true,
-//         message: "No data found",
-//         statusCode: StatusCodes.OK,
-//       });
-//     } else {
-//       return apiResponse({
-//         res,
-//         status: false,
-//         message: "Internal server error",
-//         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-//       });
-//     }
-//   }
-// };
 
 const getCountryLeagueList = async (req, res, next) => {
   try {
@@ -180,30 +33,17 @@ const getCountryLeagueList = async (req, res, next) => {
             const identifier = (alpha2 || flag).toLowerCase();
 
             if (identifier) {
-              const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
-              try {
-                const response = await fetch(baseUrl);
-                if (response.status !== 200) {
-                  item.image = null;
-                } else {
-                  item.image = baseUrl;
-                }
-              } catch (error) {
-                const response = await axiosInstance.get(
-                  `/static/images/flags/${identifier}.png`,
-                  {
-                    responseType: "arraybuffer",
-                  }
+              const folderName = "country";
+              const image = await helper.getFlagsOfCountry(identifier);
+              if (image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+                  folderName,
+                  identifier
                 );
-                const buffer = Buffer.from(response.data, "binary");
-
-                await uploadFile({
-                  filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`,
-                  file: buffer,
-                  ACL: "public-read",
-                });
-                const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
-                item.image = imageUrl;
+                item.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}`;
+              } else {
+                item.image = null;
               }
             }
             return item;
@@ -222,39 +62,18 @@ const getCountryLeagueList = async (req, res, next) => {
                 const tournamentId = tournament?.id;
                 const folderName = "tournaments";
 
-                const Tournamentimage = await service.getUniqueTournamentImage(
-                  tournamentId
-                );
-
-                const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${tournamentId}`;
-                await uploadFile({
-                  filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${tournamentId}`,
-                  file: Tournamentimage,
-                  ACL: "public-read",
-                });
-
-                try {
-                  const response = await fetch(imageUrl);
-                  if (response.status !== 200) {
-                    tournament.image = null;
-                  } else {
-                    tournament.image = imageUrl;
-                  }
-                } catch (error) {
-                  console.log(error);
-                  const image = await service.getUniqueTournamentImage(
+                const image = await helper.getTournamentImage(tournamentId);
+                if (image) {
+                  await helper.uploadImageInS3Bucket(
+                    `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${tournamentId}/image`,
+                    folderName,
                     tournamentId
                   );
-                  if (image) {
-                    await uploadFile({
-                      filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${tournamentId}`,
-                      file: image,
-                      ACL: "public-read",
-                    });
-                    const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${tournamentId}`;
-                    tournament.image = imageUrl;
-                  }
+                  tournament.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${tournamentId}`;
+                } else {
+                  tournament.image = null;
                 }
+
                 return tournament;
               })
             );
@@ -648,7 +467,7 @@ const getRecentMatches = async (req, res, next) => {
 
 const globalSearch = async (req, res, next) => {
   try {
-    const { type, text } = req.body;
+    const { type, text } = req.body; // Changed from req.query or req.params to req.body
     let data;
     if (type === "player") {
       const players = await PlayerDetails.aggregate([
@@ -680,7 +499,6 @@ const globalSearch = async (req, res, next) => {
         {
           $project: {
             team: {
-              //This data only sending null  because of frontend side use standing model
               position: { $ifNull: ["$data.team.position", null] },
               matches: { $ifNull: ["$data.team.matches", null] },
               draws: { $ifNull: ["$data.team.draws", null] },
@@ -689,8 +507,6 @@ const globalSearch = async (req, res, next) => {
               netRunRate: { $ifNull: ["$data.team.netRunRate", null] },
               noResult: { $ifNull: ["$data.team.noResult", null] },
               wins: { $ifNull: ["$data.team.wins", null] },
-
-              //The data is coming from here
               id: { $ifNull: ["$data.team.id", null] },
               shortName: { $ifNull: ["$data.team.shortName", null] },
               teamName: { $ifNull: ["$data.team.name", null] },
@@ -734,6 +550,8 @@ const globalSearch = async (req, res, next) => {
         statusCode: StatusCodes.BAD_REQUEST,
       });
     }
+
+    data = data.reverse().slice(0, 10);
 
     return apiResponse({
       res,
