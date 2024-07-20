@@ -537,6 +537,7 @@ const globalSearch = async (req, res, next) => {
               flag: "$data.tournamentlist.category.flag",
             },
             userCount: "$data.tournamentlist.userCount",
+            image: { $ifNull: ["$data.tournamentlist.image", null] },
             sport: "$data.tournamentlist.category.sport.name",
           },
         },
