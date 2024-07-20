@@ -320,7 +320,7 @@ const getAllScheduleMatches = async (req, res, next) => {
         data = await sportService.getAllScheduleMatches(sport, date);
         data.events.forEach((event) => {
           const homeTeamId = event.homeTeam.id;
-          const awayTeamId = event.homeTeam.id;
+          const awayTeamId = event.awayTeam.id;
           if (homeTeamId) {
             const image = helper.getTeamImages(homeTeamId);
 
@@ -443,7 +443,7 @@ const getAllScheduleMatches = async (req, res, next) => {
     let filteredStatusData;
     if (currentDate === date) {
       const filterSameDateData = formattedData.filter((item) =>
-        ["finished", "notstarted", "inprogress","canceled"].includes(
+        ["finished", "notstarted", "inprogress", "canceled"].includes(
           item.status.type
         )
       );
@@ -556,7 +556,9 @@ const globalSearch = async (req, res, next) => {
                   position: { $ifNull: ["$$dataObj.player.position", null] },
                   playerId: { $ifNull: ["$$dataObj.player.id", null] },
                   image: { $ifNull: ["$$dataObj.player.image", null] },
-                  countryName: { $ifNull: ["$$dataObj.player.country.name", null] },
+                  countryName: {
+                    $ifNull: ["$$dataObj.player.country.name", null],
+                  },
                   sport: {
                     $ifNull: ["$$dataObj.player.team.sport.name", null],
                   },
@@ -596,7 +598,11 @@ const globalSearch = async (req, res, next) => {
       const tournaments = await CountryLeagueList.aggregate([
         { $unwind: "$data" },
         { $unwind: "$data.tournamentlist" },
-        { $match: { "data.tournamentlist.name": { $regex: text, $options: "i" } } },
+        {
+          $match: {
+            "data.tournamentlist.name": { $regex: text, $options: "i" },
+          },
+        },
         {
           $project: {
             name: "$data.tournamentlist.name",
