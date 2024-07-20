@@ -145,13 +145,12 @@ const storeRecentMatch = async (userId, sport, matchData) => {
   }
 };
 
-
 const getPlayerImage = async (id) => {
   try {
     const { data } = await axiosInstance.get(`/api/v1/player/${id}/image`);
     return data ?? [];
   } catch (error) {
-    return null
+    return null;
   }
 };
 
@@ -160,16 +159,18 @@ const getTeamImages = async (teamId) => {
     const { data } = await axiosInstance.get(`/api/v1/team/${teamId}/image`);
     return data ?? [];
   } catch (error) {
-    return null
+    return null;
   }
 };
 
 const getTournamentImage = async (id) => {
   try {
-    const { data } = await axiosInstance.get(`/api/v1/unique-tournament/${id}/image`);
+    const { data } = await axiosInstance.get(
+      `/api/v1/unique-tournament/${id}/image`
+    );
     return data ?? [];
   } catch (error) {
-    return null
+    return null;
   }
 };
 
@@ -190,9 +191,11 @@ async function checkBucketExists(bucketName) {
 
 // Function to convert image from URL to PNG or JPEG and upload to S3
 async function uploadImageInS3Bucket(url, folderName, id) {
-  const format = "png"
-  const bucketName = "guardianshot"
-  const key = `${process.env.DIGITAL_OCEAN_DIRNAME}/${folderName}/${id}`
+  console.log(url);
+
+  const format = "png";
+  const bucketName = "guardianshot";
+  const key = `${process.env.DIGITAL_OCEAN_DIRNAME}/${folderName}/${id}`;
   try {
     const bucketExists = await checkBucketExists(bucketName);
     if (!bucketExists) return;
