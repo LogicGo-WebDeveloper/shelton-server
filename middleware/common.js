@@ -10,6 +10,7 @@ import {
   CustomBallType,
   CustomPlayerRole,
   CustomMatchStatus,
+  CustomMatchOfficial,
 } from "../cricket-custom-module/models/common.models.js";
 import CustomSportList from "../cricket-custom-module/models/sport.models.js";
 import BannerSportList from "../features/sport/models/BannerList.js";
@@ -49,6 +50,7 @@ const ballTypeList = await readJsonFile(
 const BannerList = await readJsonFile(path.resolve("json/banner-list.json"));
 const roleList = await readJsonFile(path.resolve("json/roles.player.json"));
 const statusList = await readJsonFile(path.resolve("json/status.match.json"));
+const matchOfficialsList = await readJsonFile(path.resolve("json/match-officials.match.json"));
 
 export const InsertSportList = async () => {
   const sportNamesInJson = sportList.map((sport) => sport.sportName);
@@ -220,4 +222,23 @@ export const InsertMatchStatus = async () => {
   }
   // Delete status not in JSON
   await CustomMatchStatus.deleteMany({ status: { $nin: statusNamesInJson } });
+};
+
+
+export const InsertMatchOfficials = async () => {
+  const matchOfficialsNamesInJson = matchOfficialsList.map((matchOfficial) => matchOfficial.name);
+  for (const matchOfficial of matchOfficialsList) {
+    const exists = await CustomMatchOfficial.findOne({
+      name: matchOfficial.name,
+    });
+    if (!exists) {
+      const newMatchOfficial = new CustomMatchOfficial(matchOfficial);
+      await newMatchOfficial.save();
+    } else {
+      exists.image = matchOfficial.image;
+      await exists.save();
+    }
+  }
+  // Delete sports not in JSON
+  await CustomMatchOfficial.deleteMany({ name: { $nin: matchOfficialsNamesInJson } });
 };

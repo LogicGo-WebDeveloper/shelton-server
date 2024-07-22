@@ -1,6 +1,6 @@
 import { apiResponse } from "../../helper/apiResponse.js";
 import { StatusCodes } from "http-status-codes";
-import { CustomBallType, CustomCityList, CustomMatchOn, CustomMatchStatus, CustomMatchType, CustomPitchType, CustomPlayerRole, CustomTournamentCategory, CustomTournamentWinningPrize } from "../models/common.models.js";
+import { CustomBallType, CustomCityList, CustomMatchOn, CustomMatchStatus, CustomMatchType, CustomPitchType, CustomPlayerRole, CustomTournamentCategory, CustomTournamentWinningPrize, CustomMatchOfficial } from "../models/common.models.js";
 
 const getCityList = async (req, res, next) => {
   const { page = 1, city } = req.query;
@@ -223,6 +223,41 @@ const getMatchStatus = async (req, res, next) => {
   }
 };
 
+const getMatchOfficials = async (req, res, next) => {
+  try {
+    const matchOfficials = await CustomMatchOfficial.find();
+
+    var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
+    matchOfficials.forEach((matchOfficial) => {
+      matchOfficial.image = matchOfficial.image ? fullUrl + matchOfficial.image : "";
+    });
+
+    return apiResponse({ 
+      res, 
+      statusCode: StatusCodes.OK, 
+      message: "Match officials fetched successfully", 
+      status: true, 
+      data: matchOfficials 
+    });
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        statusCode: StatusCodes.NOT_FOUND,
+        status: true,
+        message: "Match officials not found",
+      });
+    } else {  
+      return apiResponse({ 
+        res, 
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR, 
+        message: "Internal server error", 
+        status: false 
+      });
+    }
+  }
+};
+
 export default {
   getCityList,
   getTournamentCategory,
@@ -232,5 +267,6 @@ export default {
   getBallTypes,
   getPitchTypes,
   getPlayerRoles,
-  getMatchStatus
+  getMatchStatus,
+  getMatchOfficials
 };

@@ -11,6 +11,7 @@ import {
   InsertBallType,
   InsertBannerList,
   InsertCityList,
+  InsertMatchOfficials,
   InsertMatchOn,
   InsertMatchStatus,
   InsertMatchType,
@@ -52,6 +53,7 @@ InsertBallType();
 InsertBannerList();
 InsertPlayerRole();
 InsertMatchStatus();
+InsertMatchOfficials();
 
 app.use("/api/auth", route.authRoute);
 app.use("/api/v1/sport", route.sportRoute);

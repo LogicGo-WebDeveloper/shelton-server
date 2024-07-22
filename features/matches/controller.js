@@ -368,8 +368,6 @@ const getSingleMatchDetail = async (req, res, next) => {
       matchesId: data._id,
     });
 
-    console.log("data._id", data._id)
-
     const filteredMatchDetails = filterLiveMatchData(
       allData,
       data._id,
