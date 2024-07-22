@@ -143,8 +143,6 @@ const setupWebSocket = (server) => {
           try {
             const sportList = await sportWebsocketService.getSportList(19800);
             let filteredSportList = convertSportListToArray(sportList);
-
-            console.log("filteredSportList", filteredSportList)
             ws.send(
               JSON.stringify({
                 message: "Sport list fetched successfully",
@@ -335,7 +333,7 @@ const setupWebSocket = (server) => {
           try {
             const squad = await sportWebsocketService.getSquad(data.matchId);
             for (const player of squad.home.players) {
-              const image = helper.getPlayerImage(player.player.id);
+              const image = await helper.getPlayerImage(player.player.id);
               if (image) {
                 const folderName = "player";
                 helper.uploadImageInS3Bucket(
@@ -350,7 +348,7 @@ const setupWebSocket = (server) => {
             }
 
             for (const player of squad.away.players) {
-              const image = helper.getPlayerImage(player.player.id);
+              const image = await helper.getPlayerImage(player.player.id);
               if (image) {
                 const folderName = "player";
                 helper.uploadImageInS3Bucket(
