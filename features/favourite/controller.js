@@ -8,7 +8,6 @@ import favouriteLeagueDetails from "./models/favouriteLeagueDetails.js";
 const favouriteMatchesadd = async (req, res, next) => {
   try {
     const matchesId = req.body.matchesId;
-    const userId = req.body.userId;
     const type = req.body.type;
 
     // Check if the document already exists in the collection
@@ -44,7 +43,7 @@ const favouriteMatchesadd = async (req, res, next) => {
       // If document does not exist, create a new one with status 1
       const newFavourite = await FavouriteDetails.create({
         matchesId: matchesId,
-        userId: req.user ? req.user._id : userId,
+        userId: req.user ? req.user._id : "",
         status: 1, // Set initial status to 1
         type: type,
         // Additional fields can be added here
@@ -70,7 +69,6 @@ const favouriteMatchesadd = async (req, res, next) => {
 };
 
 const favouriteMatcheslist = async (req, res, next) => {
-  console.log(req.user._id);
   try {
     // Fetch data using populate and select
     const favoriteMatchList = await FavouriteDetails.find({
@@ -201,7 +199,6 @@ const favouriteMatcheslist = async (req, res, next) => {
 const favouritePlayersadd = async (req, res, next) => {
   try {
     const playerId = req.body.playerId;
-    const userId = req.body.userId;
     const type = req.body.type;
     console.log(req.user._id);
 
@@ -237,7 +234,7 @@ const favouritePlayersadd = async (req, res, next) => {
       // If document does not exist, create a new one with status 1
       const newFavourite = await FavouritePlayerDetails.create({
         playerId: playerId,
-        userId: req.user ? req.user._id : userId,
+        userId: req.user ? req.user._id : "",
         status: 1, // Set initial status to 1
         type: type,
         // Additional fields can be added here
@@ -273,7 +270,6 @@ const favouritePlayersadd = async (req, res, next) => {
 };
 
 const favouritePlayerlist = async (req, res, next) => {
-  console.log(req.user._id);
   try {
     // Fetch data using populate and select
     const favoritePlayerList = await FavouritePlayerDetails.find({
@@ -405,7 +401,6 @@ const favouritePlayerlist = async (req, res, next) => {
 const favouriteTeamsadd = async (req, res, next) => {
   try {
     const teamId = req.body.teamId;
-    const userId = req.body.userId;
     const type = req.body.type;
 
     const existingFavourite = await FavouriteTeamDetails.findOne({
@@ -440,7 +435,7 @@ const favouriteTeamsadd = async (req, res, next) => {
       // If document does not exist, create a new one with status 1
       const newFavourite = await FavouriteTeamDetails.create({
         teamId: teamId,
-        userId: req.user ? req.user._id : userId,
+        userId: req.user ? req.user._id : "",
         status: 1, // Set initial status to 1
         type: type,
         // Additional fields can be added here
@@ -611,7 +606,6 @@ const favouriteTeamList = async (req, res, next) => {
 const favouriteLeagueadd = async (req, res, next) => {
   try {
     const leagueId = req.body.leagueId;
-    const userId = req.body.userId;
     const type = req.body.type;
 
     const existingFavourite = await favouriteLeagueDetails.findOne({
@@ -646,7 +640,7 @@ const favouriteLeagueadd = async (req, res, next) => {
       // If document does not exist, create a new one with status 1
       const newFavourite = await favouriteLeagueDetails.create({
         leagueId: leagueId,
-        userId: req.user ? req.user._id : userId,
+        userId: req.user ? req.user._id : "",
         status: 1, // Set initial status to 1
         type: type,
         // Additional fields can be added here

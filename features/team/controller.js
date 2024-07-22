@@ -538,7 +538,7 @@ const getTeamDetails = async (req, res, next) => {
         }
 
         const apiData = await service.getTeamDetails(req.params);
-        let tournamentId = apiData.team.tournament.id;
+        let tournamentId = apiData.team.tournament.uniqueTournament.id;
 
         const folderTournamentName = "tournaments";
         let tournamentImageUrl;
