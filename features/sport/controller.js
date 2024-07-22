@@ -204,7 +204,7 @@ const getSportList = async (req, res, next) => {
         name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
         live: data[key].live,
         total: data[key].total,
-        image: sportUrl + data[key].image,
+        image: data[key].image ? sportUrl + data[key].image : "",
       };
     });
 
