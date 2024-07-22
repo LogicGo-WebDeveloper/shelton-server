@@ -38,7 +38,6 @@ const getTournamentById = async (req, res, next) => {
           imageUrl = "";
         }
 
-
         let alpha2 = data.category.alpha2 || undefined;
         const flag = data.category.flag || undefined;
         const identifier = (alpha2 || flag).toLowerCase();

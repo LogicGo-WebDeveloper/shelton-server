@@ -22,8 +22,10 @@ export const filterLiveMatchData = (match, _id, isFavourite) => {
         slug: match?.tournament?.category?.slug || null,
         id: match?.tournament?.category?.id || null,
         country: match?.tournament?.category?.country || null,
+        image: match?.tournament?.category?.image || null,
       },
       id: match?.tournament?.id || null,
+      image: match?.tournament?.image || null,
     },
     favouriteMatchDetails: {
       is_favourite: isAllfavourite ? isAllfavourite : false,

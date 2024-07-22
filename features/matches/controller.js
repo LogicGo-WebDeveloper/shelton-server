@@ -281,14 +281,24 @@ const getSingleMatchDetail = async (req, res, next) => {
 
         let homeId = apiData.event.homeTeam.id;
         let awayId = apiData.event.awayTeam.id;
+        let uniqueTournamentId = apiData.event.tournament?.uniqueTournament?.id;
+        let alpha2 = apiData.event.tournament?.category?.alpha2 || undefined;
+        const flag = apiData.event.tournament?.category?.flag || undefined;
+        const identifier = (alpha2 || flag).toLowerCase();
 
         const home_image = await helper.getTeamImages(homeId);
         const away_image = await helper.getTeamImages(awayId);
+        const tournament_image = await helper.getTournamentImage(uniqueTournamentId);
 
         let homeImageUrl;
         let awayImageUrl;
+        let tournamentImageUrl;
+        let countryImageUrl;
 
         const folderName = "team";
+        const tournamentFolderName = "tournaments";
+        const countryFolderName = "country";
+
         if (home_image) {
           await helper.uploadImageInS3Bucket(
             `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${homeId}/image`,
@@ -311,8 +321,36 @@ const getSingleMatchDetail = async (req, res, next) => {
           awayImageUrl = "";
         }
 
+        if (tournament_image) {
+          await helper.uploadImageInS3Bucket(
+            `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${uniqueTournamentId}/image`,
+            tournamentFolderName,
+            uniqueTournamentId
+          );
+          tournamentImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${tournamentFolderName}/${uniqueTournamentId}`;
+        } else {
+          tournamentImageUrl = "";
+        }
+
+
+        if (identifier) {
+          const image = await helper.getFlagsOfCountry(identifier);
+          if (image) {
+            await helper.uploadImageInS3Bucket(
+              `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+              countryFolderName,
+              identifier
+            );
+            countryImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${countryFolderName}/${identifier}`;
+          } else {
+            countryImageUrl = "";
+          }
+        }
+
         apiData.event.homeTeam.image = homeImageUrl;
         apiData.event.awayTeam.image = awayImageUrl;
+        apiData.event.tournament.image = tournamentImageUrl;
+        apiData.event.tournament.category.image = countryImageUrl;
 
         const matchEntry = new MatcheDetailsByMatchScreen({
           matchId: id,
@@ -329,6 +367,8 @@ const getSingleMatchDetail = async (req, res, next) => {
     const isFavourite = await FavouriteDetails.findOne({
       matchesId: data._id,
     });
+
+    console.log("data._id", data._id)
 
     const filteredMatchDetails = filterLiveMatchData(
       allData,
