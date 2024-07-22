@@ -9,6 +9,8 @@ import {
   filteredOversData,
   fractionalOddsToDecimal,
 } from "./utils.js";
+import helper from "../helper/common.js"
+import config from "../config/config.js"
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
@@ -31,11 +33,82 @@ const setupWebSocket = (server) => {
       switch (data.action) {
         case "liveMatches":
           try {
-            const liveMatches = await sportWebsocketService.getAllLiveMatches(
-              data.sport
-            );
-            const filteredLiveMatches =
-              liveMatches.events.map(filterLiveMatchData);
+            const liveMatches = await sportWebsocketService.getAllLiveMatches(data.getSportList);
+            for (const event of liveMatches.events) {
+              const folderName = "team";
+              const tournamentFolderName = "tournaments";
+              const countryFolderName = "country";
+
+              let homeImageUrl;
+              let awayImageUrl;
+              let tournamentImageUrl;
+              let countryImageUrl;
+
+              let uniqueTournamentId = event.tournament?.uniqueTournament?.id;
+              let alpha2 = event.tournament?.category?.alpha2 || undefined;
+              const flag = event.tournament?.category?.flag || undefined;
+              const identifier = (alpha2 || flag).toLowerCase();
+    
+              const home_image = await helper.getTeamImages(event.homeTeam.id);
+              const away_image = await helper.getTeamImages(event.awayTeam.id);
+              const tournament_image = await helper.getTournamentImage(uniqueTournamentId);
+    
+              if (home_image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${event.homeTeam.id}/image`,
+                  folderName,
+                  event.homeTeam.id
+                );
+                homeImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${event.homeTeam.id}`;
+              } else {
+                homeImageUrl = "";
+              }
+    
+              if (away_image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${event.awayTeam.id}/image`,
+                  folderName,
+                  event.awayTeam.id
+                );
+                awayImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${event.awayTeam.id}`;
+              } else {
+                awayImageUrl = "";
+              }
+
+
+              if (tournament_image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${uniqueTournamentId}/image`,
+                  tournamentFolderName,
+                  uniqueTournamentId
+                );
+                tournamentImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${tournamentFolderName}/${uniqueTournamentId}`;
+              } else {
+                tournamentImageUrl = "";
+              }
+      
+      
+              if (identifier) {
+                const image = await helper.getFlagsOfCountry(identifier);
+                if (image) {
+                  await helper.uploadImageInS3Bucket(
+                    `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+                    countryFolderName,
+                    identifier
+                  );
+                  countryImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${countryFolderName}/${identifier}`;
+                } else {
+                  countryImageUrl = "";
+                }
+              }
+    
+              event.homeTeam.image = homeImageUrl;
+              event.awayTeam.image = awayImageUrl;
+              event.tournament.image = tournamentImageUrl;
+              event.tournament.category.image = countryImageUrl;
+            }
+
+            const filteredLiveMatches = liveMatches.events.map(filterLiveMatchData);
             ws.send(
               JSON.stringify({
                 message: "Live matches fetched successfully",
@@ -71,6 +144,8 @@ const setupWebSocket = (server) => {
           try {
             const sportList = await sportWebsocketService.getSportList(19800);
             let filteredSportList = convertSportListToArray(sportList);
+
+            console.log("filteredSportList", filteredSportList)
             ws.send(
               JSON.stringify({
                 message: "Sport list fetched successfully",
@@ -104,9 +179,80 @@ const setupWebSocket = (server) => {
           break;
         case "liveMatch":
           try {
-            const liveMatch = await sportWebsocketService.getLiveMatch(
-              data.matchId
-            );
+            const liveMatch = await sportWebsocketService.getLiveMatch(data.matchId);
+            let homeId = liveMatch.event.homeTeam.id;
+            let awayId = liveMatch.event.awayTeam.id;
+            let uniqueTournamentId = liveMatch.event.tournament?.uniqueTournament?.id;
+            let alpha2 = liveMatch.event.tournament?.category?.alpha2 || undefined;
+            const flag = liveMatch.event.tournament?.category?.flag || undefined;
+            const identifier = (alpha2 || flag).toLowerCase();
+
+            const home_image = await helper.getTeamImages(homeId);
+            const away_image = await helper.getTeamImages(awayId);
+            const tournament_image = await helper.getTournamentImage(uniqueTournamentId);
+
+            let homeImageUrl;
+            let awayImageUrl;
+            let tournamentImageUrl;
+            let countryImageUrl;
+
+            const folderName = "team";
+            const tournamentFolderName = "tournaments";
+            const countryFolderName = "country";
+
+            if (home_image) {
+              await helper.uploadImageInS3Bucket(
+                `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${homeId}/image`,
+                folderName,
+                homeId
+              );
+              homeImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${homeId}`;
+            } else {
+              homeImageUrl = "";
+            }
+
+            if (away_image) {
+              await helper.uploadImageInS3Bucket(
+                `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${awayId}/image`,
+                folderName,
+                awayId
+              );
+              awayImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${awayId}`;
+            } else {
+              awayImageUrl = "";
+            }
+
+            if (tournament_image) {
+              await helper.uploadImageInS3Bucket(
+                `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${uniqueTournamentId}/image`,
+                tournamentFolderName,
+                uniqueTournamentId
+              );
+              tournamentImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${tournamentFolderName}/${uniqueTournamentId}`;
+            } else {
+              tournamentImageUrl = "";
+            }
+
+
+            if (identifier) {
+              const image = await helper.getFlagsOfCountry(identifier);
+              if (image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+                  countryFolderName,
+                  identifier
+                );
+                countryImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${countryFolderName}/${identifier}`;
+              } else {
+                countryImageUrl = "";
+              }
+            }
+
+            liveMatch.event.homeTeam.image = homeImageUrl;
+            liveMatch.event.awayTeam.image = awayImageUrl;
+            liveMatch.event.tournament.image = tournamentImageUrl;
+            liveMatch.event.tournament.category.image = countryImageUrl;
+
             const filteredLiveMatch = filterLiveMatchData(liveMatch.event);
             if (filteredLiveMatch?.status?.type === "finished") {
               ws.send(
@@ -284,9 +430,80 @@ const setupWebSocket = (server) => {
           break;
         case "matches":
           try {
-            const matches = await sportWebsocketService.getMatches(
-              data.customId
-            );
+            const matches = await sportWebsocketService.getMatches(data.customId);
+            for (const event of matches.events) {
+              const folderName = "team";
+              const tournamentFolderName = "tournaments";
+              const countryFolderName = "country";
+
+              let homeImageUrl;
+              let awayImageUrl;
+              let tournamentImageUrl;
+              let countryImageUrl;
+
+              let uniqueTournamentId = event.tournament?.uniqueTournament?.id;
+              let alpha2 = event.tournament?.category?.alpha2 || undefined;
+              const flag = event.tournament?.category?.flag || undefined;
+              const identifier = (alpha2 || flag).toLowerCase();
+    
+              const home_image = await helper.getTeamImages(event.homeTeam.id);
+              const away_image = await helper.getTeamImages(event.awayTeam.id);
+              const tournament_image = await helper.getTournamentImage(uniqueTournamentId);
+    
+              if (home_image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${event.homeTeam.id}/image`,
+                  folderName,
+                  event.homeTeam.id
+                );
+                homeImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${event.homeTeam.id}`;
+              } else {
+                homeImageUrl = "";
+              }
+    
+              if (away_image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${event.awayTeam.id}/image`,
+                  folderName,
+                  event.awayTeam.id
+                );
+                awayImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${event.awayTeam.id}`;
+              } else {
+                awayImageUrl = "";
+              }
+
+
+              if (tournament_image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${uniqueTournamentId}/image`,
+                  tournamentFolderName,
+                  uniqueTournamentId
+                );
+                tournamentImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${tournamentFolderName}/${uniqueTournamentId}`;
+              } else {
+                tournamentImageUrl = "";
+              }
+      
+              if (identifier) {
+                const image = await helper.getFlagsOfCountry(identifier);
+                if (image) {
+                  await helper.uploadImageInS3Bucket(
+                    `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+                    countryFolderName,
+                    identifier
+                  );
+                  countryImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${countryFolderName}/${identifier}`;
+                } else {
+                  countryImageUrl = "";
+                }
+              }
+    
+              event.homeTeam.image = homeImageUrl;
+              event.awayTeam.image = awayImageUrl;
+              event.tournament.image = tournamentImageUrl;
+              event.tournament.category.image = countryImageUrl;
+            }
+
             const filteredMatches = matches.events.map(filterLiveMatchData);
             ws.send(
               JSON.stringify({
