@@ -2,11 +2,14 @@ import helper from "../helper/common.js";
 import config from "../config/config.js";
 
 export const convertSportListToArray = (sportList) => {
+  let sportUrl = req.protocol + "://" + req.get("host") + "/sport/";
+
   return Object.keys(sportList).map((key) => ({
     id: key,
     name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
     live: sportList[key].live,
     total: sportList[key].total,
+    image: sportUrl + sportList[key].image,
   }));
 };
 
@@ -158,7 +161,11 @@ const getImageUrl = async (playerId) => {
   let imageUrl;
   const image = await helper.getPlayerImage(playerId);
   if (image) {
-    await helper.uploadImageInS3Bucket(`${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${playerId}/image`, folderName, playerId);
+    await helper.uploadImageInS3Bucket(
+      `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${playerId}/image`,
+      folderName,
+      playerId
+    );
     imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${playerId}`;
   } else {
     imageUrl = null;
@@ -176,7 +183,7 @@ export const filteredOversData = async (data) => {
       overMap[over] = {
         over: over.toString(),
         total_runs_in_this_over: 0,
-        image: await getImageUrl(item?.bowler?.id) || null,
+        image: (await getImageUrl(item?.bowler?.id)) || null,
         balls: [],
       };
       result.push(overMap[over]);

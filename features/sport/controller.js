@@ -176,6 +176,10 @@ const getSportList = async (req, res, next) => {
       } else {
         // Fetch data from the API
         data = await sportService.getSportList(timezoneOffset);
+        data.football.image = "football.png";
+        data.tennis.image = "tennis.png";
+        data.cricket.image = "cricket.png";
+
         cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
 
         // Store the fetched data in the database
@@ -192,12 +196,15 @@ const getSportList = async (req, res, next) => {
         : "";
     });
 
+    let sportUrl = req.protocol + "://" + req.get("host") + "/sport/";
+
     let fildataaa = Object.keys(data).map((key) => {
       return {
         id: key,
         name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
         live: data[key].live,
         total: data[key].total,
+        image: sportUrl + data[key].image,
       };
     });
 

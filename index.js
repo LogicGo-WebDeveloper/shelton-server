@@ -41,6 +41,8 @@ app.use(
   })
 );
 app.use("/images", express.static("cricket-custom-module/public"));
+app.use("/sport", express.static("public/images"));
+
 InsertSportList();
 InsertCityList();
 InsertTournamentCategory();
