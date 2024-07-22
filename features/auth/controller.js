@@ -30,10 +30,8 @@ const verifyToken = async (req, res) => {
 };
 
 const registerByEmail = async (req, res) => {
-  console.log(11);
   try {
     const { email, password, name } = req.body;
-    console.log(name);
 
     // find user by email
     const user = await userService.findOne({

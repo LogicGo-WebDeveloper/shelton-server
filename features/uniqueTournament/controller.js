@@ -138,8 +138,6 @@ const getTournamentById = async (req, res, next) => {
       },
     ]);
 
-    console.log(modifyData);
-
     return apiResponse({
       res,
       data: modifyData[0]?.data[0],

@@ -202,8 +202,6 @@ async function checkBucketExists(bucketName) {
 
 // Function to convert image from URL to PNG or JPEG and upload to S3
 async function uploadImageInS3Bucket(url, folderName, id) {
-  console.log(url);
-
   const format = "png";
   const bucketName = "guardianshot";
   const key = `${process.env.DIGITAL_OCEAN_DIRNAME}/${folderName}/${id}`;
