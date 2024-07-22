@@ -9,7 +9,7 @@ export const convertSportListToArray = (sportList) => {
     name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
     live: sportList[key].live,
     total: sportList[key].total,
-    image: sportUrl + sportList[key].image,
+    image: sportList[key].image ? sportUrl + sportList[key].image : "",
   }));
 };
 
