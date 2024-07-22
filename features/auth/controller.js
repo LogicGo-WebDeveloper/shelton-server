@@ -341,6 +341,7 @@ const loginByGoogle = async (req, res) => {
         role: user.role,
         email: user.email,
         mobileNumber: user.mobileNumber,
+        name: user.name,
       },
     };
 
