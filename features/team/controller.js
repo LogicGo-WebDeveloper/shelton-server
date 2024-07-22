@@ -13,6 +13,7 @@ import TeamFeaturedMatches from "./models/teamFeaturedMatchesSchema.js";
 import TeamSeasonsStanding from "./models/teamSeasonsStandingSchema.js";
 import config from "../../config/config.js";
 import helper from "../../helper/common.js";
+import FavouriteTeamDetails from "../favourite/models/favouriteTeamDetails.js";
 
 const getTeamPerformance = async (req, res, next) => {
   try {
@@ -594,33 +595,9 @@ const getTeamDetails = async (req, res, next) => {
       const aggregatedData = await TeamDetails.aggregate([
         { $match: { teamId: req.params.id } },
         {
-          $lookup: {
-            from: "favouriteteamdetails", // Collection name of FavouritePlayerDetails
-            localField: "_id", // Field from PlayerDetails collection to match
-            foreignField: "teamId", // Field from FavouritePlayerDetails collection to match
-            as: "favouriteTeamDetails",
-          },
-        },
-        {
           $project: {
             _id: 1,
             teamId: "$teamId",
-            favouriteTeamDetails: {
-              $cond: {
-                if: {
-                  $gt: [{ $size: "$favouriteTeamDetails" }, 0],
-                },
-                then: {
-                  is_favourite: {
-                    $arrayElemAt: ["$favouriteTeamDetails.status", 0],
-                  },
-                  // Include other fields from FavouritePlayerDetails if needed
-                },
-                else: {
-                  is_favourite: true,
-                },
-              },
-            },
             image: 1,
             team: {
               name: { $ifNull: ["$data.team.name", null] },
@@ -691,6 +668,14 @@ const getTeamDetails = async (req, res, next) => {
       cacheService.setCache(key, data, cacheTTL.ONE_DAY);
     }
 
+    const allExistingFavourite = await FavouriteTeamDetails.findOne({
+      teamId: data._id,
+    });
+
+    data.favouriteTeamDetails = {
+      is_favourite: allExistingFavourite?.status
+    }
+
     return apiResponse({
       res,
       data: data,
@@ -718,6 +703,85 @@ const getTeamDetails = async (req, res, next) => {
     }
   }
 };
+
+
+// const getTeamDetails = async (req, res, next) => {
+//   try {
+//     const { id } = req.params;
+//     const key = cacheService.getCacheKey(req);
+
+//     let data = cacheService.getCache(key);
+
+//     if (!data) {
+//       // Check if the data exists in the database
+//       let detailsTeam = await TeamDetails.findOne({ teamId: id });
+
+//       if (!detailsTeam) {
+//         // Fetch data from the API
+//         const apiData = await service.getTeamDetails(req.params);
+
+//         // Store the fetched data in the database
+//         const teamDetailsEntry = new TeamDetails({
+//           teamId: req.params.id,
+//           data: apiData,
+//         });
+//         await teamDetailsEntry.save();
+//         detailsTeam = teamDetailsEntry;
+//       }
+
+//       // Aggregate the data
+//       const aggregatedData = await TeamDetails.aggregate([
+//         { $match: { teamId: req.params.id } },
+//         {
+//           $lookup: {
+//             from: "favouriteteamdetails", // Collection name of FavouriteTeamDetails
+//             localField: "teamId", // Field from TeamDetails collection to match
+//             foreignField: "teamId", // Field from FavouriteTeamDetails collection to match
+//             as: "favouriteTeamDetails",
+//           },
+//         },
+//         {
+//           $project: {
+//             _id: 1,
+//             teamId: "$teamId",
+//             favouriteTeamDetails: {
+//               $cond: {
+//                 if: { $gt: [{ $size: "$favouriteTeamDetails" }, 0] },
+//                 then: {
+//                   is_favourite: { $arrayElemAt: ["$favouriteTeamDetails.status", 0] },
+//                   // Include other fields from FavouriteTeamDetails if needed
+//                 },
+//                 else: {
+//                   is_favourite: false,
+//                 },
+//               },
+//             },
+//             // Include other fields from TeamDetails if needed
+//           },
+//         },
+//       ]);
+
+//       data = aggregatedData[0];
+//       cacheService.setCache(key, data, cacheTTL.ONE_DAY);
+//     }
+
+//     return apiResponse({
+//       res,
+//       data: data,
+//       status: true,
+//       message: "Team details fetched successfully",
+//       statusCode: StatusCodes.OK,
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     return apiResponse({
+//       res,
+//       status: false,
+//       message: "Internal server error",
+//       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+//     });
+//   }
+// };
 
 const getTeamPLayers = async (req, res, next) => {
   try {
