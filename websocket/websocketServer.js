@@ -9,8 +9,8 @@ import {
   filteredOversData,
   fractionalOddsToDecimal,
 } from "./utils.js";
-import helper from "../helper/common.js"
-import config from "../config/config.js"
+import helper from "../helper/common.js";
+import config from "../config/config.js";
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
@@ -33,7 +33,9 @@ const setupWebSocket = (server) => {
       switch (data.action) {
         case "liveMatches":
           try {
-            const liveMatches = await sportWebsocketService.getAllLiveMatches(data.sport);
+            const liveMatches = await sportWebsocketService.getAllLiveMatches(
+              data.sport
+            );
             for (const event of liveMatches.events) {
               const folderName = "team";
               const tournamentFolderName = "tournaments";
@@ -48,11 +50,13 @@ const setupWebSocket = (server) => {
               let alpha2 = event.tournament?.category?.alpha2 || undefined;
               const flag = event.tournament?.category?.flag || undefined;
               const identifier = (alpha2 || flag).toLowerCase();
-    
+
               const home_image = await helper.getTeamImages(event.homeTeam.id);
               const away_image = await helper.getTeamImages(event.awayTeam.id);
-              const tournament_image = await helper.getTournamentImage(uniqueTournamentId);
-    
+              const tournament_image = await helper.getTournamentImage(
+                uniqueTournamentId
+              );
+
               if (home_image) {
                 await helper.uploadImageInS3Bucket(
                   `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${event.homeTeam.id}/image`,
@@ -63,7 +67,7 @@ const setupWebSocket = (server) => {
               } else {
                 homeImageUrl = "";
               }
-    
+
               if (away_image) {
                 await helper.uploadImageInS3Bucket(
                   `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${event.awayTeam.id}/image`,
@@ -75,7 +79,6 @@ const setupWebSocket = (server) => {
                 awayImageUrl = "";
               }
 
-
               if (tournament_image) {
                 await helper.uploadImageInS3Bucket(
                   `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${uniqueTournamentId}/image`,
@@ -86,8 +89,7 @@ const setupWebSocket = (server) => {
               } else {
                 tournamentImageUrl = "";
               }
-      
-      
+
               if (identifier) {
                 const image = await helper.getFlagsOfCountry(identifier);
                 if (image) {
@@ -101,13 +103,14 @@ const setupWebSocket = (server) => {
                   countryImageUrl = "";
                 }
               }
-    
+
               event.homeTeam.image = homeImageUrl;
               event.awayTeam.image = awayImageUrl;
               event.tournament.image = tournamentImageUrl;
               event.tournament.category.image = countryImageUrl;
             }
-            const filteredLiveMatches = liveMatches.events.map(filterLiveMatchData);
+            const filteredLiveMatches =
+              liveMatches.events.map(filterLiveMatchData);
             ws.send(
               JSON.stringify({
                 message: "Live matches fetched successfully",
@@ -176,17 +179,24 @@ const setupWebSocket = (server) => {
           break;
         case "liveMatch":
           try {
-            const liveMatch = await sportWebsocketService.getLiveMatch(data.matchId);
+            const liveMatch = await sportWebsocketService.getLiveMatch(
+              data.matchId
+            );
             let homeId = liveMatch.event.homeTeam.id;
             let awayId = liveMatch.event.awayTeam.id;
-            let uniqueTournamentId = liveMatch.event.tournament?.uniqueTournament?.id;
-            let alpha2 = liveMatch.event.tournament?.category?.alpha2 || undefined;
-            const flag = liveMatch.event.tournament?.category?.flag || undefined;
+            let uniqueTournamentId =
+              liveMatch.event.tournament?.uniqueTournament?.id;
+            let alpha2 =
+              liveMatch.event.tournament?.category?.alpha2 || undefined;
+            const flag =
+              liveMatch.event.tournament?.category?.flag || undefined;
             const identifier = (alpha2 || flag).toLowerCase();
 
             const home_image = await helper.getTeamImages(homeId);
             const away_image = await helper.getTeamImages(awayId);
-            const tournament_image = await helper.getTournamentImage(uniqueTournamentId);
+            const tournament_image = await helper.getTournamentImage(
+              uniqueTournamentId
+            );
 
             let homeImageUrl;
             let awayImageUrl;
@@ -229,7 +239,6 @@ const setupWebSocket = (server) => {
             } else {
               tournamentImageUrl = "";
             }
-
 
             if (identifier) {
               const image = await helper.getFlagsOfCountry(identifier);
@@ -457,7 +466,9 @@ const setupWebSocket = (server) => {
           break;
         case "matches":
           try {
-            const matches = await sportWebsocketService.getMatches(data.customId);
+            const matches = await sportWebsocketService.getMatches(
+              data.customId
+            );
             for (const event of matches.events) {
               const folderName = "team";
               const tournamentFolderName = "tournaments";
@@ -472,11 +483,13 @@ const setupWebSocket = (server) => {
               let alpha2 = event.tournament?.category?.alpha2 || undefined;
               const flag = event.tournament?.category?.flag || undefined;
               const identifier = (alpha2 || flag).toLowerCase();
-    
+
               const home_image = await helper.getTeamImages(event.homeTeam.id);
               const away_image = await helper.getTeamImages(event.awayTeam.id);
-              const tournament_image = await helper.getTournamentImage(uniqueTournamentId);
-    
+              const tournament_image = await helper.getTournamentImage(
+                uniqueTournamentId
+              );
+
               if (home_image) {
                 await helper.uploadImageInS3Bucket(
                   `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${event.homeTeam.id}/image`,
@@ -487,7 +500,7 @@ const setupWebSocket = (server) => {
               } else {
                 homeImageUrl = "";
               }
-    
+
               if (away_image) {
                 await helper.uploadImageInS3Bucket(
                   `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${event.awayTeam.id}/image`,
@@ -499,7 +512,6 @@ const setupWebSocket = (server) => {
                 awayImageUrl = "";
               }
 
-
               if (tournament_image) {
                 await helper.uploadImageInS3Bucket(
                   `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${uniqueTournamentId}/image`,
@@ -510,7 +522,7 @@ const setupWebSocket = (server) => {
               } else {
                 tournamentImageUrl = "";
               }
-      
+
               if (identifier) {
                 const image = await helper.getFlagsOfCountry(identifier);
                 if (image) {
@@ -524,7 +536,7 @@ const setupWebSocket = (server) => {
                   countryImageUrl = "";
                 }
               }
-    
+
               event.homeTeam.image = homeImageUrl;
               event.awayTeam.image = awayImageUrl;
               event.tournament.image = tournamentImageUrl;
