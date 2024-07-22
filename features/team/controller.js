@@ -538,7 +538,47 @@ const getTeamDetails = async (req, res, next) => {
         }
 
         const apiData = await service.getTeamDetails(req.params);
-        apiData.team.image = filename
+        let tournamentId = apiData.team.tournament.id;
+
+        const folderTournamentName = "tournaments";
+        let tournamentImageUrl;
+        let countryImageUrl;
+
+        let alpha2 = apiData.team?.category?.alpha2 || undefined;
+        const flag = apiData.team.category?.flag || undefined;
+        const identifier = (alpha2 || flag).toLowerCase();
+        const countryFolderName = "country";
+
+        if (identifier) {
+          const image = await helper.getFlagsOfCountry(identifier);
+          if (image) {
+            await helper.uploadImageInS3Bucket(
+              `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+              countryFolderName,
+              identifier
+            );
+            countryImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${countryFolderName}/${identifier}`;
+          } else {
+            countryImageUrl = "";
+          }
+        }
+
+        apiData.team.category.image = countryImageUrl;
+
+        const tournamentImage = await helper.getTournamentImage(tournamentId);
+        if (tournamentImage) {
+          await helper.uploadImageInS3Bucket(
+            `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${tournamentId}/image`,
+            folderName,
+            tournamentId
+          );
+          tournamentImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderTournamentName}/${tournamentId}`;
+        } else {
+          tournamentImageUrl = "";
+        }
+
+        apiData.team.image = filename;
+        apiData.team.tournament.image = tournamentImageUrl;
 
         // Store the fetched data in the database
         const teamDetailsEntry = new TeamDetails({
@@ -563,6 +603,8 @@ const getTeamDetails = async (req, res, next) => {
         },
         {
           $project: {
+            _id: 1,
+            teamId: "$teamId",
             favouriteTeamDetails: {
               $cond: {
                 if: {
@@ -575,12 +617,10 @@ const getTeamDetails = async (req, res, next) => {
                   // Include other fields from FavouritePlayerDetails if needed
                 },
                 else: {
-                  is_favourite: false,
+                  is_favourite: true,
                 },
               },
             },
-            _id: 1,
-            teamId: "$teamId",
             image: 1,
             team: {
               name: { $ifNull: ["$data.team.name", null] },
@@ -597,6 +637,9 @@ const getTeamDetails = async (req, res, next) => {
                 slug: "$data.team.tournament.slug",
                 isLive: { $ifNull: ["$data.team.tournament.isLive", null] },
                 id: { $ifNull: ["$data.team.tournament.id", null] },
+                tournamentImage: {
+                  $ifNull: ["$data.team.tournament.image", null],
+                },
               },
               primaryUniqueTournament: {
                 name: {
@@ -635,6 +678,7 @@ const getTeamDetails = async (req, res, next) => {
                 alpha2: { $ifNull: ["$data.team.country.alpha2", null] },
                 alpha3: { $ifNull: ["$data.team.country.alpha3", null] },
                 name: { $ifNull: ["$data.team.country.name", null] },
+                countryImage: { $ifNull: ["$data.team.category.image", null] },
               },
               fullName: { $ifNull: ["$data.team.fullName", null] },
               image: { $ifNull: ["$data.team.image", null] },

@@ -26,14 +26,35 @@ const getPlayerDetailsById = async (req, res, next) => {
       } else {
         const image = await helper.getPlayerImage(id);
         let imageUrl;
-          const folderName = "player"
-          if (image) {
-            await helper.uploadImageInS3Bucket(`${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${id}/image`, folderName, id);
-            imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${id}`
-          } else {
-            imageUrl = "";
-          }
+        const folderName = "player";
+        if (image) {
+          await helper.uploadImageInS3Bucket(
+            `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${id}/image`,
+            folderName,
+            id
+          );
+          imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${id}`;
+        } else {
+          imageUrl = "";
+        }
         data = await service.getPlayerById(id);
+
+        const folderTeamName = "team";
+        const TeamImage = await helper.getTeamImages(data.player.team.id);
+
+        let filename;
+        if (TeamImage) {
+          await helper.uploadImageInS3Bucket(
+            `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${data.player.team.id}/image`,
+            folderName,
+            data.player.team.id
+          );
+          filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderTeamName}/${data.player.team.id}`;
+        } else {
+          filename = "";
+        }
+
+        data.player.team.image = filename;
         data.player.image = imageUrl;
 
         const playerEntry = new PlayerDetails({
@@ -92,6 +113,7 @@ const getPlayerDetailsById = async (req, res, next) => {
                 nationality: "$$playerObj.country.alpha3",
                 image: "$$playerObj.image",
                 teamName: "$$playerObj.team.name",
+                teamImage: "$$playerObj.team.image",
               },
             },
           },
@@ -142,7 +164,11 @@ const getPlayerMatchesById = async (req, res, next) => {
       const image = await helper.getTeamImages(teamId);
 
       if (image) {
-        await helper.uploadImageInS3Bucket(`${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${teamId}/image`, folderName, teamId);
+        await helper.uploadImageInS3Bucket(
+          `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${teamId}/image`,
+          folderName,
+          teamId
+        );
         imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${teamId}`;
       } else {
         imageUrl = null;
