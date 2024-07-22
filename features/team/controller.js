@@ -673,7 +673,7 @@ const getTeamDetails = async (req, res, next) => {
     });
 
     data.favouriteTeamDetails = {
-      is_favourite: allExistingFavourite?.status
+      is_favourite: allExistingFavourite?.status || false
     }
 
     return apiResponse({
