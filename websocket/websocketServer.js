@@ -33,7 +33,7 @@ const setupWebSocket = (server) => {
       switch (data.action) {
         case "liveMatches":
           try {
-            const liveMatches = await sportWebsocketService.getAllLiveMatches(data.getSportList);
+            const liveMatches = await sportWebsocketService.getAllLiveMatches(data.sport);
             for (const event of liveMatches.events) {
               const folderName = "team";
               const tournamentFolderName = "tournaments";
@@ -107,7 +107,6 @@ const setupWebSocket = (server) => {
               event.tournament.image = tournamentImageUrl;
               event.tournament.category.image = countryImageUrl;
             }
-
             const filteredLiveMatches = liveMatches.events.map(filterLiveMatchData);
             ws.send(
               JSON.stringify({
@@ -335,6 +334,36 @@ const setupWebSocket = (server) => {
         case "squad":
           try {
             const squad = await sportWebsocketService.getSquad(data.matchId);
+            for (const player of squad.home.players) {
+              const image = helper.getPlayerImage(player.player.id);
+              if (image) {
+                const folderName = "player";
+                helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${player.player.id}/image`,
+                  folderName,
+                  player.player.id
+                );
+                player.player.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${player.player.id}`;
+              } else {
+                player.player.image = "";
+              }
+            }
+
+            for (const player of squad.away.players) {
+              const image = helper.getPlayerImage(player.player.id);
+              if (image) {
+                const folderName = "player";
+                helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${player.player.id}/image`,
+                  folderName,
+                  player.player.id
+                );
+                player.player.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${player.player.id}`;
+              } else {
+                player.player.image = "";
+              }
+            }
+
             const filteredSquad = {
               home: {
                 players: filterPlayerData(squad.home.players),
