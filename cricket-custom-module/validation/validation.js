@@ -16,12 +16,23 @@ const createTournament = Joi.object().keys({
   matchOnId: Joi.string().required(),
 });
 
-const createTeam = Joi.object().keys({
-  teamName: Joi.string().required(),
-  city: Joi.string().required(),
-  addMySelfInTeam: Joi.boolean().required(),
-  teamImage: Joi.string().optional(),
-});
+const createTeam = {
+  body: Joi.object().keys({
+    teamName: Joi.string().required(),
+    city: Joi.string().required(),
+    addMySelfInTeam: Joi.boolean().required(),
+    teamImage: Joi.string().optional(),
+  }),
+};
+
+const updateTeam = {
+  body: Joi.object().keys({
+    teamName: Joi.string(),
+    city: Joi.string(),
+    addMySelfInTeam: Joi.boolean(),
+    teamImage: Joi.string(),
+  }),
+};
 
 const createMatch = Joi.object().keys({
   homeTeamId: Joi.string().required(),
@@ -41,10 +52,10 @@ const createPlayer = Joi.object().keys({
   role: Joi.string().required(),
 });
 
-
 export default {
   createTournament,
   createTeam,
   createMatch,
-  createPlayer
+  createPlayer,
+  updateTeam,
 };
