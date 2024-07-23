@@ -6,6 +6,12 @@ import teamController from "./controllers/team.controllers.js";
 import matchController from "./controllers/match.controllers.js";
 import playerController from "./controllers/player.controllers.js";
 import { verifyToken } from "../middleware/verifyToken.js";
+import validate from "../middleware/validate.js";
+import validation from "./validation/validation.js";
+import multer from "multer";
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 const route = express.Router();
 
@@ -41,9 +47,19 @@ route.post(
 );
 
 // ============================== For Team List ===========================================
-route.post("/team/add", teamController.createTeam);
+route.post(
+  "/team/add",
+  upload.single("teamImage"),
+  validate(validation.createTeam),
+  teamController.createTeam
+);
 route.get("/team/list", teamController.listTeams);
-route.put("/team/update/:id", teamController.updateTeam);
+route.put(
+  "/team/update/:id",
+  upload.single("teamImage"),
+  validate(validation.updateTeam),
+  teamController.updateTeam
+);
 route.delete("/team/delete/:id", teamController.deleteTeam);
 
 // ============================== For Match List ===========================================

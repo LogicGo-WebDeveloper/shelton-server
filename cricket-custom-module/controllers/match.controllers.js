@@ -2,7 +2,7 @@ import { apiResponse } from "../../helper/apiResponse.js";
 import { StatusCodes } from "http-status-codes";
 import validate from "../validation/validation.js";
 import CustomMatch from "../models/match.models.js";
-import mongoose from "mongoose";
+import { validateObjectIds } from "../utils/utils.js";
 
 const createMatch = async (req, res, next) => {
   const {
@@ -18,6 +18,16 @@ const createMatch = async (req, res, next) => {
     matchOfficial,
   } = req.body;
 
+  const validation = validateObjectIds({ homeTeamId, awayTeamId, pitchType, ballType, matchOfficial });
+  if (!validation.isValid) {
+    return apiResponse({
+      res,
+      status: false,
+      message: validation.message,
+      statusCode: StatusCodes.BAD_REQUEST,
+    });
+  }
+
   const result = validate.createMatch.validate({
     homeTeamId,
     awayTeamId,
@@ -31,8 +41,11 @@ const createMatch = async (req, res, next) => {
   });
 
   if (result.error) {
-    return res.status(400).json({
-      msg: result.error.details[0].message,
+    return apiResponse({
+      res,
+      status: false,
+      message: result.error.details[0].message,
+      statusCode: StatusCodes.BAD_REQUEST,
     });
   } else {
     try {
@@ -57,7 +70,6 @@ const createMatch = async (req, res, next) => {
         statusCode: StatusCodes.OK,
       });
     } catch (err) {
-      console.log(err);
       return apiResponse({
         res,
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -89,15 +101,7 @@ const listMatches = async (req, res) => {
 };
 
 const updateMatch = async (req, res, next) => {
-  const id = req.params.id;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return apiResponse({
-      res,
-      status: false,
-      message: "Invalid Match ID",
-      statusCode: StatusCodes.BAD_REQUEST,
-    });
-  }
+  const { id: matchId } = req.params;
   const {
     homeTeamId,
     awayTeamId,
@@ -110,6 +114,16 @@ const updateMatch = async (req, res, next) => {
     ballType,
     matchOfficial,
   } = req.body;
+
+  const validation = validateObjectIds({ matchId, homeTeamId, awayTeamId, pitchType, ballType, matchOfficial });
+  if (!validation.isValid) {
+    return apiResponse({
+      res,
+      status: false,
+      message: validation.message,
+      statusCode: StatusCodes.BAD_REQUEST,
+    });
+  }
 
   const result = validate.createMatch.validate({
     homeTeamId,
@@ -124,13 +138,16 @@ const updateMatch = async (req, res, next) => {
   });
 
   if (result.error) {
-    return res.status(400).json({
-      msg: result.error.details[0].message,
+    return apiResponse({
+      res,
+      status: false,
+      message: result.error.details[0].message,
+      statusCode: StatusCodes.BAD_REQUEST,
     });
   } else {
     try {
       const match = await CustomMatch.findByIdAndUpdate(
-        id,
+        matchId,
         {
           homeTeamId,
           awayTeamId,
@@ -146,13 +163,22 @@ const updateMatch = async (req, res, next) => {
         { new: true }
       );
 
-      return apiResponse({
-        res,
-        status: true,
-        data: match,
-        message: "Match updated successfully!",
-        statusCode: StatusCodes.OK,
-      });
+      if (!match) {
+        return apiResponse({
+          res,
+          status: true,
+          message: "Match not found",
+          statusCode: StatusCodes.NOT_FOUND,
+        });
+      } else {
+        return apiResponse({
+          res,
+          status: true,
+          data: match,
+          message: "Match updated successfully!",
+          statusCode: StatusCodes.OK,
+        });
+      }
     } catch (err) {
       console.log(err);
       return apiResponse({
@@ -166,19 +192,21 @@ const updateMatch = async (req, res, next) => {
 };
 
 const deleteMatch = async (req, res) => {
-  const id = req.params.id;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  const { id: matchId } = req.params;
+
+  const validation = validateObjectIds({ matchId });
+  if (!validation.isValid) {
     return apiResponse({
       res,
       status: false,
-      message: "Invalid Match ID",
+      message: validation.message,
       statusCode: StatusCodes.BAD_REQUEST,
     });
   }
   try {
-    const match = await CustomMatch.findById(id);
+    const match = await CustomMatch.findById(matchId);
     if (match) {
-      await CustomMatch.findByIdAndDelete(id);
+      await CustomMatch.findByIdAndDelete(matchId);
       return apiResponse({
         res,
         status: true,
