@@ -70,7 +70,11 @@ route.put(
 route.delete("/team/delete/:id", teamController.deleteTeam);
 
 // ============================== For Match List ===========================================
-route.post("/match/add", matchController.createMatch);
+route.post(
+  "/match/add",
+  validate(validation.createMatch),
+  matchController.createMatch
+);
 route.get("/match/list", matchController.listMatches);
 route.put("/match/update/:id", matchController.updateMatch);
 route.delete("/match/delete/:id", matchController.deleteMatch);

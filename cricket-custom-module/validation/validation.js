@@ -34,17 +34,19 @@ const updateTeam = {
   }),
 };
 
-const createMatch = Joi.object().keys({
-  homeTeamId: Joi.string().required(),
-  awayTeamId: Joi.string().required(),
-  noOfOvers: Joi.number().required(),
-  overPerBowler: Joi.number().required(),
-  city: Joi.string().required(),
-  ground: Joi.string().required(),
-  dateTime: Joi.date().required(),
-  pitchType: Joi.string().required(),
-  ballType: Joi.string().required(),
-});
+const createMatch = {
+  body: Joi.object().keys({
+    homeTeamId: Joi.string().required(),
+    awayTeamId: Joi.string().required(),
+    noOfOvers: Joi.number().required(),
+    overPerBowler: Joi.number().required(),
+    city: Joi.string().required(),
+    ground: Joi.string().required(),
+    dateTime: Joi.date().required(),
+    pitchType: Joi.string().required(),
+    ballType: Joi.string().required(),
+  }),
+};
 
 const createPlayer = Joi.object().keys({
   playerName: Joi.string().required(),
