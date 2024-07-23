@@ -37,7 +37,8 @@ const loginByMobile = {
 
 const loginByGoogle = {
   body: Joi.object().keys({
-    idToken: Joi.string().required().label("Id token"),
+    email: Joi.string().email().required(),
+    name: Joi.string().required(),
   }),
 };
 

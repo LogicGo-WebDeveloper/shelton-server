@@ -7,82 +7,44 @@ import * as path from "path";
 import fs from "fs";
 import { getHostUrl } from "../utils/utils.js";
 import mongoose from "mongoose";
+import { updateFile, uploadSingleFile } from "../../features/aws/service.js";
 
 const createTeam = async (req, res, next) => {
-  let fileSuffix = Date.now().toString();
-
-  const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      const uploadDir = path.join("cricket-custom-module/public/team");
-      fs.mkdir(uploadDir, { recursive: true }, (err) => {
-        if (err) {
-          console.error("Error creating upload directory:", err);
-          cb(err, null);
-        } else {
-          cb(null, uploadDir);
-        }
-      });
-    },
-    filename: function (req, file, cb) {
-      cb(null, `${fileSuffix}-${file.originalname}`);
-    },
-  });
-
-  const upload = multer({ storage: storage }).single("teamImage");
-
-  upload(req, res, async function (err) {
+  try {
+    const folderName = "custom_team";
     const { teamName, city, addMySelfInTeam } = req.body;
-    const teamImage = req.file ? `${fileSuffix}-${req.file.originalname}` : "";
-
-    const result = validate.createTeam.validate({
+    let url = await uploadSingleFile(req, folderName);
+    const result = await CustomTeam.create({
       teamName,
       city,
       addMySelfInTeam,
-      teamImage,
+      teamImage: url,
     });
 
-    if (result.error) {
-      return res.status(400).json({
-        msg: result.error.details[0].message,
-      });
-    } else {
-      if (err) {
-        console.log(err);
-      }
-
-      await CustomTeam.create({
-        teamName,
-        city,
-        addMySelfInTeam,
-        teamImage,
-      })
-        .then((resp) => {
-          return apiResponse({
-            res,
-            status: true,
-            data: resp,
-            message: "Team created successfully!",
-            statusCode: StatusCodes.OK,
-          });
-        })
-        .catch((err) => {
-          console.log(err);
-          return apiResponse({
-            res,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-            status: false,
-            message: "Internal server error",
-          });
-        });
-    }
-  });
+    return apiResponse({
+      res,
+      status: true,
+      data: result,
+      message: "Team created successfully!",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
 };
 
 const listTeams = async (req, res) => {
   try {
     const teams = await CustomTeam.find();
     teams.forEach((element) => {
-      element.teamImage = element.teamImage ? getHostUrl(req, "team") + element.teamImage : "";
+      element.teamImage = element.teamImage
+        ? getHostUrl(req, "team") + element.teamImage
+        : "";
     });
 
     return apiResponse({
@@ -103,93 +65,57 @@ const listTeams = async (req, res) => {
 };
 
 const updateTeam = async (req, res, next) => {
-  const id = req.params.id;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  const { id } = req.params;
+  const { teamName, city, addMySelfInTeam } = req.body;
+  const findDoc = await CustomTeam.findById(id);
+  if (!findDoc) {
     return apiResponse({
       res,
       status: false,
-      message: "Invalid Team ID",
-      statusCode: StatusCodes.BAD_REQUEST,
+      message: "Team not found",
+      statusCode: StatusCodes.NOT_FOUND,
     });
   }
-
-  let fileSuffix = Date.now().toString();
-  const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      const uploadDir = path.join("../public/team");
-      fs.mkdir(uploadDir, { recursive: true }, (err) => {
-        if (err) {
-          console.error("Error creating upload directory:", err);
-          cb(err, null);
-        } else {
-          cb(null, uploadDir);
-        }
-      });
-    },
-    filename: function (req, file, cb) {
-      cb(null, `${fileSuffix}-${file.originalname}`);
-    },
-  });
-
-  const upload = multer({ storage: storage }).single("teamImage");
-
-  upload(req, res, async function (err) {
-    const { teamName, city, addMySelfInTeam } = req.body;
-    const teamImage = req.file ? `${fileSuffix}-${req.file.originalname}` : "";
-
-    const result = validate.createTeam.validate({
-      teamName,
-      city,
-      addMySelfInTeam,
-      teamImage,
-    });
-
-    if (result.error) {
-      return res.status(400).json({
-        msg: result.error.details[0].message,
-      });
-    } else {
-      const team = await CustomTeam.findById(id);
-      if (team) {
-        await CustomTeam.findByIdAndUpdate(
-            id,
-            {
-              teamName,
-              city,
-              addMySelfInTeam,
-              teamImage,
-            },
-            { new: true }
-          )
-            .then((resp) => {
-              return apiResponse({
-                res,
-                status: true,
-                data: resp,
-                message: "Team updated successfully!",
-                statusCode: StatusCodes.OK,
-              });
-            })
-            .catch((err) => {
-              console.log(err);
-              return apiResponse({
-                res,
-                statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-                status: false,
-                message: "Internal server error",
-              });
-            });
-      
-      } else {
+  const folderName = "custom_team";
+  let newUrl = await updateFile(req, findDoc, folderName);
+  const team = await CustomTeam.findById(id);
+  if (team) {
+    await CustomTeam.findByIdAndUpdate(
+      id,
+      {
+        teamName,
+        city,
+        addMySelfInTeam,
+        teamImage: newUrl,
+      },
+      { new: true }
+    )
+      .then((resp) => {
         return apiResponse({
           res,
-          status: false,
-          message: "Team not found",
-          statusCode: StatusCodes.NOT_FOUND,
+          status: true,
+          data: resp,
+          message: "Team updated successfully!",
+          statusCode: StatusCodes.OK,
         });
-      }
-    }
-  });
+      })
+      .catch((err) => {
+        console.log(err);
+        return apiResponse({
+          res,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          status: false,
+          message: "Internal server error",
+        });
+      });
+  } else {
+    return apiResponse({
+      res,
+      status: false,
+      message: "Team not found",
+      statusCode: StatusCodes.NOT_FOUND,
+    });
+  }
 };
 
 const deleteTeam = async (req, res) => {

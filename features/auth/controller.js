@@ -285,29 +285,29 @@ const loginByMobile = async (req, res) => {
 
 const loginByGoogle = async (req, res) => {
   try {
-    const { idToken } = req.body;
+    const { email, name } = req.body;
 
     const client = new OAuth2Client({
       clientId: config.google.clientId,
       clientSecret: config.google.clientSecret,
     });
 
-    const ticket = await client.verifyIdToken({
-      idToken: idToken,
-    });
+    // const ticket = await client.verifyIdToken({
+    //   email: email,
+    // });
 
-    const payload = ticket.getPayload();
+    // const payload = ticket.getPayload();
 
-    if (!payload) {
+    if (!email) {
       return apiResponse({
         res,
         statusCode: StatusCodes.UNAUTHORIZED,
         status: false,
-        message: "Invalid id token",
+        message: "Invalid authentication",
       });
     }
 
-    const { email, sub, email_verified } = payload;
+    // const { sub, email_verified } = payload;
 
     let user = await userService.findOne({
       email: email,
@@ -316,18 +316,18 @@ const loginByGoogle = async (req, res) => {
     if (!user) {
       user = await userService.create({
         email: email,
-        providerId: sub,
+        name: name,
+        providerId: null,
         provider: enums.authProviderEnum.GOOGLE,
-        isVerified: email_verified,
+        isVerified: true,
       });
     } else {
-      user.isVerified = email_verified;
-      user.providerId = sub;
+      user.isVerified = true;
+      user.providerId = null;
       user.provider = enums.authProviderEnum.GOOGLE;
       user.password = null;
       user.otp = null;
       user.otpExpiresAt = null;
-
       // Save changes
       user = await user.save();
     }
@@ -341,6 +341,7 @@ const loginByGoogle = async (req, res) => {
         role: user.role,
         email: user.email,
         mobileNumber: user.mobileNumber,
+        name: user.name,
       },
     };
 
