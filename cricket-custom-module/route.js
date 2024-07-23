@@ -25,6 +25,7 @@ route.get(
   "/tournament/winning-prize",
   commonController.getTournamentWinningPrize
 );
+
 route.get("/tournament/match-types", commonController.getMatchTypes);
 route.get("/tournament/match-on", commonController.getMatchOn);
 route.get("/match/ball-types", commonController.getBallTypes);
@@ -44,6 +45,12 @@ route.post(
   "/tournament/update/:id",
   verifyToken,
   tournamentController.tournamentupdate
+);
+
+route.post(
+  "tournament/add/umpire",
+  verifyToken,
+  tournamentController.tournamentaddumpire
 );
 
 // ============================== For Team List ===========================================

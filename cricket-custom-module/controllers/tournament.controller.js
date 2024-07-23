@@ -6,6 +6,7 @@ import CustomTournament from "../models/tournament.models.js";
 import multer from "multer";
 import fs from "fs";
 import { apiResponse } from "../../helper/apiResponse.js";
+import { CustomMatchOfficial } from "../models/common.models.js";
 
 const createTournament = async (req, res, next) => {
   let fileSuffix = Date.now().toString();
@@ -70,7 +71,11 @@ const createTournament = async (req, res, next) => {
     });
     if (result.error) {
       return res.status(400).json({
-        msg: result.error.details[0].message,
+        res,
+        status: false,
+        data: null,
+        message: result.error.details[0].message,
+        statusCode: StatusCodes.OK,
       });
     } else {
       if (err) {
@@ -313,7 +318,6 @@ const tournamentupdate = async (req, res, next) => {
         { new: true }
       )
         .then(function (resp) {
-          console.log(resp);
           var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
           resp.tournamentImage = resp.tournamentImage
             ? fullUrl + "tournament/" + resp.tournamentImage
@@ -349,8 +353,36 @@ const tournamentupdate = async (req, res, next) => {
   });
 };
 
+const tournamentaddumpire = async (req, res, next) => {
+  var name = req.body.name;
+
+  try {
+    const umpire = await CustomMatchOfficial.create({
+      name: name,
+    });
+
+    if (umpire) {
+      return apiResponse({
+        res,
+        statusCode: StatusCodes.OK,
+        status: true,
+        message: "Umpire created successfully!",
+        data: umpire,
+      });
+    }
+  } catch {
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 export default {
   createTournament,
   listTournament,
   tournamentupdate,
+  tournamentaddumpire,
 };
