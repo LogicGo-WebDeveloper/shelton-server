@@ -5,6 +5,7 @@ import commonController from "./controllers/common.controllers.js";
 import teamController from "./controllers/team.controllers.js";
 import matchController from "./controllers/match.controllers.js";
 import playerController from "./controllers/player.controllers.js";
+import { verifyToken } from "../middleware/verifyToken.js";
 
 const route = express.Router();
 
@@ -14,7 +15,10 @@ route.get("/sports", sportController.getSportList);
 // ============================== For common api routes =========================================
 route.get("/tournament/cities", commonController.getCityList);
 route.get("/tournament/category", commonController.getTournamentCategory);
-route.get("/tournament/winning-prize", commonController.getTournamentWinningPrize);
+route.get(
+  "/tournament/winning-prize",
+  commonController.getTournamentWinningPrize
+);
 route.get("/tournament/match-types", commonController.getMatchTypes);
 route.get("/tournament/match-on", commonController.getMatchOn);
 route.get("/match/ball-types", commonController.getBallTypes);
@@ -24,9 +28,17 @@ route.get("/match/officials", commonController.getMatchOfficials);
 route.get("/player/roles", commonController.getPlayerRoles);
 
 // ============================== For Tournament List ===========================================
-route.post("/tournament/add", tournamentController.createTournament);
+route.post(
+  "/tournament/add",
+  verifyToken,
+  tournamentController.createTournament
+);
 route.get("/tournament/list", tournamentController.listTournament);
-route.put("/tournament/update/:id", tournamentController.tournamentupdate);
+route.post(
+  "/tournament/update/:id",
+  verifyToken,
+  tournamentController.tournamentupdate
+);
 
 // ============================== For Team List ===========================================
 route.post("/team/add", teamController.createTeam);
