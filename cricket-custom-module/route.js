@@ -7,6 +7,7 @@ import matchController from "./controllers/match.controllers.js";
 import playerController from "./controllers/player.controllers.js";
 import validate from "../middleware/validate.js";
 import validation from "./validation/validation.js";
+import { verifyToken } from "../middleware/verifyToken.js";
 import multer from "multer";
 
 const storage = multer.memoryStorage();
@@ -41,28 +42,67 @@ route.put("/tournament/update/:id", tournamentController.tournamentupdate);
 route.post(
   "/team/add",
   upload.single("teamImage"),
+  verifyToken,
   validate(validation.createTeam),
   teamController.createTeam
 );
 route.get("/team/list", teamController.listTeams);
+
 route.put(
   "/team/update/:id",
   upload.single("teamImage"),
+  verifyToken,
   validate(validation.updateTeam),
   teamController.updateTeam
 );
 route.delete("/team/delete/:id", teamController.deleteTeam);
 
 // ============================== For Match List ===========================================
-route.post("/match/add", matchController.createMatch);
-route.get("/match/list", matchController.listMatches);
-route.put("/match/update/:id", matchController.updateMatch);
-route.delete("/match/delete/:id", matchController.deleteMatch);
+route.post(
+  "/match/add",
+  verifyToken,
+  matchController.createMatch
+);
+
+route.get(
+  "/match/list",
+  matchController.listMatches
+);
+
+route.put(
+  "/match/update/:id",
+  verifyToken,
+  matchController.updateMatch
+);
+
+route.delete(
+  "/match/delete/:id",
+  verifyToken,
+  matchController.deleteMatch
+);
 
 // ============================== For Player List ===========================================
-route.post("/player/add", playerController.createPlayer);
-route.get("/player/list", playerController.listPlayers);
-route.put("/player/update/:id", playerController.updatePlayer);
-route.delete("/player/delete/:id", playerController.deletePlayer);
+route.post(
+  "/player/add",
+  verifyToken,
+  playerController.createPlayer
+);
+
+route.get(
+  "/player/list",
+  playerController.listPlayers
+);
+
+route.put(
+  "/player/update/:id",
+  verifyToken,
+  playerController.updatePlayer
+);
+
+route.delete(
+  "/player/delete/:id",
+  verifyToken,
+  playerController.deletePlayer
+);
 
 export default route;

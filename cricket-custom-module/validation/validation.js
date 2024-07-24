@@ -35,6 +35,7 @@ const updateTeam = {
 };
 
 const createMatch = Joi.object().keys({
+  tournamentId: Joi.string().required(),
   homeTeamId: Joi.string().required(),
   awayTeamId: Joi.string().required(),
   noOfOvers: Joi.number().required(),
@@ -48,8 +49,9 @@ const createMatch = Joi.object().keys({
 
 const createPlayer = Joi.object().keys({
   playerName: Joi.string().required(),
-  phoneNumber: Joi.string().required(),
+  jerseyNumber: Joi.string().required(),
   role: Joi.string().required(),
+  teamId: Joi.string().required(),
 });
 
 export default {

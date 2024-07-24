@@ -5,6 +5,7 @@ const customTeamSchema = new mongoose.Schema({
   city: String,
   addMySelfInTeam: Boolean,
   teamImage: String,
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 });
 
 const CustomTeam = mongoose.model("CustomTeam", customTeamSchema);
