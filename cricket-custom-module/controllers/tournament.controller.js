@@ -221,11 +221,11 @@ const listTournament = async (req, res) => {
           model: "CustomTournamentCategory",
           select: "name",
         })
-        .populate({
-          path: "_id", // Assuming `_id` is the reference field in CustomUmpire
-          model: "CustomUmpire",
-          select: "name", // Fields you want to select from CustomUmpire
-        })
+        // .populate({
+        //   path: "_id", // Assuming `_id` is the reference field in CustomUmpire
+        //   model: "CustomUmpire",
+        //   select: "name", // Fields you want to select from CustomUmpire
+        // })
         .skip(offset)
         .limit(limit)
         .exec();
