@@ -87,8 +87,10 @@ const createTournament = async (req, res, next) => {
       });
 
       if (!tournamentsData) {
+        let alldata = [];
+
         const customTournament = await CustomTournament.create({
-          userId: req.user._id,
+          createdBy: req.user._id,
           sportId: sportId,
           name: name,
           cityId: cityId,
@@ -107,12 +109,15 @@ const createTournament = async (req, res, next) => {
         })
 
           .then(async function (resp) {
-            // const documents = umpireIds.map((umpireId) => ({
-            //   tournamentId: resp.id, // Assuming resp.id is the tournamentId
-            //   umpireId: umpireId,
-            // }));
+            umpireIds.forEach((umpireId) => {
+              let data = {
+                tournamentId: resp.id, // Assuming resp.id is the tournamentId
+                umpireId: umpireId,
+              };
+              alldata.push(data);
+            });
 
-            // const result = await customUmpireList.insertMany(documents);
+            const result = await customUmpireList.insertMany(alldata);
 
             var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
             resp.tournamentImage = resp.tournamentImage
@@ -212,9 +217,9 @@ const listTournament = async (req, res) => {
         select: "name",
       })
       .populate({
-        path: "officialsId",
-        model: "CustomMatchOfficial",
-        select: "name",
+        path: "_id", // Assuming `_id` is the reference field in CustomUmpire
+        model: "CustomUmpire",
+        select: "name", // Fields you want to select from CustomUmpire
       })
       .skip(offset)
       .limit(limit)
@@ -277,7 +282,7 @@ const tournamentUpdate = async (req, res, next) => {
   ]);
 
   upload(req, res, async function (err, file, cb) {
-    var userId = req.user._id;
+    var createdBy = req.user._id;
     var sportId = req.body.sportId;
     var name = req.body.name;
     var cityId = req.body.cityId;
@@ -304,7 +309,7 @@ const tournamentUpdate = async (req, res, next) => {
       await CustomTournament.findByIdAndUpdate(
         id,
         {
-          userId,
+          createdBy,
           sportId,
           name,
           cityId,
