@@ -342,7 +342,6 @@ const tournamentUpdate = async (req, res, next) => {
     var tournamentEndDate = req.body.tournamentEndDate;
     var tournamentCategoryId = req.body.tournamentCategoryId;
     var tournamentMatchTypeId = req.body.tournamentMatchTypeId;
-    var officialsId = req.body.officialsId;
     var moreTeams = req.body.moreTeams;
     var winningPrizeId = req.body.winningPrizeId;
     var matchOnId = req.body.matchOnId;
@@ -369,7 +368,6 @@ const tournamentUpdate = async (req, res, next) => {
           tournamentEndDate,
           tournamentCategoryId,
           tournamentMatchTypeId,
-          officialsId,
           moreTeams,
           winningPrizeId,
           matchOnId,

@@ -8,7 +8,7 @@ import { updateFile, uploadSingleFile } from "../../features/aws/service.js";
 
 const createPlayer = async (req, res, next) => {
   const { playerName, jerseyNumber, role, teamId } = req.body;
-  const userId = req.user._id
+  const userId = req.user._id;
   const folderName = "custom_player";
   let url = await uploadSingleFile(req, folderName);
 
@@ -43,7 +43,14 @@ const createPlayer = async (req, res, next) => {
   }
 
   try {
-    const player = await CustomPlayers.create({ playerName, jerseyNumber, role, teamId, createdBy: userId, image: url });
+    const player = await CustomPlayers.create({
+      playerName,
+      jerseyNumber,
+      role,
+      teamId,
+      createdBy: userId,
+      image: url ? url : "",
+    });
     return apiResponse({
       res,
       status: true,
@@ -60,13 +67,12 @@ const createPlayer = async (req, res, next) => {
       message: "Internal server error",
     });
   }
-  
 };
 
 const listPlayers = async (req, res) => {
-  const userId = req.user._id
-  const { teamId } = req.query; 
-  
+  const userId = req.user._id;
+  const { teamId } = req.query;
+
   const validation = validateObjectIds({ teamId });
   if (!validation.isValid) {
     return apiResponse({
@@ -76,7 +82,6 @@ const listPlayers = async (req, res) => {
       statusCode: StatusCodes.BAD_REQUEST,
     });
   }
-
 
   try {
     const players = await CustomPlayers.find({ teamId, createdBy: userId });
@@ -139,30 +144,39 @@ const updatePlayer = async (req, res, next) => {
       statusCode: StatusCodes.NOT_FOUND,
     });
   }
-  
+
   const folderName = "custom_player";
   let newUrl = await updateFile(req, findDoc, folderName);
-    
+
   await CustomPlayers.findByIdAndUpdate(
     playerId,
-    { playerName, jerseyNumber, role, teamId, createdBy: findDoc.userId, image: newUrl },
+    {
+      playerName,
+      jerseyNumber,
+      role,
+      teamId,
+      createdBy: findDoc.userId,
+      image: newUrl,
+    },
     { new: true }
-  ).then((player) => {
-    return apiResponse({
-      res,
-      status: true,
-      data: player,
-      message: "Player updated successfully!",
-      statusCode: StatusCodes.OK,
+  )
+    .then((player) => {
+      return apiResponse({
+        res,
+        status: true,
+        data: player,
+        message: "Player updated successfully!",
+        statusCode: StatusCodes.OK,
+      });
+    })
+    .catch((err) => {
+      return apiResponse({
+        res,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        status: false,
+        message: "Internal server error",
+      });
     });
-  }).catch((err) => {
-    return apiResponse({
-      res,
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-      status: false,
-      message: "Internal server error",
-    });
-  });
 };
 
 const deletePlayer = async (req, res, next) => {
