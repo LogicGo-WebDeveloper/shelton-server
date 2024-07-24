@@ -5,9 +5,9 @@ import commonController from "./controllers/common.controllers.js";
 import teamController from "./controllers/team.controllers.js";
 import matchController from "./controllers/match.controllers.js";
 import playerController from "./controllers/player.controllers.js";
+import { verifyToken } from "../middleware/verifyToken.js";
 import validate from "../middleware/validate.js";
 import validation from "./validation/validation.js";
-import { verifyToken } from "../middleware/verifyToken.js";
 import multer from "multer";
 
 const storage = multer.memoryStorage();
@@ -25,6 +25,7 @@ route.get(
   "/tournament/winning-prize",
   commonController.getTournamentWinningPrize
 );
+
 route.get("/tournament/match-types", commonController.getMatchTypes);
 route.get("/tournament/match-on", commonController.getMatchOn);
 route.get("/match/ball-types", commonController.getBallTypes);
@@ -34,9 +35,23 @@ route.get("/match/officials", commonController.getMatchOfficials);
 route.get("/player/roles", commonController.getPlayerRoles);
 
 // ============================== For Tournament List ===========================================
-route.post("/tournament/add", tournamentController.createTournament);
+route.post(
+  "/tournament/add",
+  verifyToken,
+  tournamentController.createTournament
+);
 route.get("/tournament/list", tournamentController.listTournament);
-route.put("/tournament/update/:id", tournamentController.tournamentupdate);
+route.post(
+  "/tournament/update/:id",
+  verifyToken,
+  tournamentController.tournamentUpdate
+);
+
+route.post("/tournament/add/umpire", tournamentController.tournamentAddUmpire);
+route.post(
+  "/tournament/list/umpire",
+  tournamentController.tournamentListUmpire
+);
 
 // ============================== For Team List ===========================================
 route.post(
@@ -85,24 +100,18 @@ route.delete(
 route.post(
   "/player/add",
   verifyToken,
+  upload.single("image"),
+  validate(validation.createPlayer),
   playerController.createPlayer
 );
-
-route.get(
-  "/player/list",
-  playerController.listPlayers
-);
-
+route.get("/player/list", playerController.listPlayers);
 route.put(
   "/player/update/:id",
   verifyToken,
+  upload.single("image"),
+  validate(validation.updatePlayer),
   playerController.updatePlayer
 );
-
-route.delete(
-  "/player/delete/:id",
-  verifyToken,
-  playerController.deletePlayer
-);
+route.delete("/player/delete/:id", verifyToken, playerController.deletePlayer);
 
 export default route;

@@ -34,24 +34,43 @@ const updateTeam = {
   }),
 };
 
-const createMatch = Joi.object().keys({
-  tournamentId: Joi.string().required(),
-  homeTeamId: Joi.string().required(),
-  awayTeamId: Joi.string().required(),
-  noOfOvers: Joi.number().required(),
-  overPerBowler: Joi.number().required(),
-  city: Joi.string().required(),
-  ground: Joi.string().required(),
-  dateTime: Joi.date().required(),
-  pitchType: Joi.string().required(),
-  ballType: Joi.string().required(),
-});
+const createMatch = {
+  body: Joi.object().keys({
+    tournamentId: Joi.string().required(),
+    homeTeamId: Joi.string().required(),
+    awayTeamId: Joi.string().required(),
+    noOfOvers: Joi.number().required(),
+    overPerBowler: Joi.number().required(),
+    city: Joi.string().required(),
+    ground: Joi.string().required(),
+    dateTime: Joi.date().required(),
+    pitchType: Joi.string().required(),
+    ballType: Joi.string().required(),
+  }),
+};
 
-const createPlayer = Joi.object().keys({
-  playerName: Joi.string().required(),
-  jerseyNumber: Joi.string().required(),
-  role: Joi.string().required(),
-  teamId: Joi.string().required(),
+const createPlayer = {
+  body: Joi.object().keys({
+    playerName: Joi.string().required(),
+    jerseyNumber: Joi.number().required(),
+    role: Joi.string().required(),
+    image: Joi.string().optional(),
+    teamId: Joi.string().required(),
+  }),
+};
+
+const updatePlayer = {
+  body: Joi.object().keys({
+    playerName: Joi.string(),
+    jerseyNumber: Joi.number(),
+    role: Joi.string(),
+    image: Joi.string().optional(),
+    teamId: Joi.string().required(),
+  }),
+};
+
+const createUmpire = Joi.object().keys({
+  name: Joi.string().required(),
 });
 
 export default {
@@ -60,4 +79,6 @@ export default {
   createMatch,
   createPlayer,
   updateTeam,
+  createUmpire,
+  updatePlayer,
 };

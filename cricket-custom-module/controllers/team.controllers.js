@@ -9,9 +9,7 @@ const createTeam = async (req, res, next) => {
   try {
     const folderName = "custom_team";
     const { teamName, city, addMySelfInTeam } = req.body;
-    const authHeader = req.headers?.authorization;
-    const token = authHeader ? authHeader?.split(" ")[1] : null;
-    const decodedToken = await helper.verifyToken(token);
+    const userId = req.user._id
 
     let url = await uploadSingleFile(req, folderName);
     const result = await CustomTeam.create({
@@ -19,7 +17,7 @@ const createTeam = async (req, res, next) => {
       city,
       addMySelfInTeam,
       teamImage: url,
-      createdBy: decodedToken.userId,
+      createdBy: userId,
     });
 
     return apiResponse({

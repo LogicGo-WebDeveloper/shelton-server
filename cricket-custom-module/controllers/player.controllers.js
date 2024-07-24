@@ -1,14 +1,16 @@
 import { apiResponse } from "../../helper/apiResponse.js";
 import { StatusCodes } from "http-status-codes";
-import validate from "../validation/validation.js";
 import CustomPlayers from "../models/player.models.js";
-import helper from "../../helper/common.js";
 import { validateObjectIds } from "../utils/utils.js";
 import CustomTeam from "../models/team.models.js";
 import { CustomPlayerRole } from "../models/common.models.js";
+import { updateFile, uploadSingleFile } from "../../features/aws/service.js";
 
 const createPlayer = async (req, res, next) => {
   const { playerName, jerseyNumber, role, teamId } = req.body;
+  const userId = req.user._id
+  const folderName = "custom_player";
+  let url = await uploadSingleFile(req, folderName);
 
   const validation = validateObjectIds({ teamId, role });
   if (!validation.isValid) {
@@ -19,10 +21,6 @@ const createPlayer = async (req, res, next) => {
       statusCode: StatusCodes.BAD_REQUEST,
     });
   }
-  const result = validate.createPlayer.validate({ playerName, jerseyNumber, role, teamId });
-  const authHeader = req.headers?.authorization;
-  const token = authHeader ? authHeader?.split(" ")[1] : null;
-  const decodedToken = await helper.verifyToken(token);
 
   const team = await CustomTeam.findById(teamId);
   const playerRole = await CustomPlayerRole.findById(role);
@@ -44,30 +42,25 @@ const createPlayer = async (req, res, next) => {
     });
   }
 
-  if (result.error) {
-    return res.status(400).json({
-      msg: result.error.details[0].message,
+  try {
+    const player = await CustomPlayers.create({ playerName, jerseyNumber, role, teamId, createdBy: userId, image: url });
+    return apiResponse({
+      res,
+      status: true,
+      data: player,
+      message: "Player created successfully!",
+      statusCode: StatusCodes.OK,
     });
-  } else {
-    try {
-      const player = await CustomPlayers.create({ playerName, jerseyNumber, role, teamId, createdBy: decodedToken.userId });
-      return apiResponse({
-        res,
-        status: true,
-        data: player,
-        message: "Player created successfully!",
-        statusCode: StatusCodes.OK,
-      });
-    } catch (err) {
-      console.log(err);
-      return apiResponse({
-        res,
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        status: false,
-        message: "Internal server error",
-      });
-    }
+  } catch (err) {
+    console.log(err);
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
   }
+  
 };
 
 const listPlayers = async (req, res) => {
@@ -114,54 +107,48 @@ const updatePlayer = async (req, res, next) => {
     });
   }
 
-  const result = validate.createPlayer.validate({ playerName, jerseyNumber, role, teamId });
-
-  if (result.error) {
-    return res.status(400).json({
-      msg: result.error.details[0].message,
-    });
-  } else {
-    const player = await CustomPlayers.findById(playerId);
-    const team = await CustomTeam.findById(teamId);
-    if (!player) {
-      return apiResponse({
-        res,
-        status: true,
-        message: "Player not found",
-        statusCode: StatusCodes.NOT_FOUND,
-      });
-    }
-
-    if (!team) {
-      return apiResponse({
-        res,
-        status: true,
-        message: "Team not found",
-        statusCode: StatusCodes.NOT_FOUND,
-      });
-    }
-    
-    await CustomPlayers.findByIdAndUpdate(
-      playerId,
-      { playerName, jerseyNumber, role, teamId, createdBy: player.userId },
-      { new: true }
-    ).then((player) => {
-      return apiResponse({
-        res,
-        status: true,
-        data: player,
-        message: "Player updated successfully!",
-        statusCode: StatusCodes.OK,
-      });
-    }).catch((err) => {
-      return apiResponse({
-        res,
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        status: false,
-        message: "Internal server error",
-      });
+  const findDoc = await CustomPlayers.findById(playerId);
+  const team = await CustomTeam.findById(teamId);
+  if (!findDoc) {
+    return apiResponse({
+      res,
+      status: true,
+      message: "Player not found",
+      statusCode: StatusCodes.NOT_FOUND,
     });
   }
+  if (!team) {
+    return apiResponse({
+      res,
+      status: true,
+      message: "Team not found",
+      statusCode: StatusCodes.NOT_FOUND,
+    });
+  }
+  
+  const folderName = "custom_player";
+  let newUrl = await updateFile(req, findDoc, folderName);
+    
+  await CustomPlayers.findByIdAndUpdate(
+    playerId,
+    { playerName, jerseyNumber, role, teamId, createdBy: findDoc.userId, image: newUrl },
+    { new: true }
+  ).then((player) => {
+    return apiResponse({
+      res,
+      status: true,
+      data: player,
+      message: "Player updated successfully!",
+      statusCode: StatusCodes.OK,
+    });
+  }).catch((err) => {
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  });
 };
 
 const deletePlayer = async (req, res, next) => {

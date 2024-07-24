@@ -6,6 +6,7 @@ import CustomTournament from "../models/tournament.models.js";
 import multer from "multer";
 import fs from "fs";
 import { apiResponse } from "../../helper/apiResponse.js";
+import { CustomMatchOfficial } from "../models/common.models.js";
 
 const createTournament = async (req, res, next) => {
   let fileSuffix = Date.now().toString();
@@ -41,7 +42,7 @@ const createTournament = async (req, res, next) => {
     var tournamentEndDate = req.body.tournamentEndDate;
     var tournamentCategoryId = req.body.tournamentCategoryId;
     var tournamentMatchTypeId = req.body.tournamentMatchTypeId;
-    var officials = req.body.officials;
+    var officials = req.body.officialsId;
     var moreTeams = req.body.moreTeams;
     var winningPrizeId = req.body.winningPrizeId;
     var matchOnId = req.body.matchOnId;
@@ -70,57 +71,74 @@ const createTournament = async (req, res, next) => {
     });
     if (result.error) {
       return res.status(400).json({
-        msg: result.error.details[0].message,
+        res,
+        status: false,
+        data: null,
+        message: result.error.details[0].message,
+        statusCode: StatusCodes.OK,
       });
     } else {
       if (err) {
         console.log(err);
       }
 
-      const customTournament = await CustomTournament.create({
-        sportId: sportId,
+      const tournamentsData = await CustomTournament.findOne({
         name: name,
-        cityId: cityId,
-        groundName: groundName,
-        organiserName: organiserName,
-        tournamentStartDate: tournamentStartDate,
-        tournamentCategoryId: tournamentCategoryId,
-        tournamentMatchTypeId: tournamentMatchTypeId,
-        tournamentEndDate: tournamentEndDate,
-        officials: officials,
-        moreTeams: moreTeams,
-        winningPrizeId: winningPrizeId,
-        matchOnId: matchOnId,
-        description: description,
-        tournamentImage: tournamentImage,
-        tournamentBackgroundImage: tournamentBackgroundImage,
-      })
-        .then(function (resp) {
-          var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
-          resp.tournamentImage = resp.tournamentImage
-            ? fullUrl + "tournament/" + resp.tournamentImage
-            : "";
-          resp.tournamentBackgroundImage = resp.tournamentBackgroundImage
-            ? fullUrl + "tournament/" + resp.tournamentBackgroundImage
-            : "";
+      });
 
-          return apiResponse({
-            res,
-            status: true,
-            data: resp,
-            message: "Tournament create successfully!",
-            statusCode: StatusCodes.OK,
-          });
+      if (!tournamentsData) {
+        const customTournament = await CustomTournament.create({
+          userId: req.user._id,
+          sportId: sportId,
+          name: name,
+          cityId: cityId,
+          groundName: groundName,
+          organiserName: organiserName,
+          tournamentStartDate: tournamentStartDate,
+          tournamentCategoryId: tournamentCategoryId,
+          tournamentMatchTypeId: tournamentMatchTypeId,
+          tournamentEndDate: tournamentEndDate,
+          moreTeams: moreTeams,
+          winningPrizeId: winningPrizeId,
+          matchOnId: matchOnId,
+          description: description,
+          tournamentImage: tournamentImage,
+          tournamentBackgroundImage: tournamentBackgroundImage,
         })
-        .catch(function (err) {
-          console.log(err);
-          return apiResponse({
-            res,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-            status: false,
-            message: "Internal server error",
+          .then(function (resp) {
+            var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
+            resp.tournamentImage = resp.tournamentImage
+              ? fullUrl + "tournament/" + resp.tournamentImage
+              : "";
+            resp.tournamentBackgroundImage = resp.tournamentBackgroundImage
+              ? fullUrl + "tournament/" + resp.tournamentBackgroundImage
+              : "";
+
+            return apiResponse({
+              res,
+              status: true,
+              data: resp,
+              message: "Tournament create successfully!",
+              statusCode: StatusCodes.OK,
+            });
+          })
+          .catch(function (err) {
+            console.log(err);
+            return apiResponse({
+              res,
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+              status: false,
+              message: "Internal server error",
+            });
           });
+      } else {
+        return apiResponse({
+          res,
+          status: false,
+          message: "Tournament name already exists!",
+          statusCode: StatusCodes.FORBIDDEN,
         });
+      }
     }
   });
 };
@@ -185,6 +203,11 @@ const listTournament = async (req, res) => {
         model: "CustomTournamentCategory",
         select: "name",
       })
+      .populate({
+        path: "officialsId",
+        model: "CustomMatchOfficial",
+        select: "name",
+      })
       .skip(offset)
       .limit(limit)
       .exec();
@@ -221,7 +244,7 @@ const listTournament = async (req, res) => {
   }
 };
 
-const tournamentupdate = async (req, res, next) => {
+const tournamentUpdate = async (req, res, next) => {
   const id = req.params.id;
   let fileSuffix = Date.now().toString();
   const storage = multer.diskStorage({
@@ -246,6 +269,7 @@ const tournamentupdate = async (req, res, next) => {
   ]);
 
   upload(req, res, async function (err, file, cb) {
+    var userId = req.user._id;
     var sportId = req.body.sportId;
     var name = req.body.name;
     var cityId = req.body.cityId;
@@ -255,7 +279,7 @@ const tournamentupdate = async (req, res, next) => {
     var tournamentEndDate = req.body.tournamentEndDate;
     var tournamentCategoryId = req.body.tournamentCategoryId;
     var tournamentMatchTypeId = req.body.tournamentMatchTypeId;
-    var officials = req.body.officials;
+    var officialsId = req.body.officialsId;
     var moreTeams = req.body.moreTeams;
     var winningPrizeId = req.body.winningPrizeId;
     var matchOnId = req.body.matchOnId;
@@ -272,6 +296,7 @@ const tournamentupdate = async (req, res, next) => {
       await CustomTournament.findByIdAndUpdate(
         id,
         {
+          userId,
           sportId,
           name,
           cityId,
@@ -281,7 +306,7 @@ const tournamentupdate = async (req, res, next) => {
           tournamentEndDate,
           tournamentCategoryId,
           tournamentMatchTypeId,
-          officials,
+          officialsId,
           moreTeams,
           winningPrizeId,
           matchOnId,
@@ -292,7 +317,6 @@ const tournamentupdate = async (req, res, next) => {
         { new: true }
       )
         .then(function (resp) {
-          console.log(resp);
           var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
           resp.tournamentImage = resp.tournamentImage
             ? fullUrl + "tournament/" + resp.tournamentImage
@@ -328,8 +352,96 @@ const tournamentupdate = async (req, res, next) => {
   });
 };
 
+const tournamentAddUmpire = async (req, res, next) => {
+  var name = req.body.name;
+
+  const result = validate.createUmpire.validate({
+    name,
+  });
+
+  if (result.error) {
+    return res.status(400).json({
+      message: result.error.details[0].message,
+    });
+  } else {
+    try {
+      const upmireData = await CustomMatchOfficial.findOne({
+        name: name,
+      });
+      if (upmireData) {
+        return apiResponse({
+          res,
+          statusCode: StatusCodes.FORBIDDEN,
+          status: false,
+          message: "Umpire already exists!",
+        });
+      }
+
+      const umpire = await CustomMatchOfficial.create({
+        name: name,
+      })
+        .then((resp) => {
+          return apiResponse({
+            res,
+            statusCode: StatusCodes.OK,
+            status: true,
+            message: "Umpire created successfully!",
+            data: resp,
+          });
+        })
+        .catch((error) => {
+          console.log(error);
+          return apiResponse({
+            res,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            status: false,
+            message: "Internal server error",
+          });
+        });
+    } catch {
+      return apiResponse({
+        res,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        status: false,
+        message: "Internal server error",
+      });
+    }
+  }
+};
+
+const tournamentListUmpire = async (req, res, next) => {
+  try {
+    const umpireList = await CustomMatchOfficial.find();
+    if (umpireList) {
+      return apiResponse({
+        res,
+        statusCode: StatusCodes.OK,
+        status: true,
+        message: "Umpire fetched successfully!",
+        data: umpireList,
+      });
+    } else {
+      return apiResponse({
+        res,
+        statusCode: StatusCodes.NOT_FOUND,
+        status: false,
+        message: "no data found",
+      });
+    }
+  } catch {
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 export default {
   createTournament,
   listTournament,
-  tournamentupdate,
+  tournamentUpdate,
+  tournamentAddUmpire,
+  tournamentListUmpire,
 };

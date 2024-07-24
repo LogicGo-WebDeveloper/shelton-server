@@ -21,6 +21,8 @@ const createMatch = async (req, res, next) => {
     matchOfficial,
   } = req.body;
 
+  const userId = req.user._id
+
   const validation = validateObjectIds({ homeTeamId, awayTeamId, tournamentId, pitchType, ballType, matchOfficial });
   if (!validation.isValid) {
     return apiResponse({
@@ -30,10 +32,6 @@ const createMatch = async (req, res, next) => {
       statusCode: StatusCodes.BAD_REQUEST,
     });
   }
-
-  const authHeader = req.headers?.authorization;
-  const token = authHeader ? authHeader?.split(" ")[1] : null;
-  const decodedToken = await helper.verifyToken(token);
 
   const result = validate.createMatch.validate({
     homeTeamId,
@@ -78,7 +76,7 @@ const createMatch = async (req, res, next) => {
         pitchType,
         ballType,
         matchOfficial,
-        createdBy: decodedToken.userId,
+        createdBy: userId,
         tournamentId,
       });
 
