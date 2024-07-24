@@ -10,7 +10,6 @@ const createTournament = Joi.object().keys({
   tournamentEndDate: Joi.date().required(),
   tournamentCategoryId: Joi.string().required(),
   tournamentMatchTypeId: Joi.string().required(),
-  officials: Joi.string().required(),
   moreTeams: Joi.string().required(),
   winningPrizeId: Joi.string().required(),
   matchOnId: Joi.string().required(),

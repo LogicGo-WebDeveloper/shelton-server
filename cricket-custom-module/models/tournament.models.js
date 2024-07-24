@@ -1,10 +1,7 @@
 import mongoose from "mongoose";
 
 const customTournamentSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "users",
-  },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   sportId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "CustomSportList",
