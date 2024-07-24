@@ -40,6 +40,7 @@ const CustomTournamentWinningPrize = mongoose.model(
 );
 const playerRoleSchema = new mongoose.Schema({
   role: String,
+  image: String,
 });
 const matchStatusSchema = new mongoose.Schema({
   status: String,
@@ -50,8 +51,14 @@ const matchOfficialSchema = new mongoose.Schema({
   image: String,
 });
 
-const CustomMatchOfficial = mongoose.model("CustomMatchOfficial", matchOfficialSchema);
-const CustomMatchStatus = mongoose.model("CustomMatchStatus", matchStatusSchema);
+const CustomMatchOfficial = mongoose.model(
+  "CustomMatchOfficial",
+  matchOfficialSchema
+);
+const CustomMatchStatus = mongoose.model(
+  "CustomMatchStatus",
+  matchStatusSchema
+);
 const CustomPlayerRole = mongoose.model("CustomPlayerRole", playerRoleSchema);
 const CustomMatchType = mongoose.model("CustomMatchType", matchTypeSchema);
 const CustomMatchOn = mongoose.model("CustomMatchOn", matchOnSchema);
