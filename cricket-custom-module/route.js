@@ -44,13 +44,13 @@ route.get("/tournament/list", tournamentController.listTournament);
 route.post(
   "/tournament/update/:id",
   verifyToken,
-  tournamentController.tournamentupdate
+  tournamentController.tournamentUpdate
 );
 
+route.post("/tournament/add/umpire", tournamentController.tournamentAddUmpire);
 route.post(
-  "tournament/add/umpire",
-  verifyToken,
-  tournamentController.tournamentaddumpire
+  "/tournament/list/umpire",
+  tournamentController.tournamentListUmpire
 );
 
 // ============================== For Team List ===========================================

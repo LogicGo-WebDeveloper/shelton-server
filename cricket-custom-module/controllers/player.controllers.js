@@ -7,7 +7,11 @@ import mongoose from "mongoose";
 const createPlayer = async (req, res, next) => {
   const { playerName, phoneNumber, role } = req.body;
 
-  const result = validate.createPlayer.validate({ playerName, phoneNumber, role });
+  const result = validate.createPlayer.validate({
+    playerName,
+    phoneNumber,
+    role,
+  });
 
   if (result.error) {
     return res.status(400).json({
@@ -15,7 +19,11 @@ const createPlayer = async (req, res, next) => {
     });
   } else {
     try {
-      const player = await CustomPlayers.create({ playerName, phoneNumber, role });
+      const player = await CustomPlayers.create({
+        playerName,
+        phoneNumber,
+        role,
+      });
 
       return apiResponse({
         res,
@@ -69,7 +77,11 @@ const updatePlayer = async (req, res, next) => {
 
   const { playerName, phoneNumber, role } = req.body;
 
-  const result = validate.createPlayer.validate({ playerName, phoneNumber, role });
+  const result = validate.createPlayer.validate({
+    playerName,
+    phoneNumber,
+    role,
+  });
 
   if (result.error) {
     return res.status(400).json({

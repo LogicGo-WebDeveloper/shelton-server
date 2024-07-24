@@ -98,7 +98,6 @@ const createTournament = async (req, res, next) => {
           tournamentCategoryId: tournamentCategoryId,
           tournamentMatchTypeId: tournamentMatchTypeId,
           tournamentEndDate: tournamentEndDate,
-          officialsId: officials,
           moreTeams: moreTeams,
           winningPrizeId: winningPrizeId,
           matchOnId: matchOnId,
@@ -245,7 +244,7 @@ const listTournament = async (req, res) => {
   }
 };
 
-const tournamentupdate = async (req, res, next) => {
+const tournamentUpdate = async (req, res, next) => {
   const id = req.params.id;
   let fileSuffix = Date.now().toString();
   const storage = multer.diskStorage({
@@ -353,21 +352,80 @@ const tournamentupdate = async (req, res, next) => {
   });
 };
 
-const tournamentaddumpire = async (req, res, next) => {
+const tournamentAddUmpire = async (req, res, next) => {
   var name = req.body.name;
 
-  try {
-    const umpire = await CustomMatchOfficial.create({
-      name: name,
-    });
+  const result = validate.createUmpire.validate({
+    name,
+  });
 
-    if (umpire) {
+  if (result.error) {
+    return res.status(400).json({
+      message: result.error.details[0].message,
+    });
+  } else {
+    try {
+      const upmireData = await CustomMatchOfficial.findOne({
+        name: name,
+      });
+      if (upmireData) {
+        return apiResponse({
+          res,
+          statusCode: StatusCodes.FORBIDDEN,
+          status: false,
+          message: "Umpire already exists!",
+        });
+      }
+
+      const umpire = await CustomMatchOfficial.create({
+        name: name,
+      })
+        .then((resp) => {
+          return apiResponse({
+            res,
+            statusCode: StatusCodes.OK,
+            status: true,
+            message: "Umpire created successfully!",
+            data: resp,
+          });
+        })
+        .catch((error) => {
+          console.log(error);
+          return apiResponse({
+            res,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            status: false,
+            message: "Internal server error",
+          });
+        });
+    } catch {
+      return apiResponse({
+        res,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        status: false,
+        message: "Internal server error",
+      });
+    }
+  }
+};
+
+const tournamentListUmpire = async (req, res, next) => {
+  try {
+    const umpireList = await CustomMatchOfficial.find();
+    if (umpireList) {
       return apiResponse({
         res,
         statusCode: StatusCodes.OK,
         status: true,
-        message: "Umpire created successfully!",
-        data: umpire,
+        message: "Umpire fetched successfully!",
+        data: umpireList,
+      });
+    } else {
+      return apiResponse({
+        res,
+        statusCode: StatusCodes.NOT_FOUND,
+        status: false,
+        message: "no data found",
       });
     }
   } catch {
@@ -383,6 +441,7 @@ const tournamentaddumpire = async (req, res, next) => {
 export default {
   createTournament,
   listTournament,
-  tournamentupdate,
-  tournamentaddumpire,
+  tournamentUpdate,
+  tournamentAddUmpire,
+  tournamentListUmpire,
 };

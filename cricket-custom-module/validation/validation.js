@@ -54,10 +54,15 @@ const createPlayer = Joi.object().keys({
   role: Joi.string().required(),
 });
 
+const createUmpire = Joi.object().keys({
+  name: Joi.string().required(),
+});
+
 export default {
   createTournament,
   createTeam,
   createMatch,
   createPlayer,
   updateTeam,
+  createUmpire,
 };

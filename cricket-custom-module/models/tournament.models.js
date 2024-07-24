@@ -26,10 +26,6 @@ const customTournamentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "CustomMatchType",
   },
-  officialsId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "CustomMatchOfficial",
-  },
   moreTeams: Boolean,
   winningPrizeId: {
     type: mongoose.Schema.Types.ObjectId,

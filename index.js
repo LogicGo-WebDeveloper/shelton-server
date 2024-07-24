@@ -55,7 +55,7 @@ InsertBallType();
 InsertBannerList();
 InsertPlayerRole();
 InsertMatchStatus();
-InsertMatchOfficials();
+// InsertMatchOfficials();
 
 app.use("/api/auth", route.authRoute);
 app.use("/api/v1/sport", route.sportRoute);
