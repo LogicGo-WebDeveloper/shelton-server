@@ -36,6 +36,7 @@ const updateTeam = {
 
 const createMatch = {
   body: Joi.object().keys({
+    tournamentId: Joi.string().required(),
     homeTeamId: Joi.string().required(),
     awayTeamId: Joi.string().required(),
     noOfOvers: Joi.number().required(),
@@ -51,18 +52,20 @@ const createMatch = {
 const createPlayer = {
   body: Joi.object().keys({
     playerName: Joi.string().required(),
-    phoneNumber: Joi.string().required(),
+    jerseyNumber: Joi.number().required(),
     role: Joi.string().required(),
     image: Joi.string().optional(),
+    teamId: Joi.string().required(),
   }),
 };
 
 const updatePlayer = {
   body: Joi.object().keys({
     playerName: Joi.string(),
-    phoneNumber: Joi.string(),
+    jerseyNumber: Joi.number(),
     role: Joi.string(),
     image: Joi.string().optional(),
+    teamId: Joi.string().required(),
   }),
 };
 

@@ -54,13 +54,16 @@ route.get("/tournament/list/umpire", tournamentController.tournamentListUmpire);
 route.post(
   "/team/add",
   upload.single("teamImage"),
+  verifyToken,
   validate(validation.createTeam),
   teamController.createTeam
 );
 route.get("/team/list", teamController.listTeams);
+
 route.put(
   "/team/update/:id",
   upload.single("teamImage"),
+  verifyToken,
   validate(validation.updateTeam),
   teamController.updateTeam
 );
@@ -69,16 +72,31 @@ route.delete("/team/delete/:id", teamController.deleteTeam);
 // ============================== For Match List ===========================================
 route.post(
   "/match/add",
-  validate(validation.createMatch),
+  verifyToken,
   matchController.createMatch
 );
-route.get("/match/list", matchController.listMatches);
-route.put("/match/update/:id", matchController.updateMatch);
-route.delete("/match/delete/:id", matchController.deleteMatch);
+
+route.get(
+  "/match/list",
+  matchController.listMatches
+);
+
+route.put(
+  "/match/update/:id",
+  verifyToken,
+  matchController.updateMatch
+);
+
+route.delete(
+  "/match/delete/:id",
+  verifyToken,
+  matchController.deleteMatch
+);
 
 // ============================== For Player List ===========================================
 route.post(
   "/player/add",
+  verifyToken,
   upload.single("image"),
   validate(validation.createPlayer),
   playerController.createPlayer
@@ -86,10 +104,11 @@ route.post(
 route.get("/player/list", playerController.listPlayers);
 route.put(
   "/player/update/:id",
+  verifyToken,
   upload.single("image"),
   validate(validation.updatePlayer),
   playerController.updatePlayer
 );
-route.delete("/player/delete/:id", playerController.deletePlayer);
+route.delete("/player/delete/:id", verifyToken, playerController.deletePlayer);
 
 export default route;

@@ -1,24 +1,23 @@
 import { apiResponse } from "../../helper/apiResponse.js";
 import { StatusCodes } from "http-status-codes";
-import validate from "../validation/validation.js";
 import CustomTeam from "../models/team.models.js";
-import multer from "multer";
-import * as path from "path";
-import fs from "fs";
-import { getHostUrl } from "../utils/utils.js";
-import mongoose from "mongoose";
+import { getHostUrl, validateObjectIds } from "../utils/utils.js";
 import { updateFile, uploadSingleFile } from "../../features/aws/service.js";
+import helper from "../../helper/common.js";
 
 const createTeam = async (req, res, next) => {
   try {
     const folderName = "custom_team";
     const { teamName, city, addMySelfInTeam } = req.body;
+    const userId = req.user._id
+
     let url = await uploadSingleFile(req, folderName);
     const result = await CustomTeam.create({
       teamName,
       city,
       addMySelfInTeam,
       teamImage: url,
+      createdBy: userId,
     });
 
     return apiResponse({
@@ -65,10 +64,19 @@ const listTeams = async (req, res) => {
 };
 
 const updateTeam = async (req, res, next) => {
-  const { id } = req.params;
+  const { id: teamId } = req.params;
+  const validation = validateObjectIds({ teamId });
+  if (!validation.isValid) {
+    return apiResponse({
+      res,
+      status: false,
+      message: validation.message,
+      statusCode: StatusCodes.BAD_REQUEST,
+    });
+  }
   const { teamName, city, addMySelfInTeam } = req.body;
-  const findDoc = await CustomTeam.findById(id);
-  if (!findDoc) {
+  const findTeam = await CustomTeam.findById(teamId);
+  if (!findTeam) {
     return apiResponse({
       res,
       status: false,
@@ -77,16 +85,17 @@ const updateTeam = async (req, res, next) => {
     });
   }
   const folderName = "custom_team";
-  let newUrl = await updateFile(req, findDoc, folderName);
-  const team = await CustomTeam.findById(id);
+  let newUrl = await updateFile(req, findTeam, folderName);
+  const team = await CustomTeam.findById(teamId);
   if (team) {
     await CustomTeam.findByIdAndUpdate(
-      id,
+      teamId,
       {
         teamName,
         city,
         addMySelfInTeam,
         teamImage: newUrl,
+        createdBy: team.createdBy, 
       },
       { new: true }
     )
@@ -119,20 +128,21 @@ const updateTeam = async (req, res, next) => {
 };
 
 const deleteTeam = async (req, res) => {
-  const id = req.params.id;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  const { id: teamId } = req.params;
+  const validation = validateObjectIds({ teamId });
+  if (!validation.isValid) {
     return apiResponse({
       res,
       status: false,
-      message: "Invalid Team ID",
+      message: validation.message,
       statusCode: StatusCodes.BAD_REQUEST,
     });
   }
 
   try {
-    const team = await CustomTeam.findById(id);
+    const team = await CustomTeam.findById(teamId);
     if (team) {
-      await CustomTeam.findByIdAndDelete(id);
+      await CustomTeam.findByIdAndDelete(teamId);
       return apiResponse({
         res,
         status: true,

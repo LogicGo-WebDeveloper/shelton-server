@@ -3,11 +3,14 @@ import { StatusCodes } from "http-status-codes";
 import validate from "../validation/validation.js";
 import CustomMatch from "../models/match.models.js";
 import { validateObjectIds } from "../utils/utils.js";
+import helper from "../../helper/common.js";
+import CustomTournament from "../models/tournament.models.js";
 
 const createMatch = async (req, res, next) => {
   const {
     homeTeamId,
     awayTeamId,
+    tournamentId,
     noOfOvers,
     overPerBowler,
     city,
@@ -18,7 +21,9 @@ const createMatch = async (req, res, next) => {
     matchOfficial,
   } = req.body;
 
-  const validation = validateObjectIds({ homeTeamId, awayTeamId, pitchType, ballType, matchOfficial });
+  const userId = req.user._id
+
+  const validation = validateObjectIds({ homeTeamId, awayTeamId, tournamentId, pitchType, ballType, matchOfficial });
   if (!validation.isValid) {
     return apiResponse({
       res,
@@ -38,7 +43,18 @@ const createMatch = async (req, res, next) => {
     dateTime,
     pitchType,
     ballType,
+    tournamentId,
   });
+  
+  const tournament = await CustomTournament.findById(tournamentId);
+  if (!tournament) {
+    return apiResponse({
+      res,
+      status: true,
+      message: "Tournament not found",
+      statusCode: StatusCodes.NOT_FOUND,
+    });
+  }
 
   if (result.error) {
     return apiResponse({
@@ -60,6 +76,8 @@ const createMatch = async (req, res, next) => {
         pitchType,
         ballType,
         matchOfficial,
+        createdBy: userId,
+        tournamentId,
       });
 
       return apiResponse({
@@ -146,7 +164,17 @@ const updateMatch = async (req, res, next) => {
     });
   } else {
     try {
-      const match = await CustomMatch.findByIdAndUpdate(
+      const match = await CustomMatch.findById(matchId);
+      if (!match) {
+        return apiResponse({
+          res,
+          status: false,
+          message: "Match not found",
+          statusCode: StatusCodes.NOT_FOUND,
+        });
+      }
+
+      const updatedMatch = await CustomMatch.findByIdAndUpdate(
         matchId,
         {
           homeTeamId,
@@ -159,26 +187,18 @@ const updateMatch = async (req, res, next) => {
           pitchType,
           ballType,
           matchOfficial,
+          createdBy: match.createdBy,
         },
         { new: true }
       );
 
-      if (!match) {
-        return apiResponse({
-          res,
-          status: true,
-          message: "Match not found",
-          statusCode: StatusCodes.NOT_FOUND,
-        });
-      } else {
-        return apiResponse({
-          res,
-          status: true,
-          data: match,
-          message: "Match updated successfully!",
-          statusCode: StatusCodes.OK,
-        });
-      }
+      return apiResponse({
+        res,
+        status: true,
+        data: updatedMatch,
+        message: "Match updated successfully!",
+        statusCode: StatusCodes.OK,
+      });
     } catch (err) {
       console.log(err);
       return apiResponse({
@@ -236,4 +256,4 @@ export default {
   listMatches,
   updateMatch,
   deleteMatch,
-  };
+};
