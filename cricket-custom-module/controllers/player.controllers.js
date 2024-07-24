@@ -3,36 +3,36 @@ import { StatusCodes } from "http-status-codes";
 import validate from "../validation/validation.js";
 import CustomPlayers from "../models/player.models.js";
 import mongoose from "mongoose";
+import { updateFile, uploadSingleFile } from "../../features/aws/service.js";
 
 const createPlayer = async (req, res, next) => {
   const { playerName, phoneNumber, role } = req.body;
+  const folderName = "custom_player";
+  let url = await uploadSingleFile(req, folderName);
 
-  const result = validate.createPlayer.validate({ playerName, phoneNumber, role });
-
-  if (result.error) {
-    return res.status(400).json({
-      msg: result.error.details[0].message,
+  try {
+    const player = await CustomPlayers.create({
+      playerName,
+      phoneNumber,
+      role,
+      image: url,
     });
-  } else {
-    try {
-      const player = await CustomPlayers.create({ playerName, phoneNumber, role });
 
-      return apiResponse({
-        res,
-        status: true,
-        data: player,
-        message: "Player created successfully!",
-        statusCode: StatusCodes.OK,
-      });
-    } catch (err) {
-      console.log(err);
-      return apiResponse({
-        res,
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        status: false,
-        message: "Internal server error",
-      });
-    }
+    return apiResponse({
+      res,
+      status: true,
+      data: player,
+      message: "Player created successfully!",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (err) {
+    console.log(err);
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
   }
 };
 
@@ -67,38 +67,41 @@ const updatePlayer = async (req, res, next) => {
     });
   }
 
-  const { playerName, phoneNumber, role } = req.body;
-
-  const result = validate.createPlayer.validate({ playerName, phoneNumber, role });
-
-  if (result.error) {
-    return res.status(400).json({
-      msg: result.error.details[0].message,
+  const findDoc = await CustomPlayers.findById(id);
+  if (!findDoc) {
+    return apiResponse({
+      res,
+      status: false,
+      message: "Player not found",
+      statusCode: StatusCodes.NOT_FOUND,
     });
-  } else {
-    try {
-      const player = await CustomPlayers.findByIdAndUpdate(
-        id,
-        { playerName, phoneNumber, role },
-        { new: true }
-      );
+  }
+  const folderName = "custom_player";
+  const { playerName, phoneNumber, role } = req.body;
+  let newUrl = await updateFile(req, findDoc, folderName);
 
-      return apiResponse({
-        res,
-        status: true,
-        data: player,
-        message: "Player updated successfully!",
-        statusCode: StatusCodes.OK,
-      });
-    } catch (err) {
-      console.log(err);
-      return apiResponse({
-        res,
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        status: false,
-        message: "Internal server error",
-      });
-    }
+  try {
+    const player = await CustomPlayers.findByIdAndUpdate(
+      id,
+      { playerName, phoneNumber, role, image: newUrl },
+      { new: true }
+    );
+
+    return apiResponse({
+      res,
+      status: true,
+      data: player,
+      message: "Player updated successfully!",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (err) {
+    console.log(err);
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
   }
 };
 

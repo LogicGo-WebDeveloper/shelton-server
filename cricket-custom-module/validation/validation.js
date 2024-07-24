@@ -48,11 +48,23 @@ const createMatch = {
   }),
 };
 
-const createPlayer = Joi.object().keys({
-  playerName: Joi.string().required(),
-  phoneNumber: Joi.string().required(),
-  role: Joi.string().required(),
-});
+const createPlayer = {
+  body: Joi.object().keys({
+    playerName: Joi.string().required(),
+    phoneNumber: Joi.string().required(),
+    role: Joi.string().required(),
+    image: Joi.string().optional(),
+  }),
+};
+
+const updatePlayer = {
+  body: Joi.object().keys({
+    playerName: Joi.string(),
+    phoneNumber: Joi.string(),
+    role: Joi.string(),
+    image: Joi.string().optional(),
+  }),
+};
 
 export default {
   createTournament,
@@ -60,4 +72,5 @@ export default {
   createMatch,
   createPlayer,
   updateTeam,
+  updatePlayer
 };

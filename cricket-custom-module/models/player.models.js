@@ -4,6 +4,7 @@ const customPlayersSchema = new mongoose.Schema({
   playerName: { type: String, required: true },
   phoneNumber: { type: String, required: true },
   role: { type: String, required: true },
+  image: { type: String },
 });
 
 const CustomPlayers = mongoose.model("CustomPlayers", customPlayersSchema);
