@@ -104,7 +104,13 @@ route.post(
   validate(validation.createPlayer),
   playerController.createPlayer
 );
-route.get("/player/list", playerController.listPlayers);
+
+route.get(
+  "/player/list",
+  verifyToken,
+  playerController.listPlayers
+);
+
 route.put(
   "/player/update/:id",
   verifyToken,
@@ -112,6 +118,11 @@ route.put(
   validate(validation.updatePlayer),
   playerController.updatePlayer
 );
-route.delete("/player/delete/:id", verifyToken, playerController.deletePlayer);
+
+route.delete(
+  "/player/delete/:id",
+  verifyToken,
+  playerController.deletePlayer
+);
 
 export default route;
