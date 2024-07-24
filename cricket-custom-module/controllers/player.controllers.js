@@ -64,8 +64,22 @@ const createPlayer = async (req, res, next) => {
 };
 
 const listPlayers = async (req, res) => {
+  const userId = req.user._id
+  const { teamId } = req.query; 
+  
+  const validation = validateObjectIds({ teamId });
+  if (!validation.isValid) {
+    return apiResponse({
+      res,
+      status: false,
+      message: validation.message,
+      statusCode: StatusCodes.BAD_REQUEST,
+    });
+  }
+
+
   try {
-    const players = await CustomPlayers.find();
+    const players = await CustomPlayers.find({ teamId, createdBy: userId });
     return apiResponse({
       res,
       status: true,
