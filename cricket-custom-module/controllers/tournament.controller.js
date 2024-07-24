@@ -172,65 +172,113 @@ const listTournament = async (req, res) => {
 
   try {
     let condition = {};
+
+    // Set condition based on search parameter
     if (search) {
-      condition = {
-        name: { $regex: new RegExp(search), $options: "i" },
-      };
+      condition.name = { $regex: new RegExp(search), $options: "i" };
+    }
+
+    // If req.user._id is provided, filter by createdBy field
+    if (req.user && req.user._id) {
+      condition.createdBy = req.user._id;
     }
 
     const { limit, offset } = getPagination(page, size);
 
-    // const data = await CustomTournament.find(condition)
-    //   .skip(offset)
-    //   .limit(limit)
-    //   .exec();
+    let data;
+    let totalItems;
 
-    const data = await CustomTournament.find(condition)
-      .populate({
-        path: "sportId",
-        model: "CustomSportList",
-        select: "sportName",
-      })
-      .populate({
-        path: "cityId",
-        model: "CustomCityList",
-        select: "city",
-      })
-      .populate({
-        path: "winningPrizeId",
-        model: "CustomTournamentWinningPrize",
-        select: "name",
-      })
-      .populate({
-        path: "matchOnId",
-        model: "CustomMatchOn",
-        select: "name",
-      })
-      .populate({
-        path: "tournamentMatchTypeId",
-        model: "CustomMatchType",
-        select: "name",
-      })
-      .populate({
-        path: "tournamentCategoryId",
-        model: "CustomTournamentCategory",
-        select: "name",
-      })
-      .populate({
-        path: "_id", // Assuming `_id` is the reference field in CustomUmpire
-        model: "CustomUmpire",
-        select: "name", // Fields you want to select from CustomUmpire
-      })
-      .skip(offset)
-      .limit(limit)
-      .exec();
+    // Fetch tournaments based on condition
+    if (Object.keys(condition).length > 0) {
+      data = await CustomTournament.find(condition)
+        .populate({
+          path: "sportId",
+          model: "CustomSportList",
+          select: "sportName",
+        })
+        .populate({
+          path: "cityId",
+          model: "CustomCityList",
+          select: "city",
+        })
+        .populate({
+          path: "winningPrizeId",
+          model: "CustomTournamentWinningPrize",
+          select: "name",
+        })
+        .populate({
+          path: "matchOnId",
+          model: "CustomMatchOn",
+          select: "name",
+        })
+        .populate({
+          path: "tournamentMatchTypeId",
+          model: "CustomMatchType",
+          select: "name",
+        })
+        .populate({
+          path: "tournamentCategoryId",
+          model: "CustomTournamentCategory",
+          select: "name",
+        })
+        .populate({
+          path: "_id", // Assuming `_id` is the reference field in CustomUmpire
+          model: "CustomUmpire",
+          select: "name", // Fields you want to select from CustomUmpire
+        })
+        .skip(offset)
+        .limit(limit)
+        .exec();
 
-    const totalItems = await CustomTournament.countDocuments(condition);
+      totalItems = await CustomTournament.countDocuments(condition);
+    } else {
+      // If no condition, fetch all tournaments (for cases where req.user._id is not provided)
+      data = await CustomTournament.find()
+        .populate({
+          path: "sportId",
+          model: "CustomSportList",
+          select: "sportName",
+        })
+        .populate({
+          path: "cityId",
+          model: "CustomCityList",
+          select: "city",
+        })
+        .populate({
+          path: "winningPrizeId",
+          model: "CustomTournamentWinningPrize",
+          select: "name",
+        })
+        .populate({
+          path: "matchOnId",
+          model: "CustomMatchOn",
+          select: "name",
+        })
+        .populate({
+          path: "tournamentMatchTypeId",
+          model: "CustomMatchType",
+          select: "name",
+        })
+        .populate({
+          path: "tournamentCategoryId",
+          model: "CustomTournamentCategory",
+          select: "name",
+        })
+        .populate({
+          path: "_id", // Assuming `_id` is the reference field in CustomUmpire
+          model: "CustomUmpire",
+          select: "name", // Fields you want to select from CustomUmpire
+        })
+        .skip(offset)
+        .limit(limit)
+        .exec();
 
-    const response = await getPagingData(totalItems, data, page, limit);
-    var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
+      totalItems = await CustomTournament.countDocuments();
+    }
+
+    // Modify tournament image URLs
+    const fullUrl = req.protocol + "://" + req.get("host") + "/images/";
     data.forEach((element) => {
-      console.log(element.tournamentBackgroundImage);
       element.tournamentImage = element.tournamentImage
         ? fullUrl + "tournament/" + element.tournamentImage
         : "";
@@ -239,11 +287,13 @@ const listTournament = async (req, res) => {
         : "";
     });
 
+    const response = await getPagingData(totalItems, data, page, limit);
+
     return apiResponse({
       res,
       status: true,
       data: response,
-      message: "Tournament fetch successfully!",
+      message: "Tournament fetch successful!",
       statusCode: StatusCodes.OK,
     });
   } catch (err) {
