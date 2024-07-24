@@ -48,10 +48,7 @@ route.post(
 );
 
 route.post("/tournament/add/umpire", tournamentController.tournamentAddUmpire);
-route.post(
-  "/tournament/list/umpire",
-  tournamentController.tournamentListUmpire
-);
+route.get("/tournament/list/umpire", tournamentController.tournamentListUmpire);
 
 // ============================== For Team List ===========================================
 route.post(

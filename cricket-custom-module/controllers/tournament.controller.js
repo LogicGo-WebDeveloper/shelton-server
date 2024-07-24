@@ -7,6 +7,7 @@ import multer from "multer";
 import fs from "fs";
 import { apiResponse } from "../../helper/apiResponse.js";
 import { CustomMatchOfficial } from "../models/common.models.js";
+import customUmpireList from "../models/umpire.models.js";
 
 const createTournament = async (req, res, next) => {
   let fileSuffix = Date.now().toString();
@@ -42,7 +43,7 @@ const createTournament = async (req, res, next) => {
     var tournamentEndDate = req.body.tournamentEndDate;
     var tournamentCategoryId = req.body.tournamentCategoryId;
     var tournamentMatchTypeId = req.body.tournamentMatchTypeId;
-    var officials = req.body.officialsId;
+    var umpireIds = req.body.umpireId;
     var moreTeams = req.body.moreTeams;
     var winningPrizeId = req.body.winningPrizeId;
     var matchOnId = req.body.matchOnId;
@@ -64,7 +65,6 @@ const createTournament = async (req, res, next) => {
       tournamentCategoryId: tournamentCategoryId,
       tournamentMatchTypeId: tournamentMatchTypeId,
       tournamentEndDate: tournamentEndDate,
-      officials: officials,
       moreTeams: moreTeams,
       winningPrizeId: winningPrizeId,
       matchOnId: matchOnId,
@@ -105,7 +105,15 @@ const createTournament = async (req, res, next) => {
           tournamentImage: tournamentImage,
           tournamentBackgroundImage: tournamentBackgroundImage,
         })
-          .then(function (resp) {
+
+          .then(async function (resp) {
+            // const documents = umpireIds.map((umpireId) => ({
+            //   tournamentId: resp.id, // Assuming resp.id is the tournamentId
+            //   umpireId: umpireId,
+            // }));
+
+            // const result = await customUmpireList.insertMany(documents);
+
             var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
             resp.tournamentImage = resp.tournamentImage
               ? fullUrl + "tournament/" + resp.tournamentImage
