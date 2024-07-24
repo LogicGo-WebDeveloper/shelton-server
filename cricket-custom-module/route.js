@@ -80,9 +80,19 @@ route.put("/match/update/:id", matchController.updateMatch);
 route.delete("/match/delete/:id", matchController.deleteMatch);
 
 // ============================== For Player List ===========================================
-route.post("/player/add", playerController.createPlayer);
+route.post(
+  "/player/add",
+  upload.single("image"),
+  validate(validation.createPlayer),
+  playerController.createPlayer
+);
 route.get("/player/list", playerController.listPlayers);
-route.put("/player/update/:id", playerController.updatePlayer);
+route.put(
+  "/player/update/:id",
+  upload.single("image"),
+  validate(validation.updatePlayer),
+  playerController.updatePlayer
+);
 route.delete("/player/delete/:id", playerController.deletePlayer);
 
 export default route;
