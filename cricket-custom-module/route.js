@@ -58,7 +58,12 @@ route.post(
   validate(validation.createTeam),
   teamController.createTeam
 );
-route.get("/team/list", teamController.listTeams);
+
+route.get(
+  "/team/list",
+  verifyToken,
+  teamController.listTeams
+);
 
 route.put(
   "/team/update/:id",
@@ -67,7 +72,11 @@ route.put(
   validate(validation.updateTeam),
   teamController.updateTeam
 );
-route.delete("/team/delete/:id", teamController.deleteTeam);
+
+route.delete(
+  "/team/delete/:id",
+  teamController.deleteTeam
+);
 
 // ============================== For Match List ===========================================
 route.post(

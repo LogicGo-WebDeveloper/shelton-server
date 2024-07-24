@@ -77,6 +77,15 @@ const listPlayers = async (req, res) => {
     });
   }
 
+  const findTeam = await CustomTeam(teamId)
+  if(!findTeam){
+    return apiResponse({
+      res,
+      status: true,
+      message: "Team not found",
+      statusCode: StatusCodes.NOT_FOUND,
+    });
+  }
 
   try {
     const players = await CustomPlayers.find({ teamId, createdBy: userId });

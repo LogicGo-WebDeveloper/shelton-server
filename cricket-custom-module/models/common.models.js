@@ -47,16 +47,11 @@ const matchStatusSchema = new mongoose.Schema({
 
 const matchOfficialSchema = new mongoose.Schema({
   name: String,
+  image: String,
 });
 
-const CustomMatchOfficial = mongoose.model(
-  "CustomMatchOfficial",
-  matchOfficialSchema
-);
-const CustomMatchStatus = mongoose.model(
-  "CustomMatchStatus",
-  matchStatusSchema
-);
+const CustomMatchOfficial = mongoose.model("CustomMatchOfficial", matchOfficialSchema);
+const CustomMatchStatus = mongoose.model("CustomMatchStatus", matchStatusSchema);
 const CustomPlayerRole = mongoose.model("CustomPlayerRole", playerRoleSchema);
 const CustomMatchType = mongoose.model("CustomMatchType", matchTypeSchema);
 const CustomMatchOn = mongoose.model("CustomMatchOn", matchOnSchema);
