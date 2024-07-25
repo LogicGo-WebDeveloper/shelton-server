@@ -89,6 +89,13 @@ route.put(
   matchController.updateMatch
 );
 
+route.put(
+  "/match/update/:id/status",
+  // verifyToken,
+  validate(validation.updateStatus),
+  matchController.updateMatchStatus
+);
+
 route.delete("/match/delete/:id", verifyToken, matchController.deleteMatch);
 
 // ============================== For Player List ===========================================

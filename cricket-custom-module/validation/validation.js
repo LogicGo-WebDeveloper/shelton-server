@@ -1,4 +1,5 @@
 import Joi from "joi";
+import enums from "../../config/enum.js";
 
 const createTournament = Joi.object().keys({
   sportId: Joi.string().required(),
@@ -45,6 +46,7 @@ const createMatch = {
     dateTime: Joi.date().required(),
     homeTeamPlayingPlayer: Joi.array().items(Joi.string()).min(11).required(),
     awayTeamPlayingPlayer: Joi.array().items(Joi.string()).min(11).required(),
+    status: Joi.string().default(enums.matchStatusEnum.not_started),
   }),
 };
 
@@ -72,6 +74,12 @@ const createUmpire = Joi.object().keys({
   name: Joi.string().required(),
 });
 
+const updateStatus = {
+  body: Joi.object().keys({
+    status: Joi.string().valid(...Object.values(enums.matchStatusEnum)),
+  }),
+};
+
 export default {
   createTournament,
   createTeam,
@@ -80,4 +88,5 @@ export default {
   updateTeam,
   createUmpire,
   updatePlayer,
+  updateStatus
 };

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import enums from "../../config/enum.js";
 
 const customMatchSchema = new mongoose.Schema({
   homeTeamId: { type: mongoose.Schema.Types.ObjectId, ref: "Team", required: true },
@@ -11,7 +12,8 @@ const customMatchSchema = new mongoose.Schema({
   tournamentId: { type: mongoose.Schema.Types.ObjectId, ref: "CustomTournament" },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   homeTeamPlayingPlayer: [{ type: mongoose.Schema.Types.ObjectId, ref: "CustomPlayers" }],
-  awayTeamPlayingPlayer: [{ type: mongoose.Schema.Types.ObjectId, ref: "CustomPlayers" }],
+  awayTeamPlayingPlayer: [ {type: mongoose.Schema.Types.ObjectId,ref: "CustomPlayers"} ],
+  status: {type: String,enum: Object.values(enums.matchStatusEnum),default: enums.matchStatusEnum.not_started},
 });
 
 const CustomMatch = mongoose.model("CustomMatch", customMatchSchema);
