@@ -25,10 +25,18 @@ const sofascoreApiModeEnum = {
   PAID: "paid",
 };
 
+const matchStatusEnum = {
+  not_started: "not_started",
+  in_progress: "in_progress",
+  finished: "finished",
+  cancelled: "cancelled",
+};
+
 export default {
   nodeEnvEnums,
   userRoleEnum,
   authProviderEnum,
   discountTypeEnum,
   sofascoreApiModeEnum,
+  matchStatusEnum,
 };
