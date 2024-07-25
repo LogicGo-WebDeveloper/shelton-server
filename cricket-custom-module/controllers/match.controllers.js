@@ -177,6 +177,61 @@ const createMatch = async (req, res, next) => {
   }
 };
 
+// const listMatches = async (req, res) => {
+//   const authHeader = req.headers?.authorization;
+//   const token = authHeader ? authHeader?.split(" ")[1] : null;
+//   let userId;
+//   if (token) {
+//     const decodedToken = await helper.verifyToken(token);
+//     userId = decodedToken?.userId;
+//   }
+
+//   const { page = 1, size = 10 } = req.query;
+
+//   try {
+//     let condition = {};
+
+//     if (userId) {
+//       condition.createdBy = userId;
+//     }
+
+//     const limit = parseInt(size);
+//     const skip = (parseInt(page) - 1) * limit;
+
+//     const matches = await CustomMatch.find(condition)
+//       .skip(skip)
+//       .limit(limit)
+//       .lean();
+
+//     const totalItems = await CustomMatch.countDocuments(condition);
+
+//     const getPagingData = (totalItems, matches, page, limit) => {
+//       const currentPage = page ? +page : 1;
+//       const totalPages = Math.ceil(totalItems / limit);
+//       return { totalItems, matches, totalPages, currentPage };
+//     };
+
+//     const response = getPagingData(totalItems, matches, page, limit);
+
+//     return apiResponse({
+//       res,
+//       status: true,
+//       data: response,
+//       message: "Matches fetched successfully!",
+//       statusCode: StatusCodes.OK,
+//     });
+//   } catch (err) {
+//     console.log(err);
+//     return apiResponse({
+//       res,
+//       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+//       status: false,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+
 const listMatches = async (req, res) => {
   const authHeader = req.headers?.authorization;
   const token = authHeader ? authHeader?.split(" ")[1] : null;
@@ -199,11 +254,59 @@ const listMatches = async (req, res) => {
     const skip = (parseInt(page) - 1) * limit;
 
     const matches = await CustomMatch.find(condition)
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    .skip(skip)
+    .limit(limit)
+    .populate({
+      path: 'homeTeamId',
+      model: 'CustomTeam',
+      select: 'teamName teamImage',
+    })
+    .populate({
+      path: 'awayTeamId',
+      model: 'CustomTeam',
+      select: 'teamName teamImage',
+    })
+    .populate({
+      path: 'city',
+      model: 'CustomCityList',
+      select: 'city',
+    })
+    .populate({
+      path: 'tournamentId',
+      model: 'CustomTournament',
+      select: 'name tournamentImage',
+    })
+    .lean();
 
     const totalItems = await CustomMatch.countDocuments(condition);
+
+    const formattedMatches = matches.map(match => ({
+      _id: match._id,
+      noOfOvers: match.noOfOvers,
+      overPerBowler: match.overPerBowler,
+      ground: match.ground,
+      dateTime: match.dateTime,
+      homeTeam: match.homeTeamId ? {
+        id: match.homeTeamId._id,
+        name: match.homeTeamId.teamName,
+        image: match.homeTeamId.teamImage,
+      }: null,
+      awayTeam: match.awayTeamId ? {
+        id: match.awayTeamId._id,
+        name: match.awayTeamId.teamName,
+        image: match.awayTeamId.teamImage,
+      }: null,
+      city: match.city ? {
+        id: match.city._id,
+        name: match.city.city
+      }: null,
+      tournament: match.tournamentId ? {
+        id: match.tournamentId._id,
+        name: match.tournamentId.name,
+        image: match.tournamentId.tournamentImage
+      }: null,
+      createdBy: match.createdBy
+    }));
 
     const getPagingData = (totalItems, matches, page, limit) => {
       const currentPage = page ? +page : 1;
@@ -211,7 +314,7 @@ const listMatches = async (req, res) => {
       return { totalItems, matches, totalPages, currentPage };
     };
 
-    const response = getPagingData(totalItems, matches, page, limit);
+    const response = getPagingData(totalItems, formattedMatches, page, limit);
 
     return apiResponse({
       res,
@@ -230,6 +333,7 @@ const listMatches = async (req, res) => {
     });
   }
 };
+
 
 const updateMatch = async (req, res, next) => {
   try {
