@@ -191,10 +191,19 @@ const listTournament = async (req, res) => {
       .populate("tournamentMatchTypeId", "name")
       .populate("tournamentCategoryId", "name");
 
-      
-
     // Execute the query with pagination
     const tournaments = await tournamentsQuery.skip(skip).limit(limit).exec();
+
+    const tournamentsWithUmpire = await Promise.all(
+      tournaments.map(async (tournament) => {
+        const umpireData = await customUmpireList.find({
+          tournamentId: tournament._id,
+        });
+        tournament.umpire = umpireData; // Assign umpire data to the tournament object
+        return tournament; // Return the modified tournament object
+      })
+    );
+
     const totalItems = await CustomTournament.countDocuments(condition);
 
     // Modify tournament image URLs
@@ -216,7 +225,7 @@ const listTournament = async (req, res) => {
     // Response data
     const responseData = {
       totalItems,
-      data: tournaments,
+      data: tournamentsWithUmpire,
       totalPages,
       currentPage,
     };

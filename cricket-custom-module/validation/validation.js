@@ -63,7 +63,7 @@ const updatePlayer = {
     playerName: Joi.string(),
     jerseyNumber: Joi.number(),
     role: Joi.string(),
-    image: Joi.string().optional(),
+    // image: Joi.string().optional(),
     teamId: Joi.string().required(),
   }),
 };

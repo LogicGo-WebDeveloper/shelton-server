@@ -85,7 +85,7 @@ const listPlayers = async (req, res) => {
   }
 
   const findTeam = await CustomTeam.findById(teamId);
-  if(!findTeam){
+  if (!findTeam) {
     return apiResponse({
       res,
       status: true,
@@ -166,6 +166,10 @@ const updatePlayer = async (req, res, next) => {
   const folderName = "custom_player";
   let newUrl = await updateFile(req, findDoc, folderName);
 
+  // const imagePlayer = CustomPlayers.findOne({
+  //   _id: playerId,
+  // });
+
   await CustomPlayers.findByIdAndUpdate(
     playerId,
     {
@@ -174,7 +178,7 @@ const updatePlayer = async (req, res, next) => {
       role,
       teamId,
       createdBy: findDoc.userId,
-      image: newUrl,
+      image: newUrl ? newUrl : findDoc.image,
     },
     { new: true }
   )
@@ -213,7 +217,7 @@ const deletePlayer = async (req, res) => {
 
   try {
     const player = await CustomPlayers.findById(playerId);
-    
+
     if (!player) {
       return apiResponse({
         res,
@@ -240,7 +244,7 @@ const deletePlayer = async (req, res) => {
       message: "Player deleted successfully!",
       statusCode: StatusCodes.OK,
     });
-  } catch (err) {;
+  } catch (err) {
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
