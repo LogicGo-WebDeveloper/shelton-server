@@ -221,7 +221,7 @@ export const InsertPlayerRole = async () => {
 };
 
 export const playerOutReasons = async () => {
-  reasonList.map((reason) => reason.reason);
+  reasonList.map((reason) => reason.reason)
   for (const reason of reasonList) {
     const exists = await CustomOutReason.findOne({
       reason: reason.reason,
