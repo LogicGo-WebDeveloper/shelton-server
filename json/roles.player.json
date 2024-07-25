@@ -1,20 +1,22 @@
 [
     {
-        "role": "Admin"
+        "role": "Captain",
+        "image": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/roles/captain"
     },
     {
-        "role": "Captain"
+        "role": "Wicket Keeper",
+        "image": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/roles/weeketkeeper"
     },
     {
-        "role": "Wicket Keeper"
+        "role": "Batter",
+        "image": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/roles/batter"
     },
     {
-        "role": "Batter"
+        "role": "Bowler",
+        "image": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/roles/bowler"
     },
     {
-        "role": "Bowler"
-    },
-    {
-        "role": "All-Rounder"
+        "role": "All-Rounder",
+        "image": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/roles/all-rounder"
     }
 ]

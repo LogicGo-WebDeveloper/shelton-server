@@ -3,7 +3,6 @@ import { StatusCodes } from "http-status-codes";
 import validate from "../validation/validation.js";
 import CustomMatch from "../models/match.models.js";
 import { validateObjectIds } from "../utils/utils.js";
-import helper from "../../helper/common.js";
 import CustomTournament from "../models/tournament.models.js";
 
 const createMatch = async (req, res, next) => {

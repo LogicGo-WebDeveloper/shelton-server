@@ -19,8 +19,8 @@ const createTeam = {
   body: Joi.object().keys({
     teamName: Joi.string().required(),
     city: Joi.string().required(),
-    addMySelfInTeam: Joi.boolean().required(),
     teamImage: Joi.string().optional(),
+    tournamentId: Joi.string(),
   }),
 };
 
@@ -28,8 +28,8 @@ const updateTeam = {
   body: Joi.object().keys({
     teamName: Joi.string(),
     city: Joi.string(),
-    addMySelfInTeam: Joi.boolean(),
     teamImage: Joi.string(),
+    tournamentId: Joi.string(),
   }),
 };
 

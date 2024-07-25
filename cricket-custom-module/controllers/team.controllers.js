@@ -1,23 +1,54 @@
 import { apiResponse } from "../../helper/apiResponse.js";
 import { StatusCodes } from "http-status-codes";
 import CustomTeam from "../models/team.models.js";
-import { getHostUrl, validateObjectIds } from "../utils/utils.js";
+import { validateObjectIds } from "../utils/utils.js";
 import { updateFile, uploadSingleFile } from "../../features/aws/service.js";
-import helper from "../../helper/common.js";
+import { CustomCityList } from "../models/common.models.js";
+import CustomTournament from "../models/tournament.models.js";
 
 const createTeam = async (req, res, next) => {
   try {
     const folderName = "custom_team";
-    const { teamName, city, addMySelfInTeam } = req.body;
+    const { teamName, city, tournamentId } = req.body;
     const userId = req.user._id
-
     let url = await uploadSingleFile(req, folderName);
+
+    const validation = validateObjectIds({ tournamentId, city });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    const tournament = await CustomTournament.findById(tournamentId)
+    const isCity = await CustomCityList.findById(city)
+
+    if(!tournament){
+      return apiResponse({
+        res,
+        status: true,
+        message: "Tournament not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+    if(!isCity){
+      return apiResponse({
+        res,
+        status: true,
+        message: "City not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
     const result = await CustomTeam.create({
       teamName,
       city,
-      addMySelfInTeam,
       teamImage: url,
       createdBy: userId,
+      tournamentId,
     });
 
     return apiResponse({
@@ -38,14 +69,31 @@ const createTeam = async (req, res, next) => {
 };
 
 const listTeams = async (req, res) => {
-  try {
-    const teams = await CustomTeam.find();
-    teams.forEach((element) => {
-      element.teamImage = element.teamImage
-        ? getHostUrl(req, "team") + element.teamImage
-        : "";
-    });
+  const userId = req.user._id;
+  const { tournamentId } = req.query; 
 
+  const validation = validateObjectIds({ tournamentId });
+  if (!validation.isValid) {
+    return apiResponse({
+      res,
+      status: false,
+      message: validation.message,
+      statusCode: StatusCodes.BAD_REQUEST,
+    });
+  }
+
+  const findTournament = await CustomTournament.findById(tournamentId);
+  if (!findTournament) {
+    return apiResponse({
+      res,
+      status: true,
+      message: "Tournament not found",
+      statusCode: StatusCodes.NOT_FOUND,
+    });
+  }
+
+  try {
+    const teams = await CustomTeam.find({ tournamentId, createdBy: userId });
     return apiResponse({
       res,
       status: true,
@@ -65,7 +113,9 @@ const listTeams = async (req, res) => {
 
 const updateTeam = async (req, res, next) => {
   const { id: teamId } = req.params;
-  const validation = validateObjectIds({ teamId });
+  const { teamName, city, tournamentId } = req.body;
+
+  const validation = validateObjectIds({ tournamentId, teamId, city });
   if (!validation.isValid) {
     return apiResponse({
       res,
@@ -74,28 +124,39 @@ const updateTeam = async (req, res, next) => {
       statusCode: StatusCodes.BAD_REQUEST,
     });
   }
-  const { teamName, city, addMySelfInTeam } = req.body;
-  const findTeam = await CustomTeam.findById(teamId);
-  if (!findTeam) {
+
+  const findTournament = await CustomTournament.findById(tournamentId);
+  const findCity = await CustomCityList.findById(city);
+  if(!findTournament){
     return apiResponse({
       res,
-      status: false,
-      message: "Team not found",
+      status: true,
+      message: "Tournament not found",
       statusCode: StatusCodes.NOT_FOUND,
     });
   }
+  
+  if(!findCity){
+    return apiResponse({
+      res,
+      status: true,
+      message: "City not found",
+      statusCode: StatusCodes.NOT_FOUND,
+    });
+  }
+
   const folderName = "custom_team";
-  let newUrl = await updateFile(req, findTeam, folderName);
   const team = await CustomTeam.findById(teamId);
+  let newUrl = await updateFile(req, team, folderName);
   if (team) {
     await CustomTeam.findByIdAndUpdate(
       teamId,
       {
         teamName,
         city,
-        addMySelfInTeam,
         teamImage: newUrl,
         createdBy: team.createdBy, 
+        tournamentId
       },
       { new: true }
     )
@@ -120,7 +181,7 @@ const updateTeam = async (req, res, next) => {
   } else {
     return apiResponse({
       res,
-      status: false,
+      status: true,
       message: "Team not found",
       statusCode: StatusCodes.NOT_FOUND,
     });
@@ -130,6 +191,7 @@ const updateTeam = async (req, res, next) => {
 const deleteTeam = async (req, res) => {
   const { id: teamId } = req.params;
   const validation = validateObjectIds({ teamId });
+
   if (!validation.isValid) {
     return apiResponse({
       res,
@@ -152,7 +214,7 @@ const deleteTeam = async (req, res) => {
     } else {
       return apiResponse({
         res,
-        status: false,
+        status: true,
         message: "Team not found",
         statusCode: StatusCodes.NOT_FOUND,
       });
