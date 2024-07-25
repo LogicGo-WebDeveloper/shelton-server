@@ -83,7 +83,7 @@ const listPlayers = async (req, res) => {
     });
   }
 
-  const findTeam = await CustomTeam(teamId)
+  const findTeam = await CustomTeam.findById(teamId);
   if(!findTeam){
     return apiResponse({
       res,
@@ -189,8 +189,10 @@ const updatePlayer = async (req, res, next) => {
     });
 };
 
-const deletePlayer = async (req, res, next) => {
+const deletePlayer = async (req, res) => {
   const { id: playerId } = req.params;
+  const userId = req.user._id;
+
   const validation = validateObjectIds({ playerId });
   if (!validation.isValid) {
     return apiResponse({
@@ -203,15 +205,8 @@ const deletePlayer = async (req, res, next) => {
 
   try {
     const player = await CustomPlayers.findById(playerId);
-    if (player) {
-      await CustomPlayers.findByIdAndDelete(playerId);
-      return apiResponse({
-        res,
-        status: true,
-        message: "Player deleted successfully!",
-        statusCode: StatusCodes.OK,
-      });
-    } else {
+    
+    if (!player) {
       return apiResponse({
         res,
         status: true,
@@ -219,7 +214,25 @@ const deletePlayer = async (req, res, next) => {
         statusCode: StatusCodes.NOT_FOUND,
       });
     }
-  } catch (err) {
+
+    // Check if the user deleting the player is the same as the one who created it
+    if (player.createdBy.toString() !== userId.toString()) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "You are not authorized to delete this player",
+        statusCode: StatusCodes.FORBIDDEN,
+      });
+    }
+
+    await CustomPlayers.findByIdAndDelete(playerId);
+    return apiResponse({
+      res,
+      status: true,
+      message: "Player deleted successfully!",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (err) {;
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,

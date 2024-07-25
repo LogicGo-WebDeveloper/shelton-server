@@ -8,9 +8,10 @@ const customMatchSchema = new mongoose.Schema({
   city: { type: String, required: true },
   ground: { type: String, required: true },
   dateTime: { type: Date, required: true },
-  pitchType: { type: String, required: true },
-  ballType: { type: String, required: true },
+  tournamentId: { type: mongoose.Schema.Types.ObjectId, ref: "CustomTournament" },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  homeTeamPlayingPlayer: [{ type: mongoose.Schema.Types.ObjectId, ref: "CustomPlayers" }],
+  awayTeamPlayingPlayer: [{ type: mongoose.Schema.Types.ObjectId, ref: "CustomPlayers" }],
 });
 
 const CustomMatch = mongoose.model("CustomMatch", customMatchSchema);

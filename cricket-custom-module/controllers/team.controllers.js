@@ -190,8 +190,9 @@ const updateTeam = async (req, res, next) => {
 
 const deleteTeam = async (req, res) => {
   const { id: teamId } = req.params;
-  const validation = validateObjectIds({ teamId });
+  const userId = req.user._id;
 
+  const validation = validateObjectIds({ teamId });
   if (!validation.isValid) {
     return apiResponse({
       res,
@@ -203,22 +204,31 @@ const deleteTeam = async (req, res) => {
 
   try {
     const team = await CustomTeam.findById(teamId);
-    if (team) {
-      await CustomTeam.findByIdAndDelete(teamId);
+    if (!team) {
       return apiResponse({
         res,
-        status: true,
-        message: "Team deleted successfully!",
-        statusCode: StatusCodes.OK,
-      });
-    } else {
-      return apiResponse({
-        res,
-        status: true,
+        status: false,
         message: "Team not found",
         statusCode: StatusCodes.NOT_FOUND,
       });
     }
+
+    if (team.createdBy.toString() !== userId.toString()) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "You are not authorized to delete this team",
+        statusCode: StatusCodes.FORBIDDEN,
+      });
+    }
+
+    await CustomTeam.findByIdAndDelete(teamId);
+    return apiResponse({
+      res,
+      status: true,
+      message: "Team deleted successfully!",
+      statusCode: StatusCodes.OK,
+    });
   } catch (err) {
     return apiResponse({
       res,

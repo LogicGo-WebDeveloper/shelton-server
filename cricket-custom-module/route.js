@@ -82,6 +82,7 @@ route.delete(
 route.post(
   "/match/add",
   verifyToken,
+  validate(validation.createMatch),
   matchController.createMatch
 );
 
@@ -93,6 +94,7 @@ route.get(
 route.put(
   "/match/update/:id",
   verifyToken,
+  validate(validation.createMatch),
   matchController.updateMatch
 );
 
