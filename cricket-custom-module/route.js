@@ -33,6 +33,7 @@ route.get("/match/pitch-types", commonController.getPitchTypes);
 route.get("/match/status", commonController.getMatchStatus);
 route.get("/match/officials", commonController.getMatchOfficials);
 route.get("/player/roles", commonController.getPlayerRoles);
+route.get("/player/out-reasons", commonController.getPlayerOutReason);
 
 // ============================== For Tournament List ===========================================
 route.post(
@@ -59,11 +60,7 @@ route.post(
   teamController.createTeam
 );
 
-route.get(
-  "/team/list",
-  verifyToken,
-  teamController.listTeams
-);
+route.get("/team/list", verifyToken, teamController.listTeams);
 
 route.put(
   "/team/update/:id",
@@ -73,34 +70,16 @@ route.put(
   teamController.updateTeam
 );
 
-route.delete(
-  "/team/delete/:id",
-  teamController.deleteTeam
-);
+route.delete("/team/delete/:id", teamController.deleteTeam);
 
 // ============================== For Match List ===========================================
-route.post(
-  "/match/add",
-  verifyToken,
-  matchController.createMatch
-);
+route.post("/match/add", verifyToken, matchController.createMatch);
 
-route.get(
-  "/match/list",
-  matchController.listMatches
-);
+route.get("/match/list", matchController.listMatches);
 
-route.put(
-  "/match/update/:id",
-  verifyToken,
-  matchController.updateMatch
-);
+route.put("/match/update/:id", verifyToken, matchController.updateMatch);
 
-route.delete(
-  "/match/delete/:id",
-  verifyToken,
-  matchController.deleteMatch
-);
+route.delete("/match/delete/:id", verifyToken, matchController.deleteMatch);
 
 // ============================== For Player List ===========================================
 route.post(
@@ -111,11 +90,7 @@ route.post(
   playerController.createPlayer
 );
 
-route.get(
-  "/player/list",
-  verifyToken,
-  playerController.listPlayers
-);
+route.get("/player/list", verifyToken, playerController.listPlayers);
 
 route.put(
   "/player/update/:id",
@@ -125,10 +100,6 @@ route.put(
   playerController.updatePlayer
 );
 
-route.delete(
-  "/player/delete/:id",
-  verifyToken,
-  playerController.deletePlayer
-);
+route.delete("/player/delete/:id", verifyToken, playerController.deletePlayer);
 
 export default route;

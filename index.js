@@ -17,6 +17,7 @@ import {
   InsertMatchType,
   InsertPitchType,
   InsertPlayerRole,
+  playerOutReasons,
   InsertSportList,
   InsertTournamentCategory,
   InsertTournamentWinningPrize,
@@ -54,6 +55,7 @@ InsertPitchType();
 InsertBallType();
 InsertBannerList();
 InsertPlayerRole();
+playerOutReasons();
 InsertMatchStatus();
 // InsertMatchOfficials();
 

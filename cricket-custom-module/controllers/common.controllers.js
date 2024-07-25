@@ -1,6 +1,6 @@
 import { apiResponse } from "../../helper/apiResponse.js";
 import { StatusCodes } from "http-status-codes";
-import { CustomBallType, CustomCityList, CustomMatchOn, CustomMatchStatus, CustomMatchType, CustomPitchType, CustomPlayerRole, CustomTournamentCategory, CustomTournamentWinningPrize, CustomMatchOfficial } from "../models/common.models.js";
+import { CustomBallType, CustomCityList, CustomMatchOn, CustomMatchStatus, CustomMatchType, CustomPitchType, CustomPlayerRole, CustomTournamentCategory, CustomTournamentWinningPrize, CustomMatchOfficial, CustomOutReason } from "../models/common.models.js";
 
 const getCityList = async (req, res, next) => {
   const { page = 1, city } = req.query;
@@ -258,6 +258,35 @@ const getMatchOfficials = async (req, res, next) => {
   }
 };
 
+const getPlayerOutReason = async (req, res, next) => {
+  try {
+    const result = await CustomOutReason.find();
+    return apiResponse({ 
+      res, 
+      statusCode: StatusCodes.OK, 
+      message: "Player out reasons fetched successfully", 
+      status: true, 
+      data: result 
+    });
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return apiResponse({
+        res,
+        statusCode: StatusCodes.NOT_FOUND,
+        status: true,
+        message: "Reasons not found",
+      });
+    } else {
+      return apiResponse({ 
+        res, 
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR, 
+        message: "Internal server error", 
+        status: false 
+      });
+    }
+  }
+};
+
 export default {
   getCityList,
   getTournamentCategory,
@@ -268,5 +297,6 @@ export default {
   getPitchTypes,
   getPlayerRoles,
   getMatchStatus,
-  getMatchOfficials
+  getMatchOfficials,
+  getPlayerOutReason
 };
