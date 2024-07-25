@@ -44,7 +44,10 @@ const createTournament = async (req, res, next) => {
     var tournamentEndDate = req.body.tournamentEndDate;
     var tournamentCategoryId = req.body.tournamentCategoryId;
     var tournamentMatchTypeId = req.body.tournamentMatchTypeId;
-    var umpireIds = req.body.umpireId;
+    const umpireIds = req.body.umpireId.replace(/^'(.*)'$/, "$1");
+
+    // Parse the string into an array
+    const array = JSON.parse(umpireIds);
     var moreTeams = req.body.moreTeams;
     var winningPrizeId = req.body.winningPrizeId;
     var matchOnId = req.body.matchOnId;
@@ -101,7 +104,7 @@ const createTournament = async (req, res, next) => {
           tournamentCategoryId: tournamentCategoryId,
           tournamentMatchTypeId: tournamentMatchTypeId,
           tournamentEndDate: tournamentEndDate,
-          moreTeams: moreTeams,
+          moreTeams: 0,
           winningPrizeId: winningPrizeId,
           matchOnId: matchOnId,
           description: description,
@@ -110,7 +113,7 @@ const createTournament = async (req, res, next) => {
         })
 
           .then(async function (resp) {
-            umpireIds.forEach((umpireId) => {
+            array.forEach((umpireId) => {
               let data = {
                 tournamentId: resp.id, // Assuming resp.id is the tournamentId
                 umpireId: umpireId,
@@ -150,163 +153,84 @@ const createTournament = async (req, res, next) => {
           res,
           status: false,
           message: "Tournament name already exists!",
-          statusCode: StatusCodes.FORBIDDEN,
+          statusCode: StatusCodes.OK,
         });
       }
     }
   });
 };
+
 const listTournament = async (req, res) => {
   const { page = 1, size = 10, search } = req.query;
 
-  const authHeader = req.headers?.authorization;
-  const token = authHeader ? authHeader?.split(" ")[1] : null;
-  let userId;
-  if (token) {
-    const decodedToken = await helper.verifyToken(token);
-    userId = decodedToken?.userId;
-  }
-
-  const getPagination = (page, size) => {
-    const limit = size ? +size : 10;
-    const offset = page ? (page - 1) * limit : 0;
-    return { limit, offset };
-  };
-
-  const getPagingData = async (totalItems, data, page, limit) => {
-    const currentPage = page ? +page : 1;
-    const totalPages = Math.ceil(totalItems / limit);
-    return { totalItems, data, totalPages, currentPage };
-  };
-
   try {
-    let condition = {};
+    // Pagination parameters
+    const limit = parseInt(size);
+    const skip = (page - 1) * size;
 
-    // Set condition based on search parameter
+    // Build query conditions based on search and userId
+    const condition = {};
     if (search) {
-      condition.name = { $regex: new RegExp(search), $options: "i" };
+      condition.name = { $regex: new RegExp(search, "i") };
+    }
+    if (req.headers.authorization) {
+      const decodedToken = await helper.verifyToken(
+        req.headers.authorization.split(" ")[1]
+      );
+      if (decodedToken.userId) {
+        condition.createdBy = decodedToken.userId;
+      }
     }
 
-    // If req.user._id is provided, filter by createdBy field
-    if (userId) {
-      condition.createdBy = userId;
-    }
+    // Query CustomTournament collection with conditions
+    const tournamentsQuery = CustomTournament.find(condition)
+      .populate("sportId", "sportName")
+      .populate("cityId", "city")
+      .populate("winningPrizeId", "name")
+      .populate("matchOnId", "name")
+      .populate("tournamentMatchTypeId", "name")
+      .populate("tournamentCategoryId", "name");
 
-    const { limit, offset } = getPagination(page, size);
+      
 
-    let data;
-    let totalItems;
-
-    // Fetch tournaments based on condition
-    if (Object.keys(condition).length > 0) {
-      data = await CustomTournament.find(condition)
-        .populate({
-          path: "sportId",
-          model: "CustomSportList",
-          select: "sportName",
-        })
-        .populate({
-          path: "cityId",
-          model: "CustomCityList",
-          select: "city",
-        })
-        .populate({
-          path: "winningPrizeId",
-          model: "CustomTournamentWinningPrize",
-          select: "name",
-        })
-        .populate({
-          path: "matchOnId",
-          model: "CustomMatchOn",
-          select: "name",
-        })
-        .populate({
-          path: "tournamentMatchTypeId",
-          model: "CustomMatchType",
-          select: "name",
-        })
-        .populate({
-          path: "tournamentCategoryId",
-          model: "CustomTournamentCategory",
-          select: "name",
-        })
-        // .populate({
-        //   path: "_id", // Assuming `_id` is the reference field in CustomUmpire
-        //   model: "CustomUmpire",
-        //   select: "name", // Fields you want to select from CustomUmpire
-        // })
-        .skip(offset)
-        .limit(limit)
-        .exec();
-
-      totalItems = await CustomTournament.countDocuments(condition);
-    } else {
-      // If no condition, fetch all tournaments (for cases where req.user._id is not provided)
-      data = await CustomTournament.find()
-        .populate({
-          path: "sportId",
-          model: "CustomSportList",
-          select: "sportName",
-        })
-        .populate({
-          path: "cityId",
-          model: "CustomCityList",
-          select: "city",
-        })
-        .populate({
-          path: "winningPrizeId",
-          model: "CustomTournamentWinningPrize",
-          select: "name",
-        })
-        .populate({
-          path: "matchOnId",
-          model: "CustomMatchOn",
-          select: "name",
-        })
-        .populate({
-          path: "tournamentMatchTypeId",
-          model: "CustomMatchType",
-          select: "name",
-        })
-        .populate({
-          path: "tournamentCategoryId",
-          model: "CustomTournamentCategory",
-          select: "name",
-        })
-        .populate({
-          path: "_id", // Assuming `_id` is the reference field in CustomUmpire
-          model: "CustomUmpire",
-          select: "name", // Fields you want to select from CustomUmpire
-        })
-        .skip(offset)
-        .limit(limit)
-        .exec();
-
-      totalItems = await CustomTournament.countDocuments();
-    }
+    // Execute the query with pagination
+    const tournaments = await tournamentsQuery.skip(skip).limit(limit).exec();
+    const totalItems = await CustomTournament.countDocuments(condition);
 
     // Modify tournament image URLs
     const fullUrl = req.protocol + "://" + req.get("host") + "/images/";
-    data.forEach((element) => {
-      element.tournamentImage = element.tournamentImage
-        ? fullUrl + "tournament/" + element.tournamentImage
+    tournaments.forEach((tournament) => {
+      tournament.tournamentImage = tournament.tournamentImage
+        ? fullUrl + "tournament/" + tournament.tournamentImage
         : "";
-      element.tournamentBackgroundImage = element.tournamentBackgroundImage
-        ? fullUrl + "tournament/" + element.tournamentBackgroundImage
-        : "";
+      tournament.tournamentBackgroundImage =
+        tournament.tournamentBackgroundImage
+          ? fullUrl + "tournament/" + tournament.tournamentBackgroundImage
+          : "";
     });
 
-    const response = await getPagingData(totalItems, data, page, limit);
+    // Prepare paging data
+    const totalPages = Math.ceil(totalItems / limit);
+    const currentPage = page;
 
+    // Response data
+    const responseData = {
+      totalItems,
+      data: tournaments,
+      totalPages,
+      currentPage,
+    };
+
+    // Send API response
     return apiResponse({
       res,
       status: true,
-      data: response,
+      data: responseData,
       message: "Tournament fetch successful!",
       statusCode: StatusCodes.OK,
     });
   } catch (err) {
-    console.log(err);
+    console.error("Error fetching tournaments:", err);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
