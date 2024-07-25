@@ -26,8 +26,8 @@ const sofascoreApiModeEnum = {
 };
 
 const matchStatusEnum = {
-  not_started: "not_started",
   in_progress: "in_progress",
+  not_started: "not_started",
   finished: "finished",
   cancelled: "cancelled",
 };
