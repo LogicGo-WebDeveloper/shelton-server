@@ -50,7 +50,9 @@ const ballTypeList = await readJsonFile(
 const BannerList = await readJsonFile(path.resolve("json/banner-list.json"));
 const roleList = await readJsonFile(path.resolve("json/roles.player.json"));
 const statusList = await readJsonFile(path.resolve("json/status.match.json"));
-const matchOfficialsList = await readJsonFile(path.resolve("json/match-officials.match.json"));
+const matchOfficialsList = await readJsonFile(
+  path.resolve("json/match-officials.match.json")
+);
 
 export const InsertSportList = async () => {
   const sportNamesInJson = sportList.map((sport) => sport.sportName);
@@ -201,7 +203,10 @@ export const InsertBannerList = async () => {
 export const InsertPlayerRole = async () => {
   const roleNamesInJson = roleList.map((role) => role.role);
   for (const role of roleList) {
-    const exists = await CustomPlayerRole.findOne({ role: role.role });
+    const exists = await CustomPlayerRole.findOne({
+      role: role.role,
+      image: role.image,
+    });
     if (!exists) {
       const newRole = new CustomPlayerRole(role);
       await newRole.save();
@@ -224,9 +229,10 @@ export const InsertMatchStatus = async () => {
   await CustomMatchStatus.deleteMany({ status: { $nin: statusNamesInJson } });
 };
 
-
 export const InsertMatchOfficials = async () => {
-  const matchOfficialsNamesInJson = matchOfficialsList.map((matchOfficial) => matchOfficial.name);
+  const matchOfficialsNamesInJson = matchOfficialsList.map(
+    (matchOfficial) => matchOfficial.name
+  );
   for (const matchOfficial of matchOfficialsList) {
     const exists = await CustomMatchOfficial.findOne({
       name: matchOfficial.name,
@@ -240,5 +246,7 @@ export const InsertMatchOfficials = async () => {
     }
   }
   // Delete sports not in JSON
-  await CustomMatchOfficial.deleteMany({ name: { $nin: matchOfficialsNamesInJson } });
+  await CustomMatchOfficial.deleteMany({
+    name: { $nin: matchOfficialsNamesInJson },
+  });
 };
