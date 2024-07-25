@@ -93,7 +93,12 @@ const listTeams = async (req, res) => {
   }
 
   try {
-    const teams = await CustomTeam.find({ tournamentId, createdBy: userId });
+    const teams = await CustomTeam.find({ tournamentId, createdBy: userId })
+    .populate({
+      path: 'city',
+      model: 'CustomCityList',
+      select: 'city',
+    })
     return apiResponse({
       res,
       status: true,
