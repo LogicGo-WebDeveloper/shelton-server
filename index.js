@@ -11,7 +11,6 @@ import {
   InsertBallType,
   InsertBannerList,
   InsertCityList,
-  InsertMatchOfficials,
   InsertMatchOn,
   InsertMatchStatus,
   InsertMatchType,

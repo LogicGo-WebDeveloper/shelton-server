@@ -6,7 +6,7 @@ const customPlayersSchema = new mongoose.Schema({
   role: { type: mongoose.Schema.Types.ObjectId, ref: "CustomPlayerRole" },
   teamId: { type: mongoose.Schema.Types.ObjectId, ref: "CustomTeam" },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  image: { type: String },
+  image: { type: String, required: false },
 });
 
 const CustomPlayers = mongoose.model("CustomPlayers", customPlayersSchema);

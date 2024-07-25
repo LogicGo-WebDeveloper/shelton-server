@@ -73,11 +73,21 @@ route.put(
 route.delete("/team/delete/:id", teamController.deleteTeam);
 
 // ============================== For Match List ===========================================
-route.post("/match/add", verifyToken, matchController.createMatch);
+route.post(
+  "/match/add",
+  verifyToken,
+  validate(validation.createMatch),
+  matchController.createMatch
+);
 
 route.get("/match/list", matchController.listMatches);
 
-route.put("/match/update/:id", verifyToken, matchController.updateMatch);
+route.put(
+  "/match/update/:id",
+  verifyToken,
+  validate(validation.createMatch),
+  matchController.updateMatch
+);
 
 route.delete("/match/delete/:id", verifyToken, matchController.deleteMatch);
 
@@ -92,7 +102,7 @@ route.post(
 
 route.get("/player/list", verifyToken, playerController.listPlayers);
 
-route.put(
+route.post(
   "/player/update/:id",
   verifyToken,
   upload.single("image"),
