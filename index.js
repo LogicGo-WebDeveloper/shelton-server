@@ -11,12 +11,12 @@ import {
   InsertBallType,
   InsertBannerList,
   InsertCityList,
-  InsertMatchOfficials,
   InsertMatchOn,
   InsertMatchStatus,
   InsertMatchType,
   InsertPitchType,
   InsertPlayerRole,
+  playerOutReasons,
   InsertSportList,
   InsertTournamentCategory,
   InsertTournamentWinningPrize,
@@ -54,6 +54,7 @@ InsertPitchType();
 InsertBallType();
 InsertBannerList();
 InsertPlayerRole();
+playerOutReasons();
 InsertMatchStatus();
 // InsertMatchOfficials();
 

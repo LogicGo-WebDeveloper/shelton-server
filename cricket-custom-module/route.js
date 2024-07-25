@@ -33,6 +33,7 @@ route.get("/match/pitch-types", commonController.getPitchTypes);
 route.get("/match/status", commonController.getMatchStatus);
 route.get("/match/officials", commonController.getMatchOfficials);
 route.get("/player/roles", commonController.getPlayerRoles);
+route.get("/player/out-reasons", commonController.getPlayerOutReason);
 
 // ============================== For Tournament List ===========================================
 route.post(

@@ -1,0 +1,34 @@
+[
+    {
+        "reason": "Bowled",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/bowled_out"
+    },
+    {
+        "reason": "Caught",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/caught_out"
+    },
+    {
+        "reason": "Stumped",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/stumped_out"
+    },
+    {
+        "reason": "Run Out",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/run_out"
+    },
+    {
+        "reason": "LBW",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/lbw"
+    },
+    {
+        "reason": "Hit Wicket",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/hit_wicket"
+    },
+    {
+        "reason": "Retired Hurt",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/retired_hurt"
+    },
+    {
+        "reason": "Timed Out",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/timed_out"
+    }
+]
