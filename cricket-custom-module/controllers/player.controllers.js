@@ -51,6 +51,7 @@ const createPlayer = async (req, res, next) => {
       createdBy: userId,
       image: url ? url : "",
     });
+
     return apiResponse({
       res,
       status: true,
@@ -84,7 +85,14 @@ const listPlayers = async (req, res) => {
   }
 
   try {
-    const players = await CustomPlayers.find({ teamId, createdBy: userId });
+    const players = await CustomPlayers.find({
+      teamId,
+      createdBy: userId,
+    }).populate({
+      path: "role",
+      model: "CustomPlayerRole",
+      select: "role",
+    });
     return apiResponse({
       res,
       status: true,
