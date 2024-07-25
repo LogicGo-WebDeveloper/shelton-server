@@ -144,16 +144,16 @@ const updatePlayer = async (req, res, next) => {
     });
   }
 
-  const findDoc = await CustomPlayers.findById(playerId);
+  // const findDoc = await CustomPlayers.findById(playerId);
   const team = await CustomTeam.findById(teamId);
-  if (!findDoc) {
-    return apiResponse({
-      res,
-      status: true,
-      message: "Player not found",
-      statusCode: StatusCodes.NOT_FOUND,
-    });
-  }
+  // if (!findDoc) {
+  //   return apiResponse({
+  //     res,
+  //     status: true,
+  //     message: "Player not found",
+  //     statusCode: StatusCodes.NOT_FOUND,
+  //   });
+  // }
   if (!team) {
     return apiResponse({
       res,
@@ -163,42 +163,54 @@ const updatePlayer = async (req, res, next) => {
     });
   }
 
-  const folderName = "custom_player";
-  let newUrl = await updateFile(req, findDoc, folderName);
-
-  // const imagePlayer = CustomPlayers.findOne({
-  //   _id: playerId,
-  // });
-
-  await CustomPlayers.findByIdAndUpdate(
-    playerId,
-    {
-      playerName,
-      jerseyNumber,
-      role,
-      teamId,
-      createdBy: findDoc.userId,
-      image: newUrl ? newUrl : findDoc.image,
-    },
-    { new: true }
-  )
-    .then((player) => {
+  try {
+    const findDoc = await CustomPlayers.findById(playerId);
+    if (!findDoc) {
       return apiResponse({
         res,
-        status: true,
-        data: player,
-        message: "Player updated successfully!",
-        statusCode: StatusCodes.OK,
-      });
-    })
-    .catch((err) => {
-      return apiResponse({
-        res,
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         status: false,
-        message: "Internal server error",
+        message: "Player not found",
+        statusCode: StatusCodes.NOT_FOUND,
       });
+    }
+
+    const updateData = {};
+    if (playerName !== undefined) updateData.playerName = playerName;
+    if (jerseyNumber !== undefined) updateData.jerseyNumber = jerseyNumber;
+    if (role !== undefined) updateData.role = role;
+    if (teamId !== undefined) updateData.teamId = teamId;
+
+    // Handle image update
+    if (req.file && req.file.originalname) {
+      const folderName = "custom_player";
+      const newUrl = await updateFile(req, findDoc, folderName);
+      updateData.image = newUrl;
+    } else if (req.body.image === "") {
+      updateData.image = findDoc.image;
+    }
+
+    const updatedPlayer = await CustomPlayers.findByIdAndUpdate(
+      playerId,
+      updateData,
+      { new: true }
+    );
+
+    return apiResponse({
+      res,
+      status: true,
+      data: updatedPlayer,
+      message: "Player updated successfully!",
+      statusCode: StatusCodes.OK,
     });
+  } catch (err) {
+    console.error(err);
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
 };
 
 const deletePlayer = async (req, res) => {

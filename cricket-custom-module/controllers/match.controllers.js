@@ -177,61 +177,6 @@ const createMatch = async (req, res, next) => {
   }
 };
 
-// const listMatches = async (req, res) => {
-//   const authHeader = req.headers?.authorization;
-//   const token = authHeader ? authHeader?.split(" ")[1] : null;
-//   let userId;
-//   if (token) {
-//     const decodedToken = await helper.verifyToken(token);
-//     userId = decodedToken?.userId;
-//   }
-
-//   const { page = 1, size = 10 } = req.query;
-
-//   try {
-//     let condition = {};
-
-//     if (userId) {
-//       condition.createdBy = userId;
-//     }
-
-//     const limit = parseInt(size);
-//     const skip = (parseInt(page) - 1) * limit;
-
-//     const matches = await CustomMatch.find(condition)
-//       .skip(skip)
-//       .limit(limit)
-//       .lean();
-
-//     const totalItems = await CustomMatch.countDocuments(condition);
-
-//     const getPagingData = (totalItems, matches, page, limit) => {
-//       const currentPage = page ? +page : 1;
-//       const totalPages = Math.ceil(totalItems / limit);
-//       return { totalItems, matches, totalPages, currentPage };
-//     };
-
-//     const response = getPagingData(totalItems, matches, page, limit);
-
-//     return apiResponse({
-//       res,
-//       status: true,
-//       data: response,
-//       message: "Matches fetched successfully!",
-//       statusCode: StatusCodes.OK,
-//     });
-//   } catch (err) {
-//     console.log(err);
-//     return apiResponse({
-//       res,
-//       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-//       status: false,
-//       message: "Internal server error",
-//     });
-//   }
-// };
-
-
 const listMatches = async (req, res) => {
   const authHeader = req.headers?.authorization;
   const token = authHeader ? authHeader?.split(" ")[1] : null;
