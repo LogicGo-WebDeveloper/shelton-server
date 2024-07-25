@@ -8,6 +8,7 @@ import fs from "fs";
 import { apiResponse } from "../../helper/apiResponse.js";
 import { CustomMatchOfficial } from "../models/common.models.js";
 import customUmpireList from "../models/umpire.models.js";
+import helper from "../../helper/common.js";
 
 const createTournament = async (req, res, next) => {
   let fileSuffix = Date.now().toString();
@@ -158,6 +159,14 @@ const createTournament = async (req, res, next) => {
 const listTournament = async (req, res) => {
   const { page = 1, size = 10, search } = req.query;
 
+  const authHeader = req.headers?.authorization;
+  const token = authHeader ? authHeader?.split(" ")[1] : null;
+  let userId;
+  if (token) {
+    const decodedToken = await helper.verifyToken(token);
+    userId = decodedToken?.userId;
+  }
+
   const getPagination = (page, size) => {
     const limit = size ? +size : 10;
     const offset = page ? (page - 1) * limit : 0;
@@ -179,8 +188,8 @@ const listTournament = async (req, res) => {
     }
 
     // If req.user._id is provided, filter by createdBy field
-    if (req.user && req.user._id) {
-      condition.createdBy = req.user._id;
+    if (userId) {
+      condition.createdBy = userId;
     }
 
     const { limit, offset } = getPagination(page, size);
