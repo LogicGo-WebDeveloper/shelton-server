@@ -167,26 +167,24 @@ const updatePlayer = async (req, res, next) => {
   }
 
   try {
-    if (playerId) {
-      const validation = validateObjectIds({ playerId });
-      if (!validation.isValid) {
-        return apiResponse({
-          res,
-          status: false,
-          message: validation.message,
-          statusCode: StatusCodes.BAD_REQUEST,
-        });
-      }
+    const validation = validateObjectIds({ playerId });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
 
-      const findDoc = await CustomPlayers.findById(playerId);
-      if (!findDoc) {
-        return apiResponse({
-          res,
-          status: false,
-          message: "Player not found",
-          statusCode: StatusCodes.NOT_FOUND,
-        });
-      }
+    const findDoc = await CustomPlayers.findById(playerId);
+    if (!findDoc) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Player not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
     }
 
     const updateData = {};
