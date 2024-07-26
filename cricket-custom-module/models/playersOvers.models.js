@@ -14,7 +14,6 @@ const CustomPlayerOversSchema = new mongoose.Schema({
   levels: { type: String, required: false },
   bowlerId: { type: String, required: false },
   wicketTypeId: { type: String, required: false },
-  wicketTypeId: { type: String, required: false },
   overs_finished: { type: Boolean, required: false },
   noBall: { type: Boolean, required: false },
   whiteBall: { type: Boolean, required: false },

@@ -356,6 +356,9 @@ const listMatches = async (req, res) => {
       createdBy: match.createdBy,
       status: match.status,
       umpires: match.umpires,
+      tossResult: match.tossResult,
+      tossWinnerTeamId: match.tossWinnerTeamId,
+      tossWinnerChoice: match.tossWinnerChoice
     }));
 
     // Define the order of statuses
@@ -669,7 +672,7 @@ const deleteMatch = async (req, res) => {
     if (!match) {
       return apiResponse({
         res,
-        status: false,
+        status: true,
         message: "Match not found",
         statusCode: StatusCodes.NOT_FOUND,
       });
@@ -711,7 +714,7 @@ const updateMatchStatus = async (req, res, next) => {
     if (!existingMatch) {
       return apiResponse({
         res,
-        status: false,
+        status: true,
         message: "Match not found",
         statusCode: StatusCodes.NOT_FOUND,
       });
@@ -765,10 +768,109 @@ const updateMatchStatus = async (req, res, next) => {
   }
 };
 
+
+const updateTossStatus = async (req, res) => {
+  try {
+    const { matchId, tournamentId, tossWinnerTeamId, tossWinnerChoice } = req.body;
+
+    // Validate input
+    const validation = validateObjectIds({ matchId, tournamentId, tossWinnerTeamId });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Find the match and check its status
+    const match = await CustomMatch.findOne({ _id: matchId, tournamentId: tournamentId });
+    if (!match) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Check if the match status is in_progress
+    if (match.status !== enums.matchStatusEnum.in_progress) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "You cannot update toss status because the match is not in live",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Find the winning team's name
+    const winningTeam = await CustomTeam.findById(tossWinnerTeamId);
+    const tournament = await CustomTournament.findById(tournamentId);
+    if (!winningTeam) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Toss winner team not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    if (!tournament) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Tournament not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    if (![enums.tossChoiceEnum.BATTING, enums.tossChoiceEnum.FIELDING].includes(tossWinnerChoice)) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Toss winner choice must be either 'batting' or 'fielding'",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+  
+    const tossResult = `${winningTeam.teamName} won the toss and elected to ${tossWinnerChoice}`;
+
+    // Find and update the match
+    const updatedMatch = await CustomMatch.findOneAndUpdate(
+      { _id: matchId, tournamentId: tournamentId },
+      { 
+        tossWinnerTeamId: tossWinnerTeamId,
+        tossWinnerChoice: tossWinnerChoice,
+        tossResult: tossResult
+      },
+      { new: true }
+    );
+
+    return apiResponse({
+      res,
+      status: true,
+      data: updatedMatch,
+      message: "Toss status updated successfully",
+      statusCode: StatusCodes.OK,
+    });
+
+  } catch (err) {
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 export default {
   createMatch,
   listMatches,
   updateMatch,
   deleteMatch,
   updateMatchStatus,
+  updateTossStatus
 };

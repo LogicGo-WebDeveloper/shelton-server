@@ -32,6 +32,11 @@ const matchStatusEnum = {
   cancelled: "cancelled",
 };
 
+const tossChoiceEnum = {
+  FIELDING: "fielding",
+  BATTING: "batting",
+};
+
 export default {
   nodeEnvEnums,
   userRoleEnum,
@@ -39,4 +44,5 @@ export default {
   discountTypeEnum,
   sofascoreApiModeEnum,
   matchStatusEnum,
+  tossChoiceEnum,
 };

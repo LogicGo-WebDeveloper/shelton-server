@@ -96,6 +96,13 @@ route.post(
   matchController.updateMatchStatus
 );
 
+route.post(
+  "/match/toss",
+  verifyToken,
+  validate(validation.updateTossStatus),
+  matchController.updateTossStatus
+);
+
 route.delete("/match/delete/:id", verifyToken, matchController.deleteMatch);
 
 // ============================== For Player List ===========================================
