@@ -9,6 +9,7 @@ import helper from "../../helper/common.js";
 import CustomPlayers from "../models/player.models.js";
 import enums from "../../config/enum.js";
 import config from "../../config/enum.js";
+import customUmpireList from "../models/umpire.models.js";
 
 const createMatch = async (req, res, next) => {
   try {
@@ -23,7 +24,7 @@ const createMatch = async (req, res, next) => {
       dateTime,
       homeTeamPlayingPlayer,
       awayTeamPlayingPlayer,
-      umpireList
+      umpires
     } = req.body;
     const userId = req.user._id;
 
@@ -58,7 +59,7 @@ const createMatch = async (req, res, next) => {
     }
 
      // Validate umpire list
-     if (!Array.isArray(umpireList) || umpireList.length === 0) {
+     if (!Array.isArray(umpires) || umpires.length === 0) {
       return apiResponse({
         res,
         status: false,
@@ -81,8 +82,8 @@ const createMatch = async (req, res, next) => {
     }
 
      // Check for duplicate umpires
-     const uniqueUmpires = new Set(umpireList);
-     if (uniqueUmpires.size !== umpireList.length) {
+     const uniqueUmpires = new Set(umpires);
+     if (uniqueUmpires.size !== umpires.length) {
        return apiResponse({
          res,
          status: false,
@@ -128,52 +129,9 @@ const createMatch = async (req, res, next) => {
         statusCode: StatusCodes.NOT_FOUND,
       });
     }
-    // // Validate all player IDs exist and are valid ObjectIds
-    // const allPlayerIds = [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer, ...umpireList];
-    // console.log("All player IDs:", allPlayerIds);
-
-    // // Function to validate MongoDB ObjectId format
-    // const isValidObjectId = (id) => /^[0-9a-fA-F]{24}$/.test(id);
-
-    // // Filter out invalid IDs
-    // const invalidIds = allPlayerIds.filter((id) => !isValidObjectId(id));
-
-    // if (invalidIds.length > 0) {
-    //   return apiResponse({
-    //     res,
-    //     status: false,
-    //     message: `The following player IDs are invalid: ${invalidIds.join(
-    //       ", "
-    //     )}`,
-    //     statusCode: StatusCodes.BAD_REQUEST,
-    //   });
-    // }
-
-    // const validPlayers = await CustomPlayers.find({
-    //   _id: { $in: allPlayerIds },
-    // });
-    // console.log("Valid players found:", validPlayers.length);
-
-    // if (validPlayers.length !== allPlayerIds.length) {
-    //   const foundPlayerIds = validPlayers.map((player) =>
-    //     player._id.toString()
-    //   );
-    //   const notFoundPlayerIds = allPlayerIds.filter(
-    //     (id) => !foundPlayerIds.includes(id)
-    //   );
-    //   return apiResponse({
-    //     res,
-    //     status: false,
-    //     message: `The following player IDs were not found: ${notFoundPlayerIds.join(
-    //       ", "
-    //     )}`,
-    //     statusCode: StatusCodes.BAD_REQUEST,
-    //   });
-    // }
-
 
      // Validate all player IDs and umpire IDs
-     const allIds = [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer, ...umpireList];
+     const allIds = [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer, ...umpires];
      console.log("All IDs:", allIds);
  
      // Function to validate MongoDB ObjectId format
@@ -194,7 +152,7 @@ const createMatch = async (req, res, next) => {
      // Validate players and umpires exist
      const validEntities = await Promise.all([
        CustomPlayers.find({ _id: { $in: [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer] } }),
-       CustomUmpire.find({ _id: { $in: umpireList } })
+       customUmpireList.find({ _id: { $in: umpires } })
      ]);
  
      const [validPlayers, validUmpires] = validEntities;
@@ -214,9 +172,9 @@ const createMatch = async (req, res, next) => {
        });
      }
  
-     if (validUmpires.length !== umpireList.length) {
+     if (validUmpires.length !== umpires.length) {
        const foundUmpireIds = validUmpires.map((umpire) => umpire._id.toString());
-       const notFoundUmpireIds = umpireList.filter(
+       const notFoundUmpireIds = umpires.filter(
          (id) => !foundUmpireIds.includes(id)
        );
        return apiResponse({
@@ -264,6 +222,7 @@ const createMatch = async (req, res, next) => {
       tournamentId,
       homeTeamPlayingPlayer,
       awayTeamPlayingPlayer,
+      umpires
     });
 
     return apiResponse({
