@@ -1,8 +1,12 @@
 import mongoose from "mongoose";
 
-const CustomPlayerStandingsSchema = new mongoose.Schema({
+const CustomPlayerScoreCardSchema = new mongoose.Schema({
   matchId: { type: mongoose.Schema.Types.ObjectId, ref: "CustomMatch" },
-  battingPlayerId: {
+  strikerPlayerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CustomPlayers",
+  },
+  nonStrikerPlayerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "CustomPlayers",
   },
@@ -13,9 +17,9 @@ const CustomPlayerStandingsSchema = new mongoose.Schema({
   four: { type: Number, required: false },
 });
 
-const CustomPlayerStandings = mongoose.model(
-  "CustomPlayerStandings",
-  CustomPlayerStandingsSchema
+const CustomPlayerScoreCard = mongoose.model(
+  "CustomPlayerScoreCard",
+  CustomPlayerScoreCardSchema
 );
 
-export default CustomPlayerStandings;
+export default CustomPlayerScoreCard;
