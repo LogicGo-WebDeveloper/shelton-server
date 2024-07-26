@@ -8,6 +8,7 @@ import CustomTeam from "../models/team.models.js";
 import helper from "../../helper/common.js";
 import CustomPlayers from "../models/player.models.js";
 import enums from "../../config/enum.js";
+import config from "../../config/enum.js";
 
 const createMatch = async (req, res, next) => {
   try {
@@ -262,35 +263,37 @@ const listMatches = async (req, res) => {
       overPerBowler: match.overPerBowler,
       ground: match.ground,
       dateTime: match.dateTime,
-      homeTeam: match.homeTeamId
-        ? {
-            id: match.homeTeamId._id,
-            name: match.homeTeamId.teamName,
-            image: match.homeTeamId.teamImage,
-          }
-        : null,
-      awayTeam: match.awayTeamId
-        ? {
-            id: match.awayTeamId._id,
-            name: match.awayTeamId.teamName,
-            image: match.awayTeamId.teamImage,
-          }
-        : null,
-      city: match.city
-        ? {
-            id: match.city._id,
-            name: match.city.city,
-          }
-        : null,
-      tournament: match.tournamentId
-        ? {
-            id: match.tournamentId._id,
-            name: match.tournamentId.name,
-            image: match.tournamentId.tournamentImage,
-          }
-        : null,
+      homeTeam: match.homeTeamId ? {
+        id: match.homeTeamId._id,
+        name: match.homeTeamId.teamName,
+        image: match.homeTeamId.teamImage,
+      }: null,
+      awayTeam: match.awayTeamId ? {
+        id: match.awayTeamId._id,
+        name: match.awayTeamId.teamName,
+        image: match.awayTeamId.teamImage,
+      }: null,
+      city: match.city ? {
+        id: match.city._id,
+        name: match.city.city
+      }: null,
+      tournament: match.tournamentId ? {
+        id: match.tournamentId._id,
+        name: match.tournamentId.name,
+        image: match.tournamentId.tournamentImage
+      }: null,
       createdBy: match.createdBy,
+      status: match.status
     }));
+
+    // Define the order of statuses
+    const statusOrder = Object.values(config.matchStatusEnum);
+
+    // Sort the matches based on status order
+    formattedMatches.sort((a, b) => {
+      return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
+    });
+ 
 
     const getPagingData = (totalItems, matches, page, limit) => {
       const currentPage = page ? +page : 1;
