@@ -157,6 +157,16 @@ const updateCustomPlayerOvers = {
     oversNumber: Joi.number(),
   }),
 };
+const updateTossStatus = {
+  body: Joi.object().keys({
+    matchId: Joi.string().required(),
+    tournamentId: Joi.string().required(),
+    tossWinnerTeamId: Joi.string().required(),
+    tossWinnerChoice: Joi.string()
+      .valid(enums.tossChoiceEnum.BATTING, enums.tossChoiceEnum.FIELDING)
+      .required(),
+  }),
+};
 
 export default {
   createTournament,
@@ -172,4 +182,5 @@ export default {
   updatePlayerStandingMatch,
   createCustomPlayerOvers,
   updateCustomPlayerOvers,
+  updateTossStatus,
 };
