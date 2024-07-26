@@ -99,6 +99,15 @@ const updateStatus = {
   }),
 };
 
+const updateTossStatus = {
+  body: Joi.object().keys({
+    matchId: Joi.string().required(),
+    tournamentId: Joi.string().required(),
+    tossWinnerTeamId: Joi.string().required(),
+    tossWinnerChoice: Joi.string().valid(enums.tossChoiceEnum.BATTING, enums.tossChoiceEnum.FIELDING).required(),
+  }),
+};
+
 export default {
   createTournament,
   createTeam,
@@ -109,4 +118,5 @@ export default {
   createUmpire,
   updatePlayer,
   updateStatus,
+  updateTossStatus
 };

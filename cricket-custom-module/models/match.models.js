@@ -15,6 +15,9 @@ const customMatchSchema = new mongoose.Schema({
   awayTeamPlayingPlayer: [ {type: mongoose.Schema.Types.ObjectId,ref: "CustomPlayers"} ],
   status: {type: String,enum: Object.values(enums.matchStatusEnum),default: enums.matchStatusEnum.not_started},
   umpires: [{ type: mongoose.Schema.Types.ObjectId, ref: "CustomUmpire" }],
+  tossResult: { type: String, default: null },
+  tossWinnerTeamId: { type: mongoose.Schema.Types.ObjectId, ref: "CustomTeam", default: null },
+  tossWinnerChoice: { type: String, enum: [...Object.values(enums.tossChoiceEnum), null], default: null },
 });
 
 const CustomMatch = mongoose.model("CustomMatch", customMatchSchema);
