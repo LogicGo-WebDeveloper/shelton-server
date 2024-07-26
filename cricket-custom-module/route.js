@@ -62,7 +62,7 @@ route.post(
 
 route.get("/team/list", verifyToken, teamController.listTeams);
 
-route.put(
+route.post(
   "/team/update/:id",
   upload.single("teamImage"),
   verifyToken,
@@ -82,14 +82,14 @@ route.post(
 
 route.get("/match/list", matchController.listMatches);
 
-route.put(
+route.post(
   "/match/update/:id",
   verifyToken,
   validate(validation.updateMatch),
   matchController.updateMatch
 );
 
-route.put(
+route.post(
   "/match/update/:id/status",
   // verifyToken,
   validate(validation.updateStatus),
@@ -109,7 +109,7 @@ route.post(
 
 route.get("/player/list", verifyToken, playerController.listPlayers);
 
-route.post(
+route.put(
   "/player/update/:id",
   verifyToken,
   upload.single("image"),

@@ -194,16 +194,47 @@ const listTournament = async (req, res) => {
     // Execute the query with pagination
     const tournaments = await tournamentsQuery.skip(skip).limit(limit).exec();
 
+    const fetchCustomMatchOfficials = async (umpireIds) => {
+      return CustomMatchOfficial.find({
+        _id: { $in: umpireIds },
+      }).exec();
+    };
+
     const tournamentsWithUmpire = await Promise.all(
       tournaments.map(async (tournament) => {
-        const umpireData = await customUmpireList.find({
-          tournamentId: tournament._id,
-        });
-        tournament.umpire = umpireData; // Assign umpire data to the tournament object
-        return tournament; // Return the modified tournament object
+        // Fetch umpire data for the current tournament
+        const umpireData = await customUmpireList
+          .find({ tournamentId: tournament._id })
+          .exec();
+
+        // Extract umpireIds from the fetched umpire data
+        const umpireIds = umpireData.map((umpire) => umpire.umpireId);
+
+        // Fetch CustomMatchOfficial data for the extracted umpireIds
+        const customMatchOfficials = await fetchCustomMatchOfficials(umpireIds);
+
+        // Create a map for quick lookup of CustomMatchOfficial data by umpireId
+        const customMatchOfficialsMap = customMatchOfficials.reduce(
+          (acc, official) => {
+            acc[official._id.toString()] = official;
+            return acc;
+          },
+          {}
+        );
+
+        // Attach umpire data and their corresponding CustomMatchOfficial data to the tournament object
+        const enrichedUmpireData = umpireData.map((umpire) => ({
+          ...umpire.toObject(),
+          customMatchOfficial:
+            customMatchOfficialsMap[umpire.umpireId.toString()] || null,
+        }));
+
+        return {
+          ...tournament.toObject(), // Convert Mongoose document to a plain object
+          umpire: enrichedUmpireData, // Add enriched umpire data
+        };
       })
     );
-
     const totalItems = await CustomTournament.countDocuments(condition);
 
     // Modify tournament image URLs
