@@ -91,7 +91,7 @@ route.post(
 
 route.post(
   "/match/update/:id/status",
-  // verifyToken,
+  verifyToken,
   validate(validation.updateStatus),
   matchController.updateMatchStatus
 );
