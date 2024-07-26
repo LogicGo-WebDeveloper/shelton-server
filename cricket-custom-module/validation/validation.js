@@ -50,8 +50,6 @@ const createMatch = {
   }),
 };
 
-
-
 const updateMatch = {
   body: Joi.object().keys({
     homeTeamId: Joi.string(),
@@ -67,7 +65,6 @@ const updateMatch = {
     umpires: Joi.array().items(Joi.string()).max(5),
   }),
 };
-
 
 const createPlayer = {
   body: Joi.object().keys({
@@ -99,6 +96,68 @@ const updateStatus = {
   }),
 };
 
+const createPlayerStandingMatch = {
+  body: Joi.object().keys({
+    matchId: Joi.string().required(),
+    battingPlayerId: Joi.string().required(),
+    score: Joi.number().default(0),
+    totalScore: Joi.number().default(0),
+    bowlerId: Joi.string().required(),
+    six: Joi.number().default(0),
+    four: Joi.number().default(0),
+  }),
+};
+
+const updatePlayerStandingMatch = {
+  body: Joi.object().keys({
+    matchId: Joi.string(),
+    battingPlayerId: Joi.string(),
+    score: Joi.number(),
+    totalScore: Joi.number(),
+    bowlerId: Joi.string(),
+    six: Joi.number(),
+    four: Joi.number(),
+  }),
+};
+
+const createCustomPlayerOvers = {
+  body: Joi.object().keys({
+    playerStandingId: Joi.string().required(),
+    battingPlayerId: Joi.string().required(),
+    balls: Joi.number().default(0),
+    runs: Joi.number().default(0),
+    levels: Joi.string(),
+    bowlerId: Joi.string(),
+    wicketTypeId: Joi.string(),
+    overs_finished: Joi.boolean(),
+    noBall: Joi.boolean(),
+    whiteBall: Joi.boolean(),
+    lbBall: Joi.boolean(),
+    byeBall: Joi.boolean(),
+    isOut: Joi.boolean(),
+    oversNumber: Joi.number().default(0),
+  }),
+};
+
+const updateCustomPlayerOvers = {
+  body: Joi.object().keys({
+    playerStandingId: Joi.string(),
+    battingPlayerId: Joi.string(),
+    balls: Joi.number(),
+    runs: Joi.number(),
+    levels: Joi.string(),
+    bowlerId: Joi.string(),
+    wicketTypeId: Joi.string(),
+    overs_finished: Joi.boolean(),
+    noBall: Joi.boolean(),
+    whiteBall: Joi.boolean(),
+    lbBall: Joi.boolean(),
+    byeBall: Joi.boolean(),
+    isOut: Joi.boolean(),
+    oversNumber: Joi.number(),
+  }),
+};
+
 export default {
   createTournament,
   createTeam,
@@ -109,4 +168,8 @@ export default {
   createUmpire,
   updatePlayer,
   updateStatus,
+  createPlayerStandingMatch,
+  updatePlayerStandingMatch,
+  createCustomPlayerOvers,
+  updateCustomPlayerOvers,
 };
