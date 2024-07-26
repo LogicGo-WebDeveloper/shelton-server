@@ -28,7 +28,7 @@ const server = http.createServer(app);
 
 // WebSocket server setup
 setupWebSocket(server);
-customWebsocket(server);
+// customWebsocket(server);
 
 app.disable("x-powered-by");
 
