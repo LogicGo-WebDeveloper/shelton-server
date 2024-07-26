@@ -1,14 +1,17 @@
 [
     {
         "ballType": "Tennis",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/tennis.png",
         "id": 1
     },
     {
         "ballType": "Leather",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/leather.png",
         "id": 2
     },
     {
         "ballType": "Other",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/other.png",
         "id": 3
     }
 ]

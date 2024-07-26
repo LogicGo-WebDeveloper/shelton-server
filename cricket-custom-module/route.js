@@ -85,13 +85,13 @@ route.get("/match/list", matchController.listMatches);
 route.post(
   "/match/update/:id",
   verifyToken,
-  validate(validation.createMatch),
+  validate(validation.updateMatch),
   matchController.updateMatch
 );
 
 route.post(
   "/match/update/:id/status",
-  // verifyToken,
+  verifyToken,
   validate(validation.updateStatus),
   matchController.updateMatchStatus
 );

@@ -176,6 +176,7 @@ export const InsertBallType = async () => {
   for (const ballType of ballTypeList) {
     const exists = await CustomBallType.findOne({
       ballType: ballType.ballType,
+      icon: ballType.icon,
     });
     if (!exists) {
       const newBallType = new CustomBallType(ballType);
@@ -221,7 +222,7 @@ export const InsertPlayerRole = async () => {
 };
 
 export const playerOutReasons = async () => {
-  reasonList.map((reason) => reason.reason)
+  reasonList.map((reason) => reason.reason);
   for (const reason of reasonList) {
     const exists = await CustomOutReason.findOne({
       reason: reason.reason,

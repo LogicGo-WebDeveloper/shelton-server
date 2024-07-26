@@ -50,6 +50,25 @@ const createMatch = {
   }),
 };
 
+
+
+const updateMatch = {
+  body: Joi.object().keys({
+    homeTeamId: Joi.string(),
+    awayTeamId: Joi.string(),
+    tournamentId: Joi.string(),
+    noOfOvers: Joi.number(),
+    overPerBowler: Joi.number(),
+    city: Joi.string(),
+    ground: Joi.string(),
+    dateTime: Joi.date(),
+    homeTeamPlayingPlayer: Joi.array().items(Joi.string()).min(11),
+    awayTeamPlayingPlayer: Joi.array().items(Joi.string()).min(11),
+    umpires: Joi.array().items(Joi.string()).max(5),
+  }),
+};
+
+
 const createPlayer = {
   body: Joi.object().keys({
     playerName: Joi.string().required(),
@@ -84,6 +103,7 @@ export default {
   createTournament,
   createTeam,
   createMatch,
+  updateMatch,
   createPlayer,
   updateTeam,
   createUmpire,
