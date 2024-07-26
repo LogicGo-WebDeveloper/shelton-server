@@ -9,6 +9,7 @@ import helper from "../../helper/common.js";
 import CustomPlayers from "../models/player.models.js";
 import enums from "../../config/enum.js";
 import config from "../../config/enum.js";
+import customUmpireList from "../models/umpire.models.js";
 
 const createMatch = async (req, res, next) => {
   try {
@@ -23,6 +24,7 @@ const createMatch = async (req, res, next) => {
       dateTime,
       homeTeamPlayingPlayer,
       awayTeamPlayingPlayer,
+      umpires
     } = req.body;
     const userId = req.user._id;
 
@@ -56,6 +58,16 @@ const createMatch = async (req, res, next) => {
       });
     }
 
+     // Validate umpire list
+     if (!Array.isArray(umpires) || umpires.length === 0) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Umpire list must be a non-empty array",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
     // Check for duplicate players between teams
     const duplicatePlayers = homeTeamPlayingPlayer.filter((player) =>
       awayTeamPlayingPlayer.includes(player)
@@ -68,6 +80,17 @@ const createMatch = async (req, res, next) => {
         statusCode: StatusCodes.BAD_REQUEST,
       });
     }
+
+     // Check for duplicate umpires
+     const uniqueUmpires = new Set(umpires);
+     if (uniqueUmpires.size !== umpires.length) {
+       return apiResponse({
+         res,
+         status: false,
+         message: "Duplicate umpires are not allowed",
+         statusCode: StatusCodes.BAD_REQUEST,
+       });
+     }
 
     const tournament = await CustomTournament.findById(tournamentId);
     const findCity = await CustomCityList.findById(city);
@@ -106,48 +129,58 @@ const createMatch = async (req, res, next) => {
         statusCode: StatusCodes.NOT_FOUND,
       });
     }
-    // Validate all player IDs exist and are valid ObjectIds
-    const allPlayerIds = [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer];
-    console.log("All player IDs:", allPlayerIds);
 
-    // Function to validate MongoDB ObjectId format
-    const isValidObjectId = (id) => /^[0-9a-fA-F]{24}$/.test(id);
-
-    // Filter out invalid IDs
-    const invalidIds = allPlayerIds.filter((id) => !isValidObjectId(id));
-
-    if (invalidIds.length > 0) {
-      return apiResponse({
-        res,
-        status: false,
-        message: `The following player IDs are invalid: ${invalidIds.join(
-          ", "
-        )}`,
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
-
-    const validPlayers = await CustomPlayers.find({
-      _id: { $in: allPlayerIds },
-    });
-    console.log("Valid players found:", validPlayers.length);
-
-    if (validPlayers.length !== allPlayerIds.length) {
-      const foundPlayerIds = validPlayers.map((player) =>
-        player._id.toString()
-      );
-      const notFoundPlayerIds = allPlayerIds.filter(
-        (id) => !foundPlayerIds.includes(id)
-      );
-      return apiResponse({
-        res,
-        status: false,
-        message: `The following player IDs were not found: ${notFoundPlayerIds.join(
-          ", "
-        )}`,
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
+     // Validate all player IDs and umpire IDs
+     const allIds = [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer, ...umpires];
+ 
+     // Function to validate MongoDB ObjectId format
+     const isValidObjectId = (id) => /^[0-9a-fA-F]{24}$/.test(id);
+ 
+     // Filter out invalid IDs
+     const invalidIds = allIds.filter((id) => !isValidObjectId(id));
+ 
+     if (invalidIds.length > 0) {
+       return apiResponse({
+         res,
+         status: false,
+         message: `The following IDs are invalid: ${invalidIds.join(", ")}`,
+         statusCode: StatusCodes.BAD_REQUEST,
+       });
+     }
+ 
+     // Validate players and umpires exist
+     const validEntities = await Promise.all([
+       CustomPlayers.find({ _id: { $in: [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer] } }),
+       customUmpireList.find({ _id: { $in: umpires } })
+     ]);
+ 
+     const [validPlayers, validUmpires] = validEntities;
+ 
+     if (validPlayers.length !== homeTeamPlayingPlayer.length + awayTeamPlayingPlayer.length) {
+       const foundPlayerIds = validPlayers.map((player) => player._id.toString());
+       const notFoundPlayerIds = [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer].filter(
+         (id) => !foundPlayerIds.includes(id)
+       );
+       return apiResponse({
+         res,
+         status: false,
+         message: `The following player IDs were not found: ${notFoundPlayerIds.join(", ")}`,
+         statusCode: StatusCodes.BAD_REQUEST,
+       });
+     }
+ 
+     if (validUmpires.length !== umpires.length) {
+       const foundUmpireIds = validUmpires.map((umpire) => umpire._id.toString());
+       const notFoundUmpireIds = umpires.filter(
+         (id) => !foundUmpireIds.includes(id)
+       );
+       return apiResponse({
+         res,
+         status: false,
+         message: `The following umpire IDs were not found: ${notFoundUmpireIds.join(", ")}`,
+         statusCode: StatusCodes.BAD_REQUEST,
+       });
+     }
 
     // Validate players belong to their respective teams
     const homeTeamPlayers = validPlayers.filter(
@@ -186,6 +219,7 @@ const createMatch = async (req, res, next) => {
       tournamentId,
       homeTeamPlayingPlayer,
       awayTeamPlayingPlayer,
+      umpires
     });
 
     return apiResponse({
@@ -196,7 +230,6 @@ const createMatch = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (err) {
-    console.error("Error in createMatch:", err);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -280,7 +313,8 @@ const listMatches = async (req, res) => {
         image: match.tournamentId.tournamentImage
       }: null,
       createdBy: match.createdBy,
-      status: match.status
+      status: match.status,
+      umpires: match.umpires
     }));
 
     // Define the order of statuses
@@ -308,7 +342,6 @@ const listMatches = async (req, res) => {
       statusCode: StatusCodes.OK,
     });
   } catch (err) {
-    console.log(err);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -332,6 +365,7 @@ const updateMatch = async (req, res, next) => {
       dateTime,
       homeTeamPlayingPlayer,
       awayTeamPlayingPlayer,
+      umpires
     } = req.body;
 
     const validation = validateObjectIds({
@@ -411,6 +445,16 @@ const updateMatch = async (req, res, next) => {
       });
     }
 
+     // Validate umpire list
+     if (!Array.isArray(umpires) || umpires.length === 0) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Umpire list must be a non-empty array",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
     // Check for duplicate players between teams
     const duplicatePlayers = homeTeamPlayingPlayer.filter((player) =>
       awayTeamPlayingPlayer.includes(player)
@@ -424,45 +468,65 @@ const updateMatch = async (req, res, next) => {
       });
     }
 
-    // Validate all player IDs exist and are valid ObjectIds
-    const allPlayerIds = [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer];
-    console.log("All player IDs:", allPlayerIds);
+    // Check for duplicate umpires
+    const uniqueUmpires = new Set(umpires);
+    if (uniqueUmpires.size !== umpires.length) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Duplicate umpires are not allowed",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Validate all player IDs and umpire IDs
+    const allIds = [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer, ...umpires];
 
     // Function to validate MongoDB ObjectId format
     const isValidObjectId = (id) => /^[0-9a-fA-F]{24}$/.test(id);
 
     // Filter out invalid IDs
-    const invalidIds = allPlayerIds.filter((id) => !isValidObjectId(id));
+    const invalidIds = allIds.filter((id) => !isValidObjectId(id));
 
     if (invalidIds.length > 0) {
       return apiResponse({
         res,
         status: false,
-        message: `The following player IDs are invalid: ${invalidIds.join(
-          ", "
-        )}`,
+        message: `The following IDs are invalid: ${invalidIds.join(", ")}`,
         statusCode: StatusCodes.BAD_REQUEST,
       });
     }
 
-    const validPlayers = await CustomPlayers.find({
-      _id: { $in: allPlayerIds },
-    });
-    console.log("Valid players found:", validPlayers.length);
+    // Validate players and umpires exist
+    const validEntities = await Promise.all([
+      CustomPlayers.find({ _id: { $in: [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer] } }),
+      customUmpireList.find({ _id: { $in: umpires } })
+    ]);
 
-    if (validPlayers.length !== allPlayerIds.length) {
-      const foundPlayerIds = validPlayers.map((player) =>
-        player._id.toString()
-      );
-      const notFoundPlayerIds = allPlayerIds.filter(
+    const [validPlayers, validUmpires] = validEntities;
+
+    if (validPlayers.length !== homeTeamPlayingPlayer.length + awayTeamPlayingPlayer.length) {
+      const foundPlayerIds = validPlayers.map((player) => player._id.toString());
+      const notFoundPlayerIds = [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer].filter(
         (id) => !foundPlayerIds.includes(id)
       );
       return apiResponse({
         res,
         status: false,
-        message: `The following player IDs were not found: ${notFoundPlayerIds.join(
-          ", "
-        )}`,
+        message: `The following player IDs were not found: ${notFoundPlayerIds.join(", ")}`,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    if (validUmpires.length !== umpires.length) {
+      const foundUmpireIds = validUmpires.map((umpire) => umpire._id.toString());
+      const notFoundUmpireIds = umpires.filter(
+        (id) => !foundUmpireIds.includes(id)
+      );
+      return apiResponse({
+        res,
+        status: false,
+        message: `The following umpire IDs were not found: ${notFoundUmpireIds.join(", ")}`,
         statusCode: StatusCodes.BAD_REQUEST,
       });
     }
@@ -517,7 +581,6 @@ const updateMatch = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (err) {
-    console.error("Error in updateMatch:", err);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -634,7 +697,6 @@ const updateMatchStatus = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,

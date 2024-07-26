@@ -46,6 +46,7 @@ const createMatch = {
     dateTime: Joi.date().required(),
     homeTeamPlayingPlayer: Joi.array().items(Joi.string()).min(11).required(),
     awayTeamPlayingPlayer: Joi.array().items(Joi.string()).min(11).required(),
+    umpires: Joi.array().items(Joi.string()).max(5).required(),
   }),
 };
 
