@@ -85,7 +85,7 @@ route.get("/match/list", matchController.listMatches);
 route.put(
   "/match/update/:id",
   verifyToken,
-  validate(validation.createMatch),
+  validate(validation.updateMatch),
   matchController.updateMatch
 );
 
