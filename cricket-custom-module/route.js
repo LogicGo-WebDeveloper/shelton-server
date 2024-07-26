@@ -109,7 +109,7 @@ route.post(
 
 route.get("/player/list", verifyToken, playerController.listPlayers);
 
-route.post(
+route.put(
   "/player/update/:id",
   verifyToken,
   upload.single("image"),

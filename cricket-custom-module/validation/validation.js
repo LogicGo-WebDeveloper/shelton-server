@@ -21,7 +21,7 @@ const createTeam = {
     teamName: Joi.string().required(),
     city: Joi.string().required(),
     teamImage: Joi.string().optional(),
-    tournamentId: Joi.string(),
+    tournamentId: Joi.string().required(),
   }),
 };
 
@@ -65,7 +65,7 @@ const updatePlayer = {
     jerseyNumber: Joi.number(),
     role: Joi.string(),
     image: Joi.any().optional(),
-    teamId: Joi.string().required(),
+    teamId: Joi.string(),
   }),
 };
 
@@ -87,5 +87,5 @@ export default {
   updateTeam,
   createUmpire,
   updatePlayer,
-  updateStatus
+  updateStatus,
 };

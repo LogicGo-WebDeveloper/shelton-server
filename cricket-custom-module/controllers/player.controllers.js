@@ -124,54 +124,69 @@ const updatePlayer = async (req, res, next) => {
   const { id: playerId } = req.params;
   const { playerName, jerseyNumber, role, teamId } = req.body;
 
-  const validation = validateObjectIds({ playerId, teamId, role });
-  if (!validation.isValid) {
-    return apiResponse({
-      res,
-      status: false,
-      message: validation.message,
-      statusCode: StatusCodes.BAD_REQUEST,
-    });
-  }
-
-  const playerRole = await CustomPlayerRole.findById(role);
-  if (!playerRole) {
-    return apiResponse({
-      res,
-      status: true,
-      message: "Player role not found",
-      statusCode: StatusCodes.NOT_FOUND,
-    });
-  }
-
-  // const findDoc = await CustomPlayers.findById(playerId);
-  const team = await CustomTeam.findById(teamId);
-  // if (!findDoc) {
-  //   return apiResponse({
-  //     res,
-  //     status: true,
-  //     message: "Player not found",
-  //     statusCode: StatusCodes.NOT_FOUND,
-  //   });
-  // }
-  if (!team) {
-    return apiResponse({
-      res,
-      status: true,
-      message: "Team not found",
-      statusCode: StatusCodes.NOT_FOUND,
-    });
-  }
-
-  try {
-    const findDoc = await CustomPlayers.findById(playerId);
-    if (!findDoc) {
+  if (role) {
+    const validation = validateObjectIds({ role });
+    if (!validation.isValid) {
       return apiResponse({
         res,
         status: false,
-        message: "Player not found",
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+    const playerRole = await CustomPlayerRole.findById(role);
+    if (!playerRole) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Player role not found",
         statusCode: StatusCodes.NOT_FOUND,
       });
+    }
+  }
+
+  if (teamId) {
+    const validation = validateObjectIds({ teamId });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+    const team = await CustomTeam.findById(teamId);
+    if (!team) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Team not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+  }
+
+  try {
+    if (playerId) {
+      const validation = validateObjectIds({ playerId });
+      if (!validation.isValid) {
+        return apiResponse({
+          res,
+          status: false,
+          message: validation.message,
+          statusCode: StatusCodes.BAD_REQUEST,
+        });
+      }
+
+      const findDoc = await CustomPlayers.findById(playerId);
+      if (!findDoc) {
+        return apiResponse({
+          res,
+          status: false,
+          message: "Player not found",
+          statusCode: StatusCodes.NOT_FOUND,
+        });
+      }
     }
 
     const updateData = {};

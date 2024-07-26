@@ -10,7 +10,7 @@ const createTeam = async (req, res, next) => {
   try {
     const folderName = "custom_team";
     const { teamName, city, tournamentId } = req.body;
-    const userId = req.user._id
+    const userId = req.user._id;
     let url = await uploadSingleFile(req, folderName);
 
     const validation = validateObjectIds({ tournamentId, city });
@@ -23,10 +23,10 @@ const createTeam = async (req, res, next) => {
       });
     }
 
-    const tournament = await CustomTournament.findById(tournamentId)
-    const isCity = await CustomCityList.findById(city)
+    const tournament = await CustomTournament.findById(tournamentId);
+    const isCity = await CustomCityList.findById(city);
 
-    if(!tournament){
+    if (!tournament) {
       return apiResponse({
         res,
         status: true,
@@ -34,7 +34,7 @@ const createTeam = async (req, res, next) => {
         statusCode: StatusCodes.NOT_FOUND,
       });
     }
-    if(!isCity){
+    if (!isCity) {
       return apiResponse({
         res,
         status: true,
@@ -46,7 +46,7 @@ const createTeam = async (req, res, next) => {
     const result = await CustomTeam.create({
       teamName,
       city,
-      teamImage: url,
+      teamImage: url || "",
       createdBy: userId,
       tournamentId,
     });
@@ -70,7 +70,7 @@ const createTeam = async (req, res, next) => {
 
 const listTeams = async (req, res) => {
   const userId = req.user._id;
-  const { tournamentId } = req.query; 
+  const { tournamentId } = req.query;
 
   const validation = validateObjectIds({ tournamentId });
   if (!validation.isValid) {
@@ -93,12 +93,14 @@ const listTeams = async (req, res) => {
   }
 
   try {
-    const teams = await CustomTeam.find({ tournamentId, createdBy: userId })
-    .populate({
-      path: 'city',
-      model: 'CustomCityList',
-      select: 'city',
-    })
+    const teams = await CustomTeam.find({
+      tournamentId,
+      createdBy: userId,
+    }).populate({
+      path: "city",
+      model: "CustomCityList",
+      select: "city",
+    });
     return apiResponse({
       res,
       status: true,
@@ -120,34 +122,58 @@ const updateTeam = async (req, res, next) => {
   const { id: teamId } = req.params;
   const { teamName, city, tournamentId } = req.body;
 
-  const validation = validateObjectIds({ tournamentId, teamId, city });
-  if (!validation.isValid) {
-    return apiResponse({
-      res,
-      status: false,
-      message: validation.message,
-      statusCode: StatusCodes.BAD_REQUEST,
-    });
+  if (teamId) {
+    const validation = validateObjectIds({ teamId });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
   }
 
-  const findTournament = await CustomTournament.findById(tournamentId);
-  const findCity = await CustomCityList.findById(city);
-  if(!findTournament){
-    return apiResponse({
-      res,
-      status: true,
-      message: "Tournament not found",
-      statusCode: StatusCodes.NOT_FOUND,
-    });
+  if (tournamentId) {
+    const validation = validateObjectIds({ tournamentId });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+    const findTournament = await CustomTournament.findById(tournamentId);
+    if (!findTournament) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Tournament not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
   }
-  
-  if(!findCity){
-    return apiResponse({
-      res,
-      status: true,
-      message: "City not found",
-      statusCode: StatusCodes.NOT_FOUND,
-    });
+
+  if (city) {
+    const validation = validateObjectIds({ city });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+    const findCity = await CustomCityList.findById(city);
+    if (!findCity) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "City not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
   }
 
   const folderName = "custom_team";
@@ -160,8 +186,8 @@ const updateTeam = async (req, res, next) => {
         teamName,
         city,
         teamImage: newUrl,
-        createdBy: team.createdBy, 
-        tournamentId
+        createdBy: team.createdBy,
+        tournamentId,
       },
       { new: true }
     )
