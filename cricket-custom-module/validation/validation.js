@@ -21,7 +21,7 @@ const createTeam = {
     teamName: Joi.string().required(),
     city: Joi.string().required(),
     teamImage: Joi.string().optional(),
-    tournamentId: Joi.string(),
+    tournamentId: Joi.string().required(),
   }),
 };
 
@@ -46,7 +46,7 @@ const createMatch = {
     dateTime: Joi.date().required(),
     homeTeamPlayingPlayer: Joi.array().items(Joi.string()).min(11).required(),
     awayTeamPlayingPlayer: Joi.array().items(Joi.string()).min(11).required(),
-    status: Joi.string().default(enums.matchStatusEnum.not_started),
+    umpires: Joi.array().items(Joi.string()).max(5).required(),
   }),
 };
 
@@ -66,7 +66,7 @@ const updatePlayer = {
     jerseyNumber: Joi.number(),
     role: Joi.string(),
     image: Joi.any().optional(),
-    teamId: Joi.string().required(),
+    teamId: Joi.string(),
   }),
 };
 
@@ -88,5 +88,5 @@ export default {
   updateTeam,
   createUmpire,
   updatePlayer,
-  updateStatus
+  updateStatus,
 };
