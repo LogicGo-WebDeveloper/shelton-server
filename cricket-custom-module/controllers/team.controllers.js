@@ -46,7 +46,7 @@ const createTeam = async (req, res, next) => {
     const result = await CustomTeam.create({
       teamName,
       city,
-      teamImage: url || "",
+      teamImage: url ? url : "",
       createdBy: userId,
       tournamentId,
     });
