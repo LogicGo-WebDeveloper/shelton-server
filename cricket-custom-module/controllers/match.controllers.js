@@ -23,7 +23,6 @@ const createMatch = async (req, res, next) => {
       dateTime,
       homeTeamPlayingPlayer,
       awayTeamPlayingPlayer,
-      status,
     } = req.body;
     const userId = req.user._id;
 
@@ -32,7 +31,6 @@ const createMatch = async (req, res, next) => {
       awayTeamId,
       tournamentId,
       city,
-      status,
     });
     if (!validation.isValid) {
       return apiResponse({
