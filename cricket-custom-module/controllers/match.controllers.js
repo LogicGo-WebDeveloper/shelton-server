@@ -186,7 +186,6 @@ const createMatch = async (req, res, next) => {
       tournamentId,
       homeTeamPlayingPlayer,
       awayTeamPlayingPlayer,
-      status,
     });
 
     return apiResponse({
