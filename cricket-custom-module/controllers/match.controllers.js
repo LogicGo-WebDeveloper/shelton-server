@@ -912,7 +912,7 @@ const createScorecards = async (match, tournamentId) => {
           overs: 0,
           maidens: 0,
           wickets: 0,
-          status: "yet_to_bat",
+          status: enums.matchScorecardStatusEnum.yet_to_bat,
         })),
       };
     };
