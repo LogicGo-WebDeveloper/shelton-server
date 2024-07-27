@@ -71,7 +71,7 @@ route.post(
   teamController.updateTeam
 );
 
-route.delete("/team/delete/:id", teamController.deleteTeam);
+route.delete("/team/delete/:id", verifyToken, teamController.deleteTeam);
 
 // ============================== For Match List ===========================================
 route.post(
