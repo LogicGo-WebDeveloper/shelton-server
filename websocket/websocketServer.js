@@ -17,6 +17,13 @@ import CustomMatchScorecard from "../cricket-custom-module/models/matchScorecard
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
   wss.on("connection", (ws) => {
+    const validateField = (field, value, type) => {
+      if (typeof value !== type) {
+        return `Invalid data format for ${field}`;
+      }
+      return null;
+    };
+    
     ws.on("message", async (message) => {
       let data;
       try {
@@ -771,6 +778,48 @@ const setupWebSocket = (server) => {
         case "runNumber":
           try {
             const { matchId, batters, bowlers } = data;
+
+            // Validation for batters
+            const batterErrors = [
+              validateField("batters.balls", batters.balls, "boolean"),
+              validateField("batters.fours", batters.fours, "boolean"),
+              validateField("batters.sixes", batters.sixes, "boolean"),
+            ].filter(error => error !== null);
+    
+            if (batterErrors.length > 0) {
+              ws.send(
+                JSON.stringify({
+                  message: batterErrors.join(", "),
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
+              return;
+            }
+    
+            // Validation for bowlers
+            const bowlerErrors = [
+              validateField("bowlers.overs", bowlers.overs, "number"),
+              validateField("bowlers.maidens", bowlers.maidens, "number"),
+              validateField("bowlers.runs", bowlers.runs, "number"),
+              validateField("bowlers.wickets", bowlers.wickets, "number"),
+              validateField("bowlers.noBalls", bowlers.noBalls, "number"),
+              validateField("bowlers.wides", bowlers.wides, "number"),
+            ].filter(error => error !== null);
+    
+            if (bowlerErrors.length > 0) {
+              ws.send(
+                JSON.stringify({
+                  message: bowlerErrors.join(", "),
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
+              return;
+            }
+            
             const existingScorecard = await CustomMatchScorecard.findOne({ matchId });
         
             if (!existingScorecard) {
