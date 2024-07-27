@@ -27,6 +27,9 @@ const createMatch = async (req, res, next) => {
       umpires,
     } = req.body;
     const userId = req.user._id;
+    console.log(typeof umpires);
+    console.log(typeof homeTeamPlayingPlayer);
+    console.log(typeof awayTeamPlayingPlayer);
 
     const validation = validateObjectIds({
       homeTeamId,
@@ -358,7 +361,7 @@ const listMatches = async (req, res) => {
       umpires: match.umpires,
       tossResult: match.tossResult,
       tossWinnerTeamId: match.tossWinnerTeamId,
-      tossWinnerChoice: match.tossWinnerChoice
+      tossWinnerChoice: match.tossWinnerChoice,
     }));
 
     // Define the order of statuses
@@ -768,13 +771,17 @@ const updateMatchStatus = async (req, res, next) => {
   }
 };
 
-
 const updateTossStatus = async (req, res) => {
   try {
-    const { matchId, tournamentId, tossWinnerTeamId, tossWinnerChoice } = req.body;
+    const { matchId, tournamentId, tossWinnerTeamId, tossWinnerChoice } =
+      req.body;
 
     // Validate input
-    const validation = validateObjectIds({ matchId, tournamentId, tossWinnerTeamId });
+    const validation = validateObjectIds({
+      matchId,
+      tournamentId,
+      tossWinnerTeamId,
+    });
     if (!validation.isValid) {
       return apiResponse({
         res,
@@ -785,7 +792,10 @@ const updateTossStatus = async (req, res) => {
     }
 
     // Find the match and check its status
-    const match = await CustomMatch.findOne({ _id: matchId, tournamentId: tournamentId });
+    const match = await CustomMatch.findOne({
+      _id: matchId,
+      tournamentId: tournamentId,
+    });
     if (!match) {
       return apiResponse({
         res,
@@ -800,7 +810,8 @@ const updateTossStatus = async (req, res) => {
       return apiResponse({
         res,
         status: false,
-        message: "You cannot update toss status because the match is not in live",
+        message:
+          "You cannot update toss status because the match is not in live",
         statusCode: StatusCodes.BAD_REQUEST,
       });
     }
@@ -826,7 +837,11 @@ const updateTossStatus = async (req, res) => {
       });
     }
 
-    if (![enums.tossChoiceEnum.BATTING, enums.tossChoiceEnum.FIELDING].includes(tossWinnerChoice)) {
+    if (
+      ![enums.tossChoiceEnum.BATTING, enums.tossChoiceEnum.FIELDING].includes(
+        tossWinnerChoice
+      )
+    ) {
       return apiResponse({
         res,
         status: false,
@@ -834,16 +849,16 @@ const updateTossStatus = async (req, res) => {
         statusCode: StatusCodes.BAD_REQUEST,
       });
     }
-  
+
     const tossResult = `${winningTeam.teamName} won the toss and elected to ${tossWinnerChoice}`;
 
     // Find and update the match
     const updatedMatch = await CustomMatch.findOneAndUpdate(
       { _id: matchId, tournamentId: tournamentId },
-      { 
+      {
         tossWinnerTeamId: tossWinnerTeamId,
         tossWinnerChoice: tossWinnerChoice,
-        tossResult: tossResult
+        tossResult: tossResult,
       },
       { new: true }
     );
@@ -855,7 +870,6 @@ const updateTossStatus = async (req, res) => {
       message: "Toss status updated successfully",
       statusCode: StatusCodes.OK,
     });
-
   } catch (err) {
     return apiResponse({
       res,
@@ -872,5 +886,5 @@ export default {
   updateMatch,
   deleteMatch,
   updateMatchStatus,
-  updateTossStatus
+  updateTossStatus,
 };
