@@ -445,24 +445,78 @@ const tournamentAddUmpire = async (req, res, next) => {
 
 const tournamentListUmpire = async (req, res, next) => {
   try {
-    const umpireList = await CustomMatchOfficial.find();
-    if (umpireList) {
-      return apiResponse({
-        res,
-        statusCode: StatusCodes.OK,
-        status: true,
-        message: "Umpire fetched successfully!",
-        data: umpireList,
+    const { tournamentId } = req.query; // Assuming tournamentId is passed as a query parameter
+
+    if (tournamentId) {
+      // Fetch umpires from CustomUmpires collection based on tournamentId
+      const umpiresFromCustomUmpires = await customUmpireList.find({
+        tournamentId: tournamentId,
       });
+
+      // If no umpires found for the given tournamentId, handle it accordingly
+      if (umpiresFromCustomUmpires.length === 0) {
+        return apiResponse({
+          res,
+          statusCode: StatusCodes.NOT_FOUND,
+          status: false,
+          message: "No umpires found for the given tournamentId",
+        });
+      }
+
+      // Extract umpireIds from the results
+      const umpireIds = umpiresFromCustomUmpires.map(
+        (umpire) => umpire.umpireId
+      );
+
+      // Fetch umpire details from CustomMatchOfficial using the extracted umpireIds
+      const umpireDetails = await CustomMatchOfficial.find({
+        _id: { $in: umpireIds },
+      });
+
+      if (umpireDetails.length > 0) {
+        return apiResponse({
+          res,
+          statusCode: StatusCodes.OK,
+          status: true,
+          message: "Umpires fetched successfully!",
+          data: {
+            tournamentId: tournamentId, // Include tournamentId in the response
+            umpires: umpireDetails,
+          },
+        });
+      } else {
+        return apiResponse({
+          res,
+          statusCode: StatusCodes.NOT_FOUND,
+          status: false,
+          message: "No umpire details found",
+        });
+      }
     } else {
-      return apiResponse({
-        res,
-        statusCode: StatusCodes.NOT_FOUND,
-        status: false,
-        message: "no data found",
-      });
+      // If tournamentId is not present, fetch umpires from CustomMatchOfficial collection
+      const umpireList = await CustomMatchOfficial.find();
+
+      if (umpireList.length > 0) {
+        return apiResponse({
+          res,
+          statusCode: StatusCodes.OK,
+          status: true,
+          message: "Umpires fetched successfully!",
+          data: {
+            tournamentId: null, // Indicate that no specific tournamentId was used
+            umpires: umpireList,
+          },
+        });
+      } else {
+        return apiResponse({
+          res,
+          statusCode: StatusCodes.NOT_FOUND,
+          status: false,
+          message: "No data found",
+        });
+      }
     }
-  } catch {
+  } catch (error) {
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,

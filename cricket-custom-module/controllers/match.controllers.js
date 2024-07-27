@@ -28,6 +28,9 @@ const createMatch = async (req, res, next) => {
       umpires,
     } = req.body;
     const userId = req.user._id;
+    console.log(typeof umpires);
+    console.log(typeof homeTeamPlayingPlayer);
+    console.log(typeof awayTeamPlayingPlayer);
 
     const validation = validateObjectIds({
       homeTeamId,
@@ -359,7 +362,7 @@ const listMatches = async (req, res) => {
       umpires: match.umpires,
       tossResult: match.tossResult,
       tossWinnerTeamId: match.tossWinnerTeamId,
-      tossWinnerChoice: match.tossWinnerChoice
+      tossWinnerChoice: match.tossWinnerChoice,
     }));
 
     // Define the order of statuses
@@ -771,10 +774,15 @@ const updateMatchStatus = async (req, res, next) => {
 
 const updateTossStatus = async (req, res) => {
   try {
-    const { matchId, tournamentId, tossWinnerTeamId, tossWinnerChoice } = req.body;
+    const { matchId, tournamentId, tossWinnerTeamId, tossWinnerChoice } =
+      req.body;
 
     // Validate input
-    const validation = validateObjectIds({ matchId, tournamentId, tossWinnerTeamId });
+    const validation = validateObjectIds({
+      matchId,
+      tournamentId,
+      tossWinnerTeamId,
+    });
     if (!validation.isValid) {
       return apiResponse({
         res,
@@ -785,7 +793,10 @@ const updateTossStatus = async (req, res) => {
     }
 
     // Find the match and check its status
-    const match = await CustomMatch.findOne({ _id: matchId, tournamentId: tournamentId });
+    const match = await CustomMatch.findOne({
+      _id: matchId,
+      tournamentId: tournamentId,
+    });
     if (!match) {
       return apiResponse({
         res,
@@ -800,7 +811,18 @@ const updateTossStatus = async (req, res) => {
       return apiResponse({
         res,
         status: false,
-        message: "You cannot update toss status because the match is not in live",
+        message:
+          "You cannot update toss status because the match is not in live",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Check if toss has already been conducted
+    if (match.tossWinnerTeamId) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Toss has already been conducted for this match",
         statusCode: StatusCodes.BAD_REQUEST,
       });
     }
@@ -826,7 +848,11 @@ const updateTossStatus = async (req, res) => {
       });
     }
 
-    if (![enums.tossChoiceEnum.BATTING, enums.tossChoiceEnum.FIELDING].includes(tossWinnerChoice)) {
+    if (
+      ![enums.tossChoiceEnum.BATTING, enums.tossChoiceEnum.FIELDING].includes(
+        tossWinnerChoice
+      )
+    ) {
       return apiResponse({
         res,
         status: false,
@@ -834,16 +860,16 @@ const updateTossStatus = async (req, res) => {
         statusCode: StatusCodes.BAD_REQUEST,
       });
     }
-  
+
     const tossResult = `${winningTeam.teamName} won the toss and elected to ${tossWinnerChoice}`;
 
     // Find and update the match
     const updatedMatch = await CustomMatch.findOneAndUpdate(
       { _id: matchId, tournamentId: tournamentId },
-      { 
+      {
         tossWinnerTeamId: tossWinnerTeamId,
         tossWinnerChoice: tossWinnerChoice,
-        tossResult: tossResult
+        tossResult: tossResult,
       },
       { new: true }
     );
@@ -857,7 +883,6 @@ const updateTossStatus = async (req, res) => {
       message: "Toss status updated successfully",
       statusCode: StatusCodes.OK,
     });
-
   } catch (err) {
     return apiResponse({
       res,
@@ -873,11 +898,11 @@ const createScorecards = async (match, tournamentId) => {
     const createTeamScorecard = async (teamId, playerIds) => {
       const team = await CustomTeam.findById(teamId);
       const players = await CustomPlayers.find({ _id: { $in: playerIds } });
-      
+
       return {
         id: teamId,
         name: team.teamName,
-        players: players.map(player => ({
+        players: players.map((player) => ({
           id: player._id,
           name: player.playerName,
           runs: 0,
@@ -887,29 +912,35 @@ const createScorecards = async (match, tournamentId) => {
           overs: 0,
           maidens: 0,
           wickets: 0,
-          status: "not-played"
-        }))
+          status: "yet_to_bat",
+        })),
       };
     };
 
-    const homeTeamScorecard = await createTeamScorecard(match.homeTeamId, match.homeTeamPlayingPlayer);
-    const awayTeamScorecard = await createTeamScorecard(match.awayTeamId, match.awayTeamPlayingPlayer);
+    const homeTeamScorecard = await createTeamScorecard(
+      match.homeTeamId,
+      match.homeTeamPlayingPlayer
+    );
+    const awayTeamScorecard = await createTeamScorecard(
+      match.awayTeamId,
+      match.awayTeamPlayingPlayer
+    );
     const matchScorecard = new CustomMatchScorecard({
       tournamentId,
       matchId: match._id,
       scorecard: {
         homeTeam: homeTeamScorecard,
-        awayTeam: awayTeamScorecard
-      }
+        awayTeam: awayTeamScorecard,
+      },
     });
-    
+
     console.log("Before saving scorecard:", matchScorecard);
-    
+
     const savedScorecard = await matchScorecard.save();
     console.log("Scorecard saved successfully:", savedScorecard);
   } catch (error) {
     console.error("Error in createScorecards:", error);
-    throw error; 
+    throw error;
   }
 };
 
@@ -918,8 +949,8 @@ const getMatchScorecard = async (req, res) => {
     const { matchId } = req.params;
 
     const scorecard = await CustomMatchScorecard.findOne({ matchId })
-      .populate('tournamentId', 'name')
-      .populate('matchId', 'dateTime');
+      .populate("tournamentId", "name")
+      .populate("matchId", "dateTime");
 
     if (!scorecard) {
       return apiResponse({
@@ -938,12 +969,11 @@ const getMatchScorecard = async (req, res) => {
         tournamentName: scorecard.tournamentId.name,
         matchId: scorecard.matchId._id,
         matchDateTime: scorecard.matchId.dateTime,
-        scorecard: scorecard.scorecard
+        scorecard: scorecard.scorecard,
       },
       message: "Scorecard retrieved successfully",
       statusCode: StatusCodes.OK,
     });
-
   } catch (err) {
     console.error(err);
     return apiResponse({
@@ -954,7 +984,6 @@ const getMatchScorecard = async (req, res) => {
     });
   }
 };
-
 
 const updateMatchScorecard = async (req, res) => {
   try {
@@ -992,7 +1021,6 @@ const updateMatchScorecard = async (req, res) => {
       message: "Scorecard updated successfully",
       statusCode: StatusCodes.OK,
     });
-
   } catch (err) {
     console.error(err);
     return apiResponse({
