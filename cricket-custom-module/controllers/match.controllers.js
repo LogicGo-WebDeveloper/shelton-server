@@ -1034,6 +1034,67 @@ const updateMatchScorecard = async (req, res) => {
   }
 };
 
+const updateStatus = async (req, res) => {
+  try {
+    const { id, playerId } = req.params;
+    const { activeBowler, activeStriker, status } = req.body;
+
+    const existingMatch = await CustomMatchScorecard.findById(id);
+    if (!existingMatch) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    let playerFound = false;
+
+    const updatePlayerStatus = (players) => {
+      players.forEach((player) => {
+        if (player._id.toString() === playerId) {
+          if (activeBowler !== undefined) player.activeBowler = activeBowler;
+          if (activeStriker !== undefined) player.activeStriker = activeStriker;
+          if (status !== undefined) player.status = status;
+
+          playerFound = true;
+        }
+      });
+    };
+
+    updatePlayerStatus(existingMatch.scorecard.homeTeam.players);
+    updatePlayerStatus(existingMatch.scorecard.awayTeam.players);
+
+    if (!playerFound) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Player not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    await existingMatch.save();
+
+    return apiResponse({
+      res,
+      status: true,
+      message: "Status updated successfully",
+      statusCode: StatusCodes.OK,
+      body: existingMatch,
+    });
+  } catch (error) {
+    console.error(error);
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 export default {
   createMatch,
   listMatches,
@@ -1044,4 +1105,5 @@ export default {
   createScorecards,
   getMatchScorecard,
   updateMatchScorecard,
+  updateStatus,
 };

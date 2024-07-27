@@ -157,6 +157,7 @@ const updateCustomPlayerOvers = {
     oversNumber: Joi.number(),
   }),
 };
+
 const updateTossStatus = {
   body: Joi.object().keys({
     matchId: Joi.string().required(),
@@ -165,6 +166,16 @@ const updateTossStatus = {
     tossWinnerChoice: Joi.string()
       .valid(enums.tossChoiceEnum.BATTING, enums.tossChoiceEnum.FIELDING)
       .required(),
+  }),
+};
+
+const updatePlayerStatus = {
+  body: Joi.object().keys({
+    status: Joi.string().valid(
+      ...Object.values(enums.matchScorecardStatusEnum)
+    ),
+    activeBowler: Joi.boolean(),
+    activeStriker: Joi.boolean(),
   }),
 };
 
@@ -183,4 +194,5 @@ export default {
   createCustomPlayerOvers,
   updateCustomPlayerOvers,
   updateTossStatus,
+  updatePlayerStatus,
 };

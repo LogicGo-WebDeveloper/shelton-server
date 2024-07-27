@@ -112,6 +112,12 @@ route.post(
   matchController.updateMatchScorecard
 );
 
+route.post(
+  "/match/scorecard/:id/update/:playerId",
+  validate(validation.updatePlayerStatus),
+  matchController.updateStatus
+);
+
 // ============================== For Player List ===========================================
 route.post(
   "/player/add",
