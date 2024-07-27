@@ -11,8 +11,8 @@ import {
 } from "./utils.js";
 import helper from "../helper/common.js";
 import config from "../config/config.js";
-import CustomPlayerScoreCard from "../cricket-custom-module/models/playerScorecard.models.js";
 import CustomPlayerOvers from "../cricket-custom-module/models/playersOvers.models.js";
+import CustomMatchScorecard from "../cricket-custom-module/models/matchScorecard.models.js";
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
@@ -791,7 +791,7 @@ const setupWebSocket = (server) => {
             let levels = data.levels;
             let oversNumber = data.oversNumber;
 
-            const runUpdate = await CustomPlayerScoreCard.create({
+            const runUpdate = await CustomMatchScorecard.create({
               matchId: matchId,
               strikerPlayerId: strikerPlayerId,
               nonStrikerPlayerId: nonStrikerPlayerId,

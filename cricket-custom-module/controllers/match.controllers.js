@@ -10,7 +10,6 @@ import CustomPlayers from "../models/player.models.js";
 import enums from "../../config/enum.js";
 import config from "../../config/enum.js";
 import customUmpireList from "../models/umpire.models.js";
-import CustomPlayerScoreCard from "../models/matchScorecard.models.js";
 import CustomMatchScorecard from "../models/matchScorecard.models.js";
 
 const createMatch = async (req, res, next) => {
@@ -887,7 +886,8 @@ const createScorecards = async (match, tournamentId) => {
           sixes: 0,
           overs: 0,
           maidens: 0,
-          wickets: 0
+          wickets: 0,
+          status: "not-played"
         }))
       };
     };
@@ -961,6 +961,15 @@ const updateMatchScorecard = async (req, res) => {
     const { matchId } = req.params;
     const { scorecard } = req.body;
 
+    if (!scorecard || !scorecard.homeTeam || !scorecard.awayTeam) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Invalid scorecard data",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
     const updatedScorecard = await CustomMatchScorecard.findOneAndUpdate(
       { matchId },
       { scorecard },
@@ -970,7 +979,7 @@ const updateMatchScorecard = async (req, res) => {
     if (!updatedScorecard) {
       return apiResponse({
         res,
-        status: false,
+        status: true,
         message: "Scorecard not found",
         statusCode: StatusCodes.NOT_FOUND,
       });

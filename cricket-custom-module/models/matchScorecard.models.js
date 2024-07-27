@@ -9,7 +9,8 @@ const CustomPlayerScoreSchema = new mongoose.Schema({
   sixes: { type: Number, default: 0 },
   overs: { type: Number, default: 0 },
   maidens: { type: Number, default: 0 },
-  wickets: { type: Number, default: 0 }
+  wickets: { type: Number, default: 0 },
+  status: { type: String, default: "not-played" }
 });
 
 const TeamScoreSchema = new mongoose.Schema({
