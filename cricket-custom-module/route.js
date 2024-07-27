@@ -106,8 +106,11 @@ route.post(
 
 route.delete("/match/delete/:id", verifyToken, matchController.deleteMatch);
 
-route.get('/match/scorecard/:matchId', matchController.getMatchScorecard);
-route.post('/match/scorecard/update/:matchId', matchController.updateMatchScorecard);
+route.get("/match/scorecard/:matchId", matchController.getMatchScorecard);
+route.post(
+  "/match/scorecard/update/:matchId",
+  matchController.updateMatchScorecard
+);
 
 // ============================== For Player List ===========================================
 route.post(
@@ -135,6 +138,13 @@ route.get(
   "/player/overs/:id",
   verifyToken,
   playerOverController.getPlayerOvers
-)
+);
+
+route.post(
+  "/player/overs/update/:id",
+  verifyToken,
+  validate(validation.updateCustomPlayerOvers),
+  playerOverController.updatePlayerOvers
+);
 
 export default route;
