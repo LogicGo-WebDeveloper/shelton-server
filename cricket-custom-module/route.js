@@ -5,6 +5,7 @@ import commonController from "./controllers/common.controllers.js";
 import teamController from "./controllers/team.controllers.js";
 import matchController from "./controllers/match.controllers.js";
 import playerController from "./controllers/player.controllers.js";
+import playerOverController from "./controllers/player.overs.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import validate from "../middleware/validate.js";
 import validation from "./validation/validation.js";
@@ -125,5 +126,12 @@ route.put(
 );
 
 route.delete("/player/delete/:id", verifyToken, playerController.deletePlayer);
+
+// ============================== For Player Overs ===========================================
+route.get(
+  "/player/overs/:id",
+  verifyToken,
+  playerOverController.getPlayerOvers
+)
 
 export default route;
