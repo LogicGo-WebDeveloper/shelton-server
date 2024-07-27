@@ -1,7 +1,7 @@
 import { apiResponse } from "../../helper/apiResponse.js";
 import { StatusCodes } from "http-status-codes";
 import CustomMatch from "../models/match.models.js";
-import { validateObjectIds } from "../utils/utils.js";
+import { updateMatchScorecardDetails, validateObjectIds } from "../utils/utils.js";
 import CustomTournament from "../models/tournament.models.js";
 import { CustomCityList } from "../models/common.models.js";
 import CustomTeam from "../models/team.models.js";
@@ -987,105 +987,67 @@ const getMatchScorecard = async (req, res) => {
   }
 };
 
-const updateMatchScorecard = async (req, res) => {
+const updateStartingPlayerScorecard = async (req, res) => {
   try {
     const { matchId } = req.params;
-    const { scorecard } = req.body;
+    const { bowlingTeamId, battingTeamId, bowlerId, strikerId, nonStrikerId } = req.body;
 
-    if (!scorecard || !scorecard.homeTeam || !scorecard.awayTeam) {
-      return apiResponse({
-        res,
-        status: false,
-        message: "Invalid scorecard data",
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
-
-    const updatedScorecard = await CustomMatchScorecard.findOneAndUpdate(
-      { matchId },
-      { scorecard },
-      { new: true }
-    );
-
-    if (!updatedScorecard) {
-      return apiResponse({
-        res,
-        status: true,
-        message: "Scorecard not found",
-        statusCode: StatusCodes.NOT_FOUND,
-      });
-    }
-
-    return apiResponse({
-      res,
-      status: true,
-      data: updatedScorecard,
-      message: "Scorecard updated successfully",
-      statusCode: StatusCodes.OK,
-    });
-  } catch (err) {
-    console.error(err);
-    return apiResponse({
-      res,
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-      status: false,
-      message: "Internal server error",
-    });
-  }
-};
-
-const updateStatus = async (req, res) => {
-  try {
-    const { id, playerId } = req.params;
-    const { activeBowler, activeStriker, status } = req.body;
-
-    const existingMatch = await CustomMatchScorecard.findById(id);
+    const existingMatch = await CustomMatchScorecard.findOne({ matchId });
     if (!existingMatch) {
       return apiResponse({
         res,
-        status: false,
+        status: true,
         message: "Match not found",
         statusCode: StatusCodes.NOT_FOUND,
       });
     }
 
-    let playerFound = false;
+    let data = [
+      {
+        matchId: matchId,
+        teamId: bowlingTeamId,
+        playerId: bowlerId,
+        updateScore: {
+          activeStriker: false,
+          activeBowler: true,
+          status: "yet_to_bat",
+        },
+      },
+      {
+        matchId: matchId,
+        teamId: battingTeamId,
+        playerId: strikerId,
+        updateScore: {
+          activeStriker: true,
+          activeBowler: false,
+          status: "not_out",
+        },
+      },
+      {
+        matchId: matchId,
+        teamId: battingTeamId,
+        playerId: nonStrikerId,
+        updateScore: {
+          activeStriker: false,
+          activeBowler: false,
+          status: "not_out",
+        },
+      }
+    ];
 
-    const updatePlayerStatus = (players) => {
-      players.forEach((player) => {
-        if (player._id.toString() === playerId) {
-          if (activeBowler !== undefined) player.activeBowler = activeBowler;
-          if (activeStriker !== undefined) player.activeStriker = activeStriker;
-          if (status !== undefined) player.status = status;
+    await Promise.all(data.map(updateMatchScorecardDetails));
 
-          playerFound = true;
-        }
-      });
-    };
-
-    updatePlayerStatus(existingMatch.scorecard.homeTeam.players);
-    updatePlayerStatus(existingMatch.scorecard.awayTeam.players);
-
-    if (!playerFound) {
-      return apiResponse({
-        res,
-        status: false,
-        message: "Player not found",
-        statusCode: StatusCodes.NOT_FOUND,
-      });
-    }
-
-    await existingMatch.save();
+    const updatedMatch = await CustomMatchScorecard.findOne({ matchId });
 
     return apiResponse({
       res,
       status: true,
       message: "Status updated successfully",
       statusCode: StatusCodes.OK,
-      body: existingMatch,
+      body: updatedMatch,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error in updateStartingPlayerScorecard:", error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -1094,7 +1056,7 @@ const updateStatus = async (req, res) => {
     });
   }
 };
-
+  
 export default {
   createMatch,
   listMatches,
@@ -1104,6 +1066,5 @@ export default {
   updateTossStatus,
   createScorecards,
   getMatchScorecard,
-  updateMatchScorecard,
-  updateStatus,
+  updateStartingPlayerScorecard,
 };

@@ -769,99 +769,73 @@ const setupWebSocket = (server) => {
           }
           break;
         case "runNumber":
-          // let nonStrikerPlayerId = data.nonStrikerPlayerId;
-          // let bowlerId = data.bowlerId;
-          // let sixes = data.six;
-          // let fours = data.four;
-          // let runs = data.runs;
-          // let balls = data.balls;
-          // let overs = data.overs;
-          // let maidens = data.maidens;
-          // let wickets = data.wickets;
-          // let noBall = data.noBall;
-          // let overs_finished = data.overs_finished;
-          // let wicketTypeId = data.wicketTypeId;
-          // let whiteBall = data.whiteBall;
-          // let lbBall = data.lbBall;
-          // let byeBall = data.byeBall;
-          // let isOut = data.isOut;
-          // let levels = data.levels;
-          // let oversNumber = data.oversNumber;
-          // let status = data.status;
-          // let activeBowler = data.activeBowler;
-          // let activeStriker = data.activeStriker;
-
           try {
-            let scoreCard = {
-              matchId: data.matchId,
-              teamId: data.teamId,
-              playerId: data.PlayerId,
-              updateScore: {
-                runs: data.runs,
-                balls: 0,
-                fours: 0,
-                sixes: 0,
-                overs: 0,
-                maidens: 0,
-                wickets: 0,
-                status: "not_out",
-                activeBowler: false,
-                activeStriker: false,
-              },
-            };
-            const scorecard = await CustomMatchScorecard.findOne({
-              matchId: scoreCard.matchId,
-            });
-            // console.log(scorecard);
-
-            let team =
-              scorecard.scorecard.homeTeam.id.toString() === scoreCard.teamId
-                ? "homeTeam"
-                : "awayTeam";
-            const playerIndex = scorecard.scorecard[team].players.findIndex(
-              (player) => player.id.toString() === scoreCard.playerId
+            const { matchId, batters, bowlers } = data;
+            const existingScorecard = await CustomMatchScorecard.findOne({ matchId });
+        
+            if (!existingScorecard) {
+              ws.send(
+                JSON.stringify({
+                  message: "Scorecard not found",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
+              return;
+            }
+        
+            const battingTeamKey = existingScorecard.scorecard.homeTeam.players.some(player => player.id.toString() === batters.playerId) ? "homeTeam" : "awayTeam";
+            const bowlingTeamKey = battingTeamKey === "homeTeam" ? "awayTeam" : "homeTeam";
+        
+            const batterIndex = existingScorecard.scorecard[battingTeamKey].players.findIndex(
+              (player) => player.id.toString() === batters.playerId
             );
-            Object.keys(scoreCard.updateScore).forEach((key) => {
-              scorecard.scorecard[team].players[playerIndex][key] =
-                scoreCard.updateScore[key];
-            });
-            await scorecard.save();
+        
+            if (batterIndex !== -1) {
+              const player = existingScorecard.scorecard[battingTeamKey].players[batterIndex];
+              player.runs = (player.runs || 0) + batters.runs;
+              player.balls = (player.balls || 0) + (batters.balls ? 1 : 0);
+              player.fours = (player.fours || 0) + (batters.fours ? 1 : 0);
+              player.sixes = (player.sixes || 0) + (batters.sixes ? 1 : 0);
+            }
+        
+            const bowlerIndex = existingScorecard.scorecard[bowlingTeamKey].players.findIndex(
+              (player) => player.id.toString() === bowlers.playerId
+            );
+        
+            if (bowlerIndex !== -1) {
+              const player = existingScorecard.scorecard[bowlingTeamKey].players[bowlerIndex];
+              player.overs = (player.overs || 0) + (bowlers.overs ? 1 : 0);
+              player.maidens = (player.maidens || 0) + (bowlers.maidens ? 1 : 0);
+              player.runs = (player.runs || 0) + bowlers.runs;
+              player.wickets = (player.wickets || 0) + (bowlers.wickets ? 1 : 0);
+              player.noBalls = (player.noBalls || 0) + (bowlers.noBalls ? 1 : 0);
+              player.wides = (player.wides || 0) + (bowlers.wides ? 1 : 0);
+            }
+        
+            await existingScorecard.save();
+        
+            ws.send(
+              JSON.stringify({
+                message: "Run number updated successfully",
+                actionType: data.action,
+                body: existingScorecard,
+                status: true,
+              })
+            );
           } catch (error) {
-            console.error("Failed to update score:", error.message);
-          }
-
-          // ws.send(
-          //   JSON.stringify({
-          //     message: "Run add successfully",
-          //     actionType: data.action,
-          //     body: runUpdate,
-          //     status: true,
-          //   })
-          // );
-          // } catch (error) {
-          //   console.log(error);
-          //   if (error?.response?.status === 404) {
-          //     ws.send(
-          //       JSON.stringify({
-          //         message: "No live matches found",
-          //         actionType: data.action,
-          //         body: null,
-          //         status: false,
-          //       })
-          //     );
-          //   } else {
-          //     ws.send(
-          //       JSON.stringify({
-          //         message: "Something went wrong",
-          //         actionType: data.action,
-          //         body: null,
-          //         status: false,
-          //       })
-          //     );
-          //   }
-          //   return;
-          // }
-          break;
+            console.error("Failed to update run number:", error.message);
+            ws.send(
+            JSON.stringify({
+              message: "Something went wrong",
+              actionType: data.action,
+              body: null,
+              status: false,
+            })
+          );
+        }
+        break;
       }
     });
   });

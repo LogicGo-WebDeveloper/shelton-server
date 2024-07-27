@@ -107,15 +107,11 @@ route.post(
 route.delete("/match/delete/:id", verifyToken, matchController.deleteMatch);
 
 route.get("/match/scorecard/:matchId", matchController.getMatchScorecard);
-route.post(
-  "/match/scorecard/update/:matchId",
-  matchController.updateMatchScorecard
-);
 
 route.post(
-  "/match/scorecard/:id/update/:playerId",
-  validate(validation.updatePlayerStatus),
-  matchController.updateStatus
+  "/match/scorecard/update-players-info/:matchId",
+  // validate(validation.updatePlayerStatus),
+  matchController.updateStartingPlayerScorecard
 );
 
 // ============================== For Player List ===========================================

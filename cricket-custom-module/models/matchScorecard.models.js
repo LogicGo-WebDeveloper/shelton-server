@@ -11,6 +11,8 @@ const CustomPlayerScoreSchema = new mongoose.Schema({
   overs: { type: Number, default: 0 },
   maidens: { type: Number, default: 0 },
   wickets: { type: Number, default: 0 },
+  noBalls: { type: Number, default: 0 },
+  wides: { type: Number, default: 0 },
   status: {
     type: String,
     enum: Object.values(enums.matchScorecardStatusEnum),

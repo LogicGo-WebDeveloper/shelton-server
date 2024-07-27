@@ -221,7 +221,9 @@ const updateTeam = async (req, res, next) => {
 
 const deleteTeam = async (req, res) => {
   const { id: teamId } = req.params;
+  console.log("______________", req.user)
   const userId = req.user._id;
+
 
   const validation = validateObjectIds({ teamId });
   if (!validation.isValid) {
