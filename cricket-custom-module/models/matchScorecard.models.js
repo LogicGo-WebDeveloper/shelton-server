@@ -13,9 +13,11 @@ const CustomPlayerScoreSchema = new mongoose.Schema({
   wickets: { type: Number, default: 0 },
   status: {
     type: String,
-    enum: Object.values(enums.matchScorecardStatusEnum),  
+    enum: Object.values(enums.matchScorecardStatusEnum),
     default: enums.matchScorecardStatusEnum.yet_to_bat,
   },
+  activeBowler: { type: Boolean, default: false },
+  activeStriker: { type: Boolean, default: false },
 });
 
 const TeamScoreSchema = new mongoose.Schema({
