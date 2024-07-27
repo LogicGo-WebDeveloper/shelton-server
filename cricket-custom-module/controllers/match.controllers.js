@@ -913,6 +913,8 @@ const createScorecards = async (match, tournamentId) => {
           maidens: 0,
           wickets: 0,
           status: "yet_to_bat",
+          activeBowler: false,
+          activeStriker: false,
         })),
       };
     };

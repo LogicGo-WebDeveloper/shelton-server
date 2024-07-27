@@ -11,6 +11,8 @@ const CustomPlayerScoreSchema = new mongoose.Schema({
   maidens: { type: Number, default: 0 },
   wickets: { type: Number, default: 0 },
   status: { type: String, enum: ['not_out', 'out', 'yet_to_bat'], default: 'yet_to_bat' },
+  activeBowler: { type: Boolean, default: false },
+  activeStriker: { type: Boolean, default: false },
 });
 
 const TeamScoreSchema = new mongoose.Schema({
