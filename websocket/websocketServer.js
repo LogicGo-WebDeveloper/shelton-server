@@ -772,7 +772,7 @@ const setupWebSocket = (server) => {
           try {
             let strikerPlayerId = data.strikerPlayerId;
             let nonStrikerPlayerId = data.nonStrikerPlayerId;
-            let bowlerId = data.bowlerId;
+            let bowlerId = data.bowlerId;   
             let six = data.six;
             let four = data.four;
             let matchId = data.matchId;
