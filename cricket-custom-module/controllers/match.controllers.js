@@ -805,6 +805,16 @@ const updateTossStatus = async (req, res) => {
       });
     }
 
+     // Check if toss has already been conducted
+     if (match.tossWinnerTeamId) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Toss has already been conducted for this match",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
     // Find the winning team's name
     const winningTeam = await CustomTeam.findById(tossWinnerTeamId);
     const tournament = await CustomTournament.findById(tournamentId);
@@ -887,7 +897,7 @@ const createScorecards = async (match, tournamentId) => {
           overs: 0,
           maidens: 0,
           wickets: 0,
-          status: "not-played"
+          status: "yet_to_bat"
         }))
       };
     };
@@ -954,7 +964,6 @@ const getMatchScorecard = async (req, res) => {
     });
   }
 };
-
 
 const updateMatchScorecard = async (req, res) => {
   try {
