@@ -161,7 +161,7 @@ const createMatch = async (req, res, next) => {
       CustomPlayers.find({
         _id: { $in: [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer] },
       }),
-      customUmpireList.find({ _id: { $in: umpires } }),
+      customUmpireList.find({ umpireId: { $in: umpires } }),
     ]);
 
     const [validPlayers, validUmpires] = validEntities;
@@ -189,7 +189,7 @@ const createMatch = async (req, res, next) => {
 
     if (validUmpires.length !== umpires.length) {
       const foundUmpireIds = validUmpires.map((umpire) =>
-        umpire._id.toString()
+        umpire.umpireId.toString()
       );
       const notFoundUmpireIds = umpires.filter(
         (id) => !foundUmpireIds.includes(id)
@@ -582,7 +582,7 @@ const updateMatch = async (req, res, next) => {
 
     if (validUmpires.length !== umpires.length) {
       const foundUmpireIds = validUmpires.map((umpire) =>
-        umpire._id.toString()
+        umpire.umpireId.toString()
       );
       const notFoundUmpireIds = umpires.filter(
         (id) => !foundUmpireIds.includes(id)
@@ -912,7 +912,7 @@ const createScorecards = async (match, tournamentId) => {
           overs: 0,
           maidens: 0,
           wickets: 0,
-          status: "yet_to_bat",
+          status: enums.matchScorecardStatusEnum.yet_to_bat,
           activeBowler: false,
           activeStriker: false,
         })),
@@ -1034,6 +1034,67 @@ const updateMatchScorecard = async (req, res) => {
   }
 };
 
+const updateStatus = async (req, res) => {
+  try {
+    const { id, playerId } = req.params;
+    const { activeBowler, activeStriker, status } = req.body;
+
+    const existingMatch = await CustomMatchScorecard.findById(id);
+    if (!existingMatch) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    let playerFound = false;
+
+    const updatePlayerStatus = (players) => {
+      players.forEach((player) => {
+        if (player._id.toString() === playerId) {
+          if (activeBowler !== undefined) player.activeBowler = activeBowler;
+          if (activeStriker !== undefined) player.activeStriker = activeStriker;
+          if (status !== undefined) player.status = status;
+
+          playerFound = true;
+        }
+      });
+    };
+
+    updatePlayerStatus(existingMatch.scorecard.homeTeam.players);
+    updatePlayerStatus(existingMatch.scorecard.awayTeam.players);
+
+    if (!playerFound) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Player not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    await existingMatch.save();
+
+    return apiResponse({
+      res,
+      status: true,
+      message: "Status updated successfully",
+      statusCode: StatusCodes.OK,
+      body: existingMatch,
+    });
+  } catch (error) {
+    console.error(error);
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 export default {
   createMatch,
   listMatches,
@@ -1044,4 +1105,5 @@ export default {
   createScorecards,
   getMatchScorecard,
   updateMatchScorecard,
+  updateStatus,
 };

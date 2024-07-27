@@ -37,6 +37,12 @@ const tossChoiceEnum = {
   BATTING: "batting",
 };
 
+const matchScorecardStatusEnum = {
+  not_out: "not_out",
+  out: "out",
+  yet_to_bat: "yet_to_bat",
+};
+
 export default {
   nodeEnvEnums,
   userRoleEnum,
@@ -45,4 +51,5 @@ export default {
   sofascoreApiModeEnum,
   matchStatusEnum,
   tossChoiceEnum,
+  matchScorecardStatusEnum
 };
