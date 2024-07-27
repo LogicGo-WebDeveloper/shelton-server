@@ -1,18 +1,21 @@
 import mongoose from "mongoose";
 
 const CustomPlayerOversSchema = new mongoose.Schema({
-  playerStandingId: {
+  playerScoreCardId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "CustomPlayerStandings",
+    ref: "CustomPlayerScoreCard",
   },
   battingPlayerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CustomPlayers",
+  },
+  bowlerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "CustomPlayers",
   },
   balls: { type: Number, required: false },
   runs: { type: Number, required: false },
   levels: { type: String, required: false },
-  bowlerId: { type: String, required: false },
   wicketTypeId: { type: String, required: false },
   overs_finished: { type: Boolean, required: false },
   noBall: { type: Boolean, required: false },
