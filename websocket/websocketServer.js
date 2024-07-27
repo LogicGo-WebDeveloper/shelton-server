@@ -11,6 +11,8 @@ import {
 } from "./utils.js";
 import helper from "../helper/common.js";
 import config from "../config/config.js";
+import CustomPlayerOvers from "../cricket-custom-module/models/playersOvers.models.js";
+import CustomMatchScorecard from "../cricket-custom-module/models/matchScorecard.models.js";
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
@@ -748,6 +750,92 @@ const setupWebSocket = (server) => {
               ws.send(
                 JSON.stringify({
                   message: "h2h not found",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
+            } else {
+              ws.send(
+                JSON.stringify({
+                  message: "Something went wrong",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
+            }
+            return;
+          }
+          break;
+        case "runNumber":
+          try {
+            let strikerPlayerId = data.strikerPlayerId;
+            let nonStrikerPlayerId = data.nonStrikerPlayerId;
+            let bowlerId = data.bowlerId;
+            let six = data.six;
+            let four = data.four;
+            let matchId = data.matchId;
+            let runs = data.runs;
+            let balls = data.balls;
+            let overs = data.overs;
+            let maidens = data.maidens;
+            let wickets = data.wickets;
+            let noBall = data.noBall;
+            let overs_finished = data.overs_finished;
+            let wicketTypeId = data.wicketTypeId;
+            let whiteBall = data.whiteBall;
+            let lbBall = data.lbBall;
+            let byeBall = data.byeBall;
+            let isOut = data.isOut;
+            let levels = data.levels;
+            let oversNumber = data.oversNumber;
+
+            const runUpdate = await CustomMatchScorecard.create({
+              matchId: matchId,
+              strikerPlayerId: strikerPlayerId,
+              nonStrikerPlayerId: nonStrikerPlayerId,
+              totalRun: totalRun,
+              bowlerId: bowlerId,
+              six: six,
+              four: four,
+              runs: runs + runs,
+              balls: balls,
+              overs: overs,
+              maidens: maidens,
+              wickets: wickets,
+            });
+
+            const runUpdateOvers = await CustomPlayerOvers.create({
+              matchId: matchId,
+              bowlerId: bowlerId,
+              balls: balls,
+              runs: runs,
+              levels: levels,
+              wicketTypeId: wicketTypeId,
+              overs_finished: overs_finished,
+              noBall: noBall,
+              whiteBall: whiteBall,
+              lbBall: lbBall,
+              byeBall: byeBall,
+              isOut: isOut,
+              oversNumber: oversNumber,
+            });
+
+            ws.send(
+              JSON.stringify({
+                message: "Run add successfully",
+                actionType: data.action,
+                body: runUpdate,
+                status: true,
+              })
+            );
+          } catch (error) {
+            console.log(error);
+            if (error?.response?.status === 404) {
+              ws.send(
+                JSON.stringify({
+                  message: "No live matches found",
                   actionType: data.action,
                   body: null,
                   status: false,

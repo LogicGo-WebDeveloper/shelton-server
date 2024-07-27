@@ -106,6 +106,9 @@ route.post(
 
 route.delete("/match/delete/:id", verifyToken, matchController.deleteMatch);
 
+route.get('/match/scorecard/:matchId', matchController.getMatchScorecard);
+route.post('/match/scorecard/update/:matchId', matchController.updateMatchScorecard);
+
 // ============================== For Player List ===========================================
 route.post(
   "/player/add",
