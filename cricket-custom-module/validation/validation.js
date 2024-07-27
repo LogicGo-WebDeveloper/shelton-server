@@ -122,7 +122,7 @@ const updatePlayerStandingMatch = {
 
 const createCustomPlayerOvers = {
   body: Joi.object().keys({
-    playerStandingId: Joi.string().required(),
+    playerScoreCardId: Joi.string().required(),
     battingPlayerId: Joi.string().required(),
     balls: Joi.number().default(0),
     runs: Joi.number().default(0),
@@ -141,7 +141,7 @@ const createCustomPlayerOvers = {
 
 const updateCustomPlayerOvers = {
   body: Joi.object().keys({
-    playerStandingId: Joi.string(),
+    playerScoreCardId: Joi.string(),
     battingPlayerId: Joi.string(),
     balls: Joi.number(),
     runs: Joi.number(),

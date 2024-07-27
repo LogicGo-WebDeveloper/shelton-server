@@ -10,6 +10,7 @@ import CustomPlayers from "../models/player.models.js";
 import enums from "../../config/enum.js";
 import config from "../../config/enum.js";
 import customUmpireList from "../models/umpire.models.js";
+import CustomMatchScorecard from "../models/matchScorecard.models.js";
 
 const createMatch = async (req, res, next) => {
   try {
@@ -816,6 +817,16 @@ const updateTossStatus = async (req, res) => {
       });
     }
 
+    // Check if toss has already been conducted
+    if (match.tossWinnerTeamId) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Toss has already been conducted for this match",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
     // Find the winning team's name
     const winningTeam = await CustomTeam.findById(tossWinnerTeamId);
     const tournament = await CustomTournament.findById(tournamentId);
@@ -863,6 +874,8 @@ const updateTossStatus = async (req, res) => {
       { new: true }
     );
 
+    await createScorecards(updatedMatch, tournamentId);
+
     return apiResponse({
       res,
       status: true,
@@ -880,6 +893,145 @@ const updateTossStatus = async (req, res) => {
   }
 };
 
+const createScorecards = async (match, tournamentId) => {
+  try {
+    const createTeamScorecard = async (teamId, playerIds) => {
+      const team = await CustomTeam.findById(teamId);
+      const players = await CustomPlayers.find({ _id: { $in: playerIds } });
+
+      return {
+        id: teamId,
+        name: team.teamName,
+        players: players.map((player) => ({
+          id: player._id,
+          name: player.playerName,
+          runs: 0,
+          balls: 0,
+          fours: 0,
+          sixes: 0,
+          overs: 0,
+          maidens: 0,
+          wickets: 0,
+          status: "yet_to_bat",
+        })),
+      };
+    };
+
+    const homeTeamScorecard = await createTeamScorecard(
+      match.homeTeamId,
+      match.homeTeamPlayingPlayer
+    );
+    const awayTeamScorecard = await createTeamScorecard(
+      match.awayTeamId,
+      match.awayTeamPlayingPlayer
+    );
+    const matchScorecard = new CustomMatchScorecard({
+      tournamentId,
+      matchId: match._id,
+      scorecard: {
+        homeTeam: homeTeamScorecard,
+        awayTeam: awayTeamScorecard,
+      },
+    });
+
+    console.log("Before saving scorecard:", matchScorecard);
+
+    const savedScorecard = await matchScorecard.save();
+    console.log("Scorecard saved successfully:", savedScorecard);
+  } catch (error) {
+    console.error("Error in createScorecards:", error);
+    throw error;
+  }
+};
+
+const getMatchScorecard = async (req, res) => {
+  try {
+    const { matchId } = req.params;
+
+    const scorecard = await CustomMatchScorecard.findOne({ matchId })
+      .populate("tournamentId", "name")
+      .populate("matchId", "dateTime");
+
+    if (!scorecard) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Scorecard not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    return apiResponse({
+      res,
+      status: true,
+      data: {
+        tournamentId: scorecard.tournamentId._id,
+        tournamentName: scorecard.tournamentId.name,
+        matchId: scorecard.matchId._id,
+        matchDateTime: scorecard.matchId.dateTime,
+        scorecard: scorecard.scorecard,
+      },
+      message: "Scorecard retrieved successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (err) {
+    console.error(err);
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const updateMatchScorecard = async (req, res) => {
+  try {
+    const { matchId } = req.params;
+    const { scorecard } = req.body;
+
+    if (!scorecard || !scorecard.homeTeam || !scorecard.awayTeam) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Invalid scorecard data",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    const updatedScorecard = await CustomMatchScorecard.findOneAndUpdate(
+      { matchId },
+      { scorecard },
+      { new: true }
+    );
+
+    if (!updatedScorecard) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Scorecard not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    return apiResponse({
+      res,
+      status: true,
+      data: updatedScorecard,
+      message: "Scorecard updated successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (err) {
+    console.error(err);
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 export default {
   createMatch,
   listMatches,
@@ -887,4 +1039,7 @@ export default {
   deleteMatch,
   updateMatchStatus,
   updateTossStatus,
+  createScorecards,
+  getMatchScorecard,
+  updateMatchScorecard,
 };
