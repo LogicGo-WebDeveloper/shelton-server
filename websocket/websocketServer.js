@@ -769,90 +769,98 @@ const setupWebSocket = (server) => {
           }
           break;
         case "runNumber":
+          // let nonStrikerPlayerId = data.nonStrikerPlayerId;
+          // let bowlerId = data.bowlerId;
+          // let sixes = data.six;
+          // let fours = data.four;
+          // let runs = data.runs;
+          // let balls = data.balls;
+          // let overs = data.overs;
+          // let maidens = data.maidens;
+          // let wickets = data.wickets;
+          // let noBall = data.noBall;
+          // let overs_finished = data.overs_finished;
+          // let wicketTypeId = data.wicketTypeId;
+          // let whiteBall = data.whiteBall;
+          // let lbBall = data.lbBall;
+          // let byeBall = data.byeBall;
+          // let isOut = data.isOut;
+          // let levels = data.levels;
+          // let oversNumber = data.oversNumber;
+          // let status = data.status;
+          // let activeBowler = data.activeBowler;
+          // let activeStriker = data.activeStriker;
+
           try {
-            let strikerPlayerId = data.strikerPlayerId;
-            let nonStrikerPlayerId = data.nonStrikerPlayerId;
-            let bowlerId = data.bowlerId;
-            let six = data.six;
-            let four = data.four;
-            let matchId = data.matchId;
-            let runs = data.runs;
-            let balls = data.balls;
-            let overs = data.overs;
-            let maidens = data.maidens;
-            let wickets = data.wickets;
-            let noBall = data.noBall;
-            let overs_finished = data.overs_finished;
-            let wicketTypeId = data.wicketTypeId;
-            let whiteBall = data.whiteBall;
-            let lbBall = data.lbBall;
-            let byeBall = data.byeBall;
-            let isOut = data.isOut;
-            let levels = data.levels;
-            let oversNumber = data.oversNumber;
-
-            const runUpdate = await CustomMatchScorecard.create({
-              matchId: matchId,
-              strikerPlayerId: strikerPlayerId,
-              nonStrikerPlayerId: nonStrikerPlayerId,
-              totalRun: totalRun,
-              bowlerId: bowlerId,
-              six: six,
-              four: four,
-              runs: runs + runs,
-              balls: balls,
-              overs: overs,
-              maidens: maidens,
-              wickets: wickets,
+            let scoreCard = {
+              matchId: data.matchId,
+              teamId: data.teamId,
+              playerId: data.PlayerId,
+              updateScore: {
+                runs: data.runs,
+                balls: 0,
+                fours: 0,
+                sixes: 0,
+                overs: 0,
+                maidens: 0,
+                wickets: 0,
+                status: "not_out",
+                activeBowler: false,
+                activeStriker: false,
+              },
+            };
+            const scorecard = await CustomMatchScorecard.findOne({
+              matchId: scoreCard.matchId,
             });
+            // console.log(scorecard);
 
-            const runUpdateOvers = await CustomPlayerOvers.create({
-              matchId: matchId,
-              bowlerId: bowlerId,
-              balls: balls,
-              runs: runs,
-              levels: levels,
-              wicketTypeId: wicketTypeId,
-              overs_finished: overs_finished,
-              noBall: noBall,
-              whiteBall: whiteBall,
-              lbBall: lbBall,
-              byeBall: byeBall,
-              isOut: isOut,
-              oversNumber: oversNumber,
-            });
-
-            ws.send(
-              JSON.stringify({
-                message: "Run add successfully",
-                actionType: data.action,
-                body: runUpdate,
-                status: true,
-              })
+            let team =
+              scorecard.scorecard.homeTeam.id.toString() === scoreCard.teamId
+                ? "homeTeam"
+                : "awayTeam";
+            const playerIndex = scorecard.scorecard[team].players.findIndex(
+              (player) => player.id.toString() === scoreCard.playerId
             );
+            Object.keys(scoreCard.updateScore).forEach((key) => {
+              scorecard.scorecard[team].players[playerIndex][key] =
+                scoreCard.updateScore[key];
+            });
+            await scorecard.save();
           } catch (error) {
-            console.log(error);
-            if (error?.response?.status === 404) {
-              ws.send(
-                JSON.stringify({
-                  message: "No live matches found",
-                  actionType: data.action,
-                  body: null,
-                  status: false,
-                })
-              );
-            } else {
-              ws.send(
-                JSON.stringify({
-                  message: "Something went wrong",
-                  actionType: data.action,
-                  body: null,
-                  status: false,
-                })
-              );
-            }
-            return;
+            console.error("Failed to update score:", error.message);
           }
+
+          // ws.send(
+          //   JSON.stringify({
+          //     message: "Run add successfully",
+          //     actionType: data.action,
+          //     body: runUpdate,
+          //     status: true,
+          //   })
+          // );
+          // } catch (error) {
+          //   console.log(error);
+          //   if (error?.response?.status === 404) {
+          //     ws.send(
+          //       JSON.stringify({
+          //         message: "No live matches found",
+          //         actionType: data.action,
+          //         body: null,
+          //         status: false,
+          //       })
+          //     );
+          //   } else {
+          //     ws.send(
+          //       JSON.stringify({
+          //         message: "Something went wrong",
+          //         actionType: data.action,
+          //         body: null,
+          //         status: false,
+          //       })
+          //     );
+          //   }
+          //   return;
+          // }
           break;
       }
     });

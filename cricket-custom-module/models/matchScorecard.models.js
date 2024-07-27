@@ -10,7 +10,11 @@ const CustomPlayerScoreSchema = new mongoose.Schema({
   overs: { type: Number, default: 0 },
   maidens: { type: Number, default: 0 },
   wickets: { type: Number, default: 0 },
-  status: { type: String, enum: ['not_out', 'out', 'yet_to_bat'], default: 'yet_to_bat' },
+  status: {
+    type: String,
+    enum: ["not_out", "out", "yet_to_bat"],
+    default: "yet_to_bat",
+  },
   activeBowler: { type: Boolean, default: false },
   activeStriker: { type: Boolean, default: false },
 });
@@ -18,18 +22,32 @@ const CustomPlayerScoreSchema = new mongoose.Schema({
 const TeamScoreSchema = new mongoose.Schema({
   id: { type: mongoose.Schema.Types.ObjectId, ref: "CustomTeam" },
   name: String,
-  players: [CustomPlayerScoreSchema]
+  players: [CustomPlayerScoreSchema],
 });
 
-const CustomMatchScorecardSchema = new mongoose.Schema({
-  tournamentId: { type: mongoose.Schema.Types.ObjectId, ref: "CustomTournament", required: true },
-  matchId: { type: mongoose.Schema.Types.ObjectId, ref: "CustomMatch", required: true },
-  scorecard: {
-    homeTeam: TeamScoreSchema,
-    awayTeam: TeamScoreSchema
-  }
-}, { timestamps: true });
+const CustomMatchScorecardSchema = new mongoose.Schema(
+  {
+    tournamentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CustomTournament",
+      required: true,
+    },
+    matchId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CustomMatch",
+      required: true,
+    },
+    scorecard: {
+      homeTeam: TeamScoreSchema,
+      awayTeam: TeamScoreSchema,
+    },
+  },
+  { timestamps: true }
+);
 
-const CustomMatchScorecard = mongoose.model("CustomMatchScorecard", CustomMatchScorecardSchema);
+const CustomMatchScorecard = mongoose.model(
+  "CustomMatchScorecard",
+  CustomMatchScorecardSchema
+);
 
 export default CustomMatchScorecard;
