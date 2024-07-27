@@ -2,7 +2,7 @@ import { apiResponse } from "../../helper/apiResponse.js";
 import { StatusCodes } from "http-status-codes";
 import CustomPlayers from "../models/player.models.js";
 import { validateObjectIds } from "../utils/utils.js";
-import CustomPlayerScoreCard from "../models/playerScorecard.models.js";
+// import CustomPlayerScoreCard from "../models/playerScorecard.models.js";
 import CustomPlayerOvers from "../models/playersOvers.models.js";
 import mongoose from "mongoose";
 
