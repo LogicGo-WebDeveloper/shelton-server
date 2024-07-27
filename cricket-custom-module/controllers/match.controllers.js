@@ -161,7 +161,7 @@ const createMatch = async (req, res, next) => {
       CustomPlayers.find({
         _id: { $in: [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer] },
       }),
-      customUmpireList.find({ _id: { $in: umpires } }),
+      customUmpireList.find({ umpireId: { $in: umpires } }),
     ]);
 
     const [validPlayers, validUmpires] = validEntities;
@@ -189,7 +189,7 @@ const createMatch = async (req, res, next) => {
 
     if (validUmpires.length !== umpires.length) {
       const foundUmpireIds = validUmpires.map((umpire) =>
-        umpire._id.toString()
+        umpire.umpireId.toString()
       );
       const notFoundUmpireIds = umpires.filter(
         (id) => !foundUmpireIds.includes(id)
@@ -582,7 +582,7 @@ const updateMatch = async (req, res, next) => {
 
     if (validUmpires.length !== umpires.length) {
       const foundUmpireIds = validUmpires.map((umpire) =>
-        umpire._id.toString()
+        umpire.umpireId.toString()
       );
       const notFoundUmpireIds = umpires.filter(
         (id) => !foundUmpireIds.includes(id)
