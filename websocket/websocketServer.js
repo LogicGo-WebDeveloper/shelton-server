@@ -13,6 +13,7 @@ import helper from "../helper/common.js";
 import config from "../config/config.js";
 import CustomPlayerOvers from "../cricket-custom-module/models/playersOvers.models.js";
 import CustomMatchScorecard from "../cricket-custom-module/models/matchScorecard.models.js";
+import CustomMatch from "../cricket-custom-module/models/match.models.js";
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
@@ -778,6 +779,18 @@ const setupWebSocket = (server) => {
         case "runNumber":
           try {
             const { matchId, batters, bowlers } = data;
+            const match = await CustomMatch.findOne({ _id: matchId });
+            if (!match) {
+              ws.send(
+                JSON.stringify({
+                  message: "Match not found",
+                  actionType: data.action,
+                  body: null,
+                  status: true,
+                })
+              );
+              return;
+            }
 
             // Validation for batters
             const batterErrors = [
@@ -800,12 +813,12 @@ const setupWebSocket = (server) => {
     
             // Validation for bowlers
             const bowlerErrors = [
-              validateField("bowlers.overs", bowlers.overs, "number"),
-              validateField("bowlers.maidens", bowlers.maidens, "number"),
+              validateField("bowlers.balls", bowlers.balls, "boolean"),
+              validateField("bowlers.maidens", bowlers.maidens, "boolean"),
               validateField("bowlers.runs", bowlers.runs, "number"),
-              validateField("bowlers.wickets", bowlers.wickets, "number"),
-              validateField("bowlers.noBalls", bowlers.noBalls, "number"),
-              validateField("bowlers.wides", bowlers.wides, "number"),
+              validateField("bowlers.wickets", bowlers.wickets, "boolean"),
+              validateField("bowlers.noBalls", bowlers.noBalls, "boolean"),
+              validateField("bowlers.wides", bowlers.wides, "boolean"),
             ].filter(error => error !== null);
     
             if (bowlerErrors.length > 0) {
@@ -855,7 +868,21 @@ const setupWebSocket = (server) => {
         
             if (bowlerIndex !== -1) {
               const player = existingScorecard.scorecard[bowlingTeamKey].players[bowlerIndex];
-              player.overs = (player.overs || 0) + (bowlers.overs ? 1 : 0);
+              player.overs = (player.overs || 0) + (bowlers.balls ? 1 : 0);
+
+              const currentOvers = player.overs || 0;
+              const ballsBowled = Math.floor((currentOvers % 1) * 10);
+
+              if (bowlers.balls) {
+                const newBallsBowled = ballsBowled + 1;
+                if (newBallsBowled >= 6) {
+                  player.overs = Math.floor(currentOvers) + 1; // Increment the over
+                } else {
+                  player.overs = Math.floor(currentOvers) + (newBallsBowled / 10);
+                }
+              }
+
+
               player.maidens = (player.maidens || 0) + (bowlers.maidens ? 1 : 0);
               player.runs = (player.runs || 0) + bowlers.runs;
               player.wickets = (player.wickets || 0) + (bowlers.wickets ? 1 : 0);
