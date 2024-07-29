@@ -877,11 +877,9 @@ const setupWebSocket = (server) => {
               const ballsBowled = getDecimalPart(currentOvers);
 
               if (bowlers.balls) {
-                console.log("ballsBowled", ballsBowled)
-                console.log("type", typeof ballsBowled)
                 const newBallsBowled = ballsBowled + 1;
                 if (newBallsBowled >= 6) {
-                  player.overs = Math.floor(currentOvers) + 1; // Increment the over
+                  player.overs = Math.floor(currentOvers) + 1;
                 } else {
                   player.overs = Math.floor(currentOvers) + (newBallsBowled / 10);
                 }
