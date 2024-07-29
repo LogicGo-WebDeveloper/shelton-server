@@ -776,7 +776,7 @@ const setupWebSocket = (server) => {
             return;
           }
           break;
-        case "runNumber":
+        case "cricketController":
           try {
             const { matchId, batters, bowlers } = data;
             const match = await CustomMatch.findOne({ _id: matchId });
