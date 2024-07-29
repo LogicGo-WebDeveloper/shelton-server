@@ -353,10 +353,10 @@ const tournamentUpdate = async (req, res, next) => {
           var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
           resp.tournamentImage = resp.tournamentImage
             ? fullUrl + "tournament/" + resp.tournamentImage
-            : tournamentData.tournamentBackgroundImage;
-          resp.tournamentBackgroundImage = resp.tournamentBackgroundImage
-            ? fullUrl + "tournament/" + resp.tournamentBackgroundImage
             : tournamentData.tournamentImage;
+            resp.tournamentBackgroundImage = resp.tournamentBackgroundImage
+            ? fullUrl + "tournament/" + resp.tournamentBackgroundImage
+            : tournamentData.tournamentBackgroundImage;
           return apiResponse({
             res,
             status: true,
