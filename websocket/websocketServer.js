@@ -24,7 +24,7 @@ const setupWebSocket = (server) => {
       }
       return null;
     };
-    
+
     ws.on("message", async (message) => {
       let data;
       try {
@@ -797,8 +797,8 @@ const setupWebSocket = (server) => {
               validateField("batters.balls", batters.balls, "boolean"),
               validateField("batters.fours", batters.fours, "boolean"),
               validateField("batters.sixes", batters.sixes, "boolean"),
-            ].filter(error => error !== null);
-    
+            ].filter((error) => error !== null);
+
             if (batterErrors.length > 0) {
               ws.send(
                 JSON.stringify({
@@ -810,7 +810,7 @@ const setupWebSocket = (server) => {
               );
               return;
             }
-    
+
             // Validation for bowlers
             const bowlerErrors = [
               validateField("bowlers.balls", bowlers.balls, "boolean"),
@@ -819,8 +819,8 @@ const setupWebSocket = (server) => {
               validateField("bowlers.wickets", bowlers.wickets, "boolean"),
               validateField("bowlers.noBalls", bowlers.noBalls, "boolean"),
               validateField("bowlers.wides", bowlers.wides, "boolean"),
-            ].filter(error => error !== null);
-    
+            ].filter((error) => error !== null);
+
             if (bowlerErrors.length > 0) {
               ws.send(
                 JSON.stringify({
@@ -832,9 +832,11 @@ const setupWebSocket = (server) => {
               );
               return;
             }
-            
-            const existingScorecard = await CustomMatchScorecard.findOne({ matchId });
-        
+
+            const existingScorecard = await CustomMatchScorecard.findOne({
+              matchId,
+            });
+
             if (!existingScorecard) {
               ws.send(
                 JSON.stringify({
@@ -846,33 +848,49 @@ const setupWebSocket = (server) => {
               );
               return;
             }
-        
-            const battingTeamKey = existingScorecard.scorecard.homeTeam.players.some(player => player.id.toString() === batters.playerId) ? "homeTeam" : "awayTeam";
-            const bowlingTeamKey = battingTeamKey === "homeTeam" ? "awayTeam" : "homeTeam";
-        
-            const batterIndex = existingScorecard.scorecard[battingTeamKey].players.findIndex(
+
+            const battingTeamKey =
+              existingScorecard.scorecard.homeTeam.players.some(
+                (player) => player.id.toString() === batters.playerId
+              )
+                ? "homeTeam"
+                : "awayTeam";
+            const bowlingTeamKey =
+              battingTeamKey === "homeTeam" ? "awayTeam" : "homeTeam";
+
+            const batterIndex = existingScorecard.scorecard[
+              battingTeamKey
+            ].players.findIndex(
               (player) => player.id.toString() === batters.playerId
             );
-        
+
             if (batterIndex !== -1) {
-              const player = existingScorecard.scorecard[battingTeamKey].players[batterIndex];
+              const player =
+                existingScorecard.scorecard[battingTeamKey].players[
+                  batterIndex
+                ];
               player.runs = (player.runs || 0) + batters.runs;
               player.balls = (player.balls || 0) + (batters.balls ? 1 : 0);
               player.fours = (player.fours || 0) + (batters.fours ? 1 : 0);
               player.sixes = (player.sixes || 0) + (batters.sixes ? 1 : 0);
             }
-        
-            const bowlerIndex = existingScorecard.scorecard[bowlingTeamKey].players.findIndex(
+
+            const bowlerIndex = existingScorecard.scorecard[
+              bowlingTeamKey
+            ].players.findIndex(
               (player) => player.id.toString() === bowlers.playerId
             );
 
             const getDecimalPart = (num) => {
-              const parts = num.toString().split('.');
+              const parts = num.toString().split(".");
               return parts.length > 1 ? parseInt(parts[1], 10) : 0;
             };
-        
+
             if (bowlerIndex !== -1) {
-              const player = existingScorecard.scorecard[bowlingTeamKey].players[bowlerIndex];
+              const player =
+                existingScorecard.scorecard[bowlingTeamKey].players[
+                  bowlerIndex
+                ];
               const currentOvers = player.overs || 0;
               const ballsBowled = getDecimalPart(currentOvers);
 
@@ -881,18 +899,49 @@ const setupWebSocket = (server) => {
                 if (newBallsBowled >= 6) {
                   player.overs = Math.floor(currentOvers) + 1;
                 } else {
-                  player.overs = Math.floor(currentOvers) + (newBallsBowled / 10);
+                  player.overs = Math.floor(currentOvers) + newBallsBowled / 10;
                 }
               }
-              player.maidens = (player.maidens || 0) + (bowlers.maidens ? 1 : 0);
+              player.maidens =
+                (player.maidens || 0) + (bowlers.maidens ? 1 : 0);
               player.runs = (player.runs || 0) + bowlers.runs;
-              player.wickets = (player.wickets || 0) + (bowlers.wickets ? 1 : 0);
-              player.noBalls = (player.noBalls || 0) + (bowlers.noBalls ? 1 : 0);
+              player.wickets =
+                (player.wickets || 0) + (bowlers.wickets ? 1 : 0);
+              player.noBalls =
+                (player.noBalls || 0) + (bowlers.noBalls ? 1 : 0);
               player.wides = (player.wides || 0) + (bowlers.wides ? 1 : 0);
             }
-        
+
             await existingScorecard.save();
-        
+
+            const calculateAndUpdateTeamScores = async (teamKey) => {
+              const teamPlayers = existingScorecard.scorecard[teamKey].players;
+              const totalRuns = teamPlayers.reduce(
+                (acc, player) => acc + (player.runs || 0),
+                0
+              );
+              const totalOvers = teamPlayers.reduce(
+                (acc, player) => acc + (player.overs || 0),
+                0
+              );
+              const totalWickets = teamPlayers.reduce(
+                (acc, player) => acc + (player.wickets || 0),
+                0
+              );
+
+              match[`${teamKey}Score`].runs = totalRuns;
+              match[`${teamKey}Score`].overs = totalOvers;
+              match[`${teamKey}Score`].wickets = totalWickets;
+              console.log({ totalRuns });
+              console.log({ totalOvers });
+              console.log({ totalWickets });
+            };
+
+            calculateAndUpdateTeamScores("homeTeam", "homeTeamScore");
+            calculateAndUpdateTeamScores("awayTeam", "awayTeamScore");
+
+            await match.save();
+
             ws.send(
               JSON.stringify({
                 message: "Run number updated successfully",
@@ -904,15 +953,15 @@ const setupWebSocket = (server) => {
           } catch (error) {
             console.error("Failed to update run number:", error.message);
             ws.send(
-            JSON.stringify({
-              message: "Something went wrong",
-              actionType: data.action,
-              body: null,
-              status: false,
-            })
-          );
-        }
-        break;
+              JSON.stringify({
+                message: "Something went wrong",
+                actionType: data.action,
+                body: null,
+                status: false,
+              })
+            );
+          }
+          break;
       }
     });
   });
