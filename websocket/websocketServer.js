@@ -865,15 +865,20 @@ const setupWebSocket = (server) => {
             const bowlerIndex = existingScorecard.scorecard[bowlingTeamKey].players.findIndex(
               (player) => player.id.toString() === bowlers.playerId
             );
+
+            const getDecimalPart = (num) => {
+              const parts = num.toString().split('.');
+              return parts.length > 1 ? parseInt(parts[1], 10) : 0;
+            };
         
             if (bowlerIndex !== -1) {
               const player = existingScorecard.scorecard[bowlingTeamKey].players[bowlerIndex];
-              player.overs = (player.overs || 0) + (bowlers.balls ? 1 : 0);
-
               const currentOvers = player.overs || 0;
-              const ballsBowled = Math.floor((currentOvers % 1) * 10);
+              const ballsBowled = getDecimalPart(currentOvers);
 
               if (bowlers.balls) {
+                console.log("ballsBowled", ballsBowled)
+                console.log("type", typeof ballsBowled)
                 const newBallsBowled = ballsBowled + 1;
                 if (newBallsBowled >= 6) {
                   player.overs = Math.floor(currentOvers) + 1; // Increment the over
@@ -881,8 +886,6 @@ const setupWebSocket = (server) => {
                   player.overs = Math.floor(currentOvers) + (newBallsBowled / 10);
                 }
               }
-
-
               player.maidens = (player.maidens || 0) + (bowlers.maidens ? 1 : 0);
               player.runs = (player.runs || 0) + bowlers.runs;
               player.wickets = (player.wickets || 0) + (bowlers.wickets ? 1 : 0);
