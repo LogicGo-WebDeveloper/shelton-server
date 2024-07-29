@@ -917,7 +917,7 @@ const setupWebSocket = (server) => {
             const calculateAndUpdateTeamScores = async (teamKey) => {
               const teamPlayers = existingScorecard.scorecard[teamKey].players;
               const totalRuns = teamPlayers.reduce(
-                (acc, player) => acc + (player.runs || 0),
+                (acc, bowlers) => acc + (bowlers.runs || 0),
                 0
               );
               const totalOvers = teamPlayers.reduce(
@@ -929,12 +929,21 @@ const setupWebSocket = (server) => {
                 0
               );
 
+              if (totalOvers < match.noOfOvers) {
+                ws.send(
+                  JSON.stringify({
+                    message: "Overs is greater than Matches overs.",
+                    actionType: data.action,
+                    body: null,
+                    status: false,
+                  })
+                );
+                return;
+              }
+
               match[`${teamKey}Score`].runs = totalRuns;
               match[`${teamKey}Score`].overs = totalOvers;
               match[`${teamKey}Score`].wickets = totalWickets;
-              console.log({ totalRuns });
-              console.log({ totalOvers });
-              console.log({ totalWickets });
             };
 
             calculateAndUpdateTeamScores("homeTeam", "homeTeamScore");
