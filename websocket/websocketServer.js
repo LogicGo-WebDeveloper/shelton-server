@@ -797,6 +797,7 @@ const setupWebSocket = (server) => {
               validateField("batters.balls", batters.balls, "boolean"),
               validateField("batters.fours", batters.fours, "boolean"),
               validateField("batters.sixes", batters.sixes, "boolean"),
+              validateField("batters.bye", batters.bye, "boolean"),
             ].filter((error) => error !== null);
 
             if (batterErrors.length > 0) {
@@ -849,8 +850,7 @@ const setupWebSocket = (server) => {
               return;
             }
 
-            const battingTeamKey =
-              existingScorecard.scorecard.homeTeam.players.some(
+            const battingTeamKey = existingScorecard.scorecard.homeTeam.players.some(
                 (player) => player.id.toString() === batters.playerId
               )
                 ? "homeTeam"
@@ -865,14 +865,15 @@ const setupWebSocket = (server) => {
             );
 
             if (batterIndex !== -1) {
-              const player =
-                existingScorecard.scorecard[battingTeamKey].players[
-                  batterIndex
-                ];
-              player.runs = (player.runs || 0) + batters.runs;
-              player.balls = (player.balls || 0) + (batters.balls ? 1 : 0);
-              player.fours = (player.fours || 0) + (batters.fours ? 1 : 0);
-              player.sixes = (player.sixes || 0) + (batters.sixes ? 1 : 0);
+              const player = existingScorecard.scorecard[battingTeamKey].players[
+                batterIndex
+              ];
+              if(!batters.bye) {
+                player.runs = (player.runs || 0) + batters.runs;
+                player.balls = (player.balls || 0) + (batters.balls ? 1 : 0);
+                player.fours = (player.fours || 0) + (batters.fours ? 1 : 0);
+                player.sixes = (player.sixes || 0) + (batters.sixes ? 1 : 0);
+              }
             }
 
             const bowlerIndex = existingScorecard.scorecard[
