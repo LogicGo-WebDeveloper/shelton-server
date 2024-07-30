@@ -320,6 +320,11 @@ const listMatches = async (req, res) => {
         model: "CustomTournament",
         select: "name tournamentImage",
       })
+      .populate({
+        path: "umpires",
+        model: "CustomMatchOfficial",
+        select: "name",
+      })
       .lean();
 
     const totalItems = await CustomMatch.countDocuments(condition);
@@ -359,7 +364,10 @@ const listMatches = async (req, res) => {
         : null,
       createdBy: match.createdBy,
       status: match.status,
-      umpires: match.umpires,
+      umpires: match.umpires.map((umpire) => ({
+        id: umpire._id,
+        name: umpire.name,
+      })),
       tossResult: match.tossResult,
       tossWinnerTeamId: match.tossWinnerTeamId,
       tossWinnerChoice: match.tossWinnerChoice,
@@ -411,9 +419,9 @@ const updateMatch = async (req, res, next) => {
       city,
       ground,
       dateTime,
-      homeTeamPlayingPlayer,
-      awayTeamPlayingPlayer,
-      umpires,
+      // homeTeamPlayingPlayer,
+      // awayTeamPlayingPlayer,
+      // umpires,
     } = req.body;
 
     const validation = validateObjectIds({
@@ -478,149 +486,149 @@ const updateMatch = async (req, res, next) => {
       });
     }
 
-    // Validate minimum 11 players for each team
-    if (
-      !Array.isArray(homeTeamPlayingPlayer) ||
-      homeTeamPlayingPlayer.length < 11 ||
-      !Array.isArray(awayTeamPlayingPlayer) ||
-      awayTeamPlayingPlayer.length < 11
-    ) {
-      return apiResponse({
-        res,
-        status: false,
-        message: "Both teams must have at least 11 players",
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
+    // // Validate minimum 11 players for each team
+    // if (
+    //   !Array.isArray(homeTeamPlayingPlayer) ||
+    //   homeTeamPlayingPlayer.length < 11 ||
+    //   !Array.isArray(awayTeamPlayingPlayer) ||
+    //   awayTeamPlayingPlayer.length < 11
+    // ) {
+    //   return apiResponse({
+    //     res,
+    //     status: false,
+    //     message: "Both teams must have at least 11 players",
+    //     statusCode: StatusCodes.BAD_REQUEST,
+    //   });
+    // }
 
-    // Validate umpire list
-    if (!Array.isArray(umpires) || umpires.length === 0) {
-      return apiResponse({
-        res,
-        status: false,
-        message: "Umpire list must be a non-empty array",
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
+    // // Validate umpire list
+    // if (!Array.isArray(umpires) || umpires.length === 0) {
+    //   return apiResponse({
+    //     res,
+    //     status: false,
+    //     message: "Umpire list must be a non-empty array",
+    //     statusCode: StatusCodes.BAD_REQUEST,
+    //   });
+    // }
 
-    // Check for duplicate players between teams
-    const duplicatePlayers = homeTeamPlayingPlayer.filter((player) =>
-      awayTeamPlayingPlayer.includes(player)
-    );
-    if (duplicatePlayers.length > 0) {
-      return apiResponse({
-        res,
-        status: false,
-        message: "A player cannot be in both teams",
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
+    // // Check for duplicate players between teams
+    // const duplicatePlayers = homeTeamPlayingPlayer.filter((player) =>
+    //   awayTeamPlayingPlayer.includes(player)
+    // );
+    // if (duplicatePlayers.length > 0) {
+    //   return apiResponse({
+    //     res,
+    //     status: false,
+    //     message: "A player cannot be in both teams",
+    //     statusCode: StatusCodes.BAD_REQUEST,
+    //   });
+    // }
 
-    // Check for duplicate umpires
-    const uniqueUmpires = new Set(umpires);
-    if (uniqueUmpires.size !== umpires.length) {
-      return apiResponse({
-        res,
-        status: false,
-        message: "Duplicate umpires are not allowed",
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
+    // // Check for duplicate umpires
+    // const uniqueUmpires = new Set(umpires);
+    // if (uniqueUmpires.size !== umpires.length) {
+    //   return apiResponse({
+    //     res,
+    //     status: false,
+    //     message: "Duplicate umpires are not allowed",
+    //     statusCode: StatusCodes.BAD_REQUEST,
+    //   });
+    // }
 
-    // Validate all player IDs and umpire IDs
-    const allIds = [
-      ...homeTeamPlayingPlayer,
-      ...awayTeamPlayingPlayer,
-      ...umpires,
-    ];
+    // // Validate all player IDs and umpire IDs
+    // const allIds = [
+    //   ...homeTeamPlayingPlayer,
+    //   ...awayTeamPlayingPlayer,
+    //   ...umpires,
+    // ];
 
-    // Function to validate MongoDB ObjectId format
-    const isValidObjectId = (id) => /^[0-9a-fA-F]{24}$/.test(id);
+    // // Function to validate MongoDB ObjectId format
+    // const isValidObjectId = (id) => /^[0-9a-fA-F]{24}$/.test(id);
 
-    // Filter out invalid IDs
-    const invalidIds = allIds.filter((id) => !isValidObjectId(id));
+    // // Filter out invalid IDs
+    // const invalidIds = allIds.filter((id) => !isValidObjectId(id));
 
-    if (invalidIds.length > 0) {
-      return apiResponse({
-        res,
-        status: false,
-        message: `The following IDs are invalid: ${invalidIds.join(", ")}`,
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
+    // if (invalidIds.length > 0) {
+    //   return apiResponse({
+    //     res,
+    //     status: false,
+    //     message: `The following IDs are invalid: ${invalidIds.join(", ")}`,
+    //     statusCode: StatusCodes.BAD_REQUEST,
+    //   });
+    // }
 
-    // Validate players and umpires exist
-    const validEntities = await Promise.all([
-      CustomPlayers.find({
-        _id: { $in: [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer] },
-      }),
-      customUmpireList.find({ _id: { $in: umpires } }),
-    ]);
+    // // Validate players and umpires exist
+    // const validEntities = await Promise.all([
+    //   CustomPlayers.find({
+    //     _id: { $in: [...homeTeamPlayingPlayer, ...awayTeamPlayingPlayer] },
+    //   }),
+    //   customUmpireList.find({ _id: { $in: umpires } }),
+    // ]);
 
-    const [validPlayers, validUmpires] = validEntities;
+    // const [validPlayers, validUmpires] = validEntities;
 
-    if (
-      validPlayers.length !==
-      homeTeamPlayingPlayer.length + awayTeamPlayingPlayer.length
-    ) {
-      const foundPlayerIds = validPlayers.map((player) =>
-        player._id.toString()
-      );
-      const notFoundPlayerIds = [
-        ...homeTeamPlayingPlayer,
-        ...awayTeamPlayingPlayer,
-      ].filter((id) => !foundPlayerIds.includes(id));
-      return apiResponse({
-        res,
-        status: false,
-        message: `The following player IDs were not found: ${notFoundPlayerIds.join(
-          ", "
-        )}`,
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
+    // if (
+    //   validPlayers.length !==
+    //   homeTeamPlayingPlayer.length + awayTeamPlayingPlayer.length
+    // ) {
+    //   const foundPlayerIds = validPlayers.map((player) =>
+    //     player._id.toString()
+    //   );
+    //   const notFoundPlayerIds = [
+    //     ...homeTeamPlayingPlayer,
+    //     ...awayTeamPlayingPlayer,
+    //   ].filter((id) => !foundPlayerIds.includes(id));
+    //   return apiResponse({
+    //     res,
+    //     status: false,
+    //     message: `The following player IDs were not found: ${notFoundPlayerIds.join(
+    //       ", "
+    //     )}`,
+    //     statusCode: StatusCodes.BAD_REQUEST,
+    //   });
+    // }
 
-    if (validUmpires.length !== umpires.length) {
-      const foundUmpireIds = validUmpires.map((umpire) =>
-        umpire.umpireId.toString()
-      );
-      const notFoundUmpireIds = umpires.filter(
-        (id) => !foundUmpireIds.includes(id)
-      );
-      return apiResponse({
-        res,
-        status: false,
-        message: `The following umpire IDs were not found: ${notFoundUmpireIds.join(
-          ", "
-        )}`,
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
+    // if (validUmpires.length !== umpires.length) {
+    //   const foundUmpireIds = validUmpires.map((umpire) =>
+    //     umpire.umpireId.toString()
+    //   );
+    //   const notFoundUmpireIds = umpires.filter(
+    //     (id) => !foundUmpireIds.includes(id)
+    //   );
+    //   return apiResponse({
+    //     res,
+    //     status: false,
+    //     message: `The following umpire IDs were not found: ${notFoundUmpireIds.join(
+    //       ", "
+    //     )}`,
+    //     statusCode: StatusCodes.BAD_REQUEST,
+    //   });
+    // }
 
-    // Validate players belong to their respective teams
-    const homeTeamPlayers = validPlayers.filter(
-      (player) =>
-        player.teamId.toString() === homeTeamId &&
-        homeTeamPlayingPlayer.includes(player._id.toString())
-    );
+    // // Validate players belong to their respective teams
+    // const homeTeamPlayers = validPlayers.filter(
+    //   (player) =>
+    //     player.teamId.toString() === homeTeamId &&
+    //     homeTeamPlayingPlayer.includes(player._id.toString())
+    // );
 
-    const awayTeamPlayers = validPlayers.filter(
-      (player) =>
-        player.teamId.toString() === awayTeamId &&
-        awayTeamPlayingPlayer.includes(player._id.toString())
-    );
+    // const awayTeamPlayers = validPlayers.filter(
+    //   (player) =>
+    //     player.teamId.toString() === awayTeamId &&
+    //     awayTeamPlayingPlayer.includes(player._id.toString())
+    // );
 
-    if (
-      homeTeamPlayers.length !== homeTeamPlayingPlayer.length ||
-      awayTeamPlayers.length !== awayTeamPlayingPlayer.length
-    ) {
-      return apiResponse({
-        res,
-        status: false,
-        message: "Some players do not belong to their respective teams",
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
+    // if (
+    //   homeTeamPlayers.length !== homeTeamPlayingPlayer.length ||
+    //   awayTeamPlayers.length !== awayTeamPlayingPlayer.length
+    // ) {
+    //   return apiResponse({
+    //     res,
+    //     status: false,
+    //     message: "Some players do not belong to their respective teams",
+    //     statusCode: StatusCodes.BAD_REQUEST,
+    //   });
+    // }
 
     const updatedMatch = await CustomMatch.findByIdAndUpdate(
       matchId,
@@ -633,8 +641,8 @@ const updateMatch = async (req, res, next) => {
         city,
         ground,
         dateTime,
-        homeTeamPlayingPlayer,
-        awayTeamPlayingPlayer,
+        // homeTeamPlayingPlayer,
+        // awayTeamPlayingPlayer,
       },
       { new: true }
     );
@@ -1056,6 +1064,84 @@ const updateStartingPlayerScorecard = async (req, res) => {
     });
   }
 };
+
+const getMatchSummary = async (req, res) => {
+  try {
+    const { matchId } = req.params;
+
+    // Fetch the scorecard details using the matchId
+    const scorecard = await CustomMatchScorecard.findOne({ matchId });
+
+    if (!scorecard) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Scorecard not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Filter the players based on their status
+    const battingTeamKey = scorecard.scorecard.homeTeam.players.some(player => player.status === 'not_out') ? 'homeTeam' : 'awayTeam';
+    const bowlingTeamKey = battingTeamKey === 'homeTeam' ? 'awayTeam' : 'homeTeam';
+
+    const batters = scorecard.scorecard[battingTeamKey].players.filter(player => player.status === 'not_out');
+    const bowlers = scorecard.scorecard[bowlingTeamKey].players.filter(player => player.activeBowler);
+
+    // Function to get player image from the database
+    const getPlayerImageFromDB = async (playerId) => {
+      try {
+        const player = await CustomPlayers.findById(playerId).select('image');
+        return player?.image || "";
+      } catch (error) {
+        console.error(`Error fetching image for player ${playerId}:`, error);
+        return "";
+      }
+    };
+
+    const responseData = {
+      batters: await Promise.all(batters.map(async player => {
+        const image = await getPlayerImageFromDB(player.id);
+        return {
+          name: player.name,
+          runs: player.runs,
+          balls: player.balls,
+          fours: player.fours,
+          sixes: player.sixes,
+          id: player.id,
+          image: image,
+        };
+      })),
+      bowlers: await Promise.all(bowlers.map(async player => {
+        const image = await getPlayerImageFromDB(player.id);
+        return {
+          name: player.name,
+          overs: player.overs,
+          maidens: player.maidens,
+          runs: player.runs,
+          wickets: player.wickets,
+          id: player.id,
+          image: image,
+        };
+      })),
+    };
+    return apiResponse({
+      res,
+      status: true,
+      data: responseData,
+      message: "Summary fetched successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    console.error("Error fetching match summary:", error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
   
 export default {
   createMatch,
@@ -1067,4 +1153,5 @@ export default {
   createScorecards,
   getMatchScorecard,
   updateStartingPlayerScorecard,
+  getMatchSummary
 };

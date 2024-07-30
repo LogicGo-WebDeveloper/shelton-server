@@ -26,9 +26,10 @@ const setupWebSocket = (server) => {
     };
 
     ws.on("message", async (message) => {
+      const messageString = message.toString();
       let data;
       try {
-        data = JSON.parse(message);
+        data = JSON.parse(messageString);
       } catch (error) {
         console.error("Invalid JSON:", error);
         ws.send(
@@ -778,7 +779,7 @@ const setupWebSocket = (server) => {
           break;
         case "cricketController":
           try {
-            const { matchId, batters, bowlers } = data;
+            const { matchId, batters, bowlers, teamRuns } = data;
             const match = await CustomMatch.findOne({ _id: matchId });
             if (!match) {
               ws.send(
@@ -797,7 +798,6 @@ const setupWebSocket = (server) => {
               validateField("batters.balls", batters.balls, "boolean"),
               validateField("batters.fours", batters.fours, "boolean"),
               validateField("batters.sixes", batters.sixes, "boolean"),
-              validateField("batters.bye", batters.bye, "boolean"),
             ].filter((error) => error !== null);
 
             if (batterErrors.length > 0) {
@@ -826,6 +826,25 @@ const setupWebSocket = (server) => {
               ws.send(
                 JSON.stringify({
                   message: bowlerErrors.join(", "),
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Validation for teamRuns
+            const teamRunsErrors = [
+              validateField("teamRuns.bye", teamRuns.bye, "boolean"),
+              validateField("teamRuns.legBye", teamRuns.legBye, "boolean"),
+              validateField("teamRuns.runs", teamRuns.runs, "number"),
+            ].filter((error) => error !== null);
+
+            if (teamRunsErrors.length > 0) {
+              ws.send(
+                JSON.stringify({
+                  message: teamRunsErrors.join(", "),
                   actionType: data.action,
                   body: null,
                   status: false,
@@ -868,7 +887,7 @@ const setupWebSocket = (server) => {
               const player = existingScorecard.scorecard[battingTeamKey].players[
                 batterIndex
               ];
-              if(!batters.bye) {
+              if(!teamRuns.bye && !teamRuns.legBye) {
                 player.runs = (player.runs || 0) + batters.runs;
                 player.balls = (player.balls || 0) + (batters.balls ? 1 : 0);
                 player.fours = (player.fours || 0) + (batters.fours ? 1 : 0);
@@ -918,7 +937,13 @@ const setupWebSocket = (server) => {
             const calculateAndUpdateTeamScores = async (teamKey) => {
               const teamPlayers = existingScorecard.scorecard[teamKey].players;
               const totalRuns = teamPlayers.reduce(
-                (acc, bowlers) => acc + (bowlers.runs || 0),
+                (acc, batters) => {
+                  if (teamRuns.bye || teamRuns.legBye) {
+                    return acc + (teamRuns.runs || 0);
+                  } else {
+                    return acc + (batters.runs || 0);
+                  }
+                },
                 0
               );
               const totalOvers = teamPlayers.reduce(
@@ -947,21 +972,42 @@ const setupWebSocket = (server) => {
               match[`${teamKey}Score`].wickets = totalWickets;
             };
 
-            calculateAndUpdateTeamScores("homeTeam", "homeTeamScore");
-            calculateAndUpdateTeamScores("awayTeam", "awayTeamScore");
+            calculateAndUpdateTeamScores(battingTeamKey);
 
             await match.save();
 
+            const matchDetails = await CustomMatch.findById(matchId);
+            const scorecardDetails = await CustomMatchScorecard.findOne({ matchId });
+
+            const matchLiveScore = {
+              homeTeam: matchDetails.homeTeamScore,
+              awayTeam: matchDetails.awayTeamScore,
+              noOfOvers: matchDetails.noOfOvers,
+            };
+
+            const playingBatters = scorecardDetails.scorecard[battingTeamKey].players
+              .filter(player => player.status === "not_out")
+              .slice(0, 2)
+              .map(player => ({
+                name: player.name,
+                runs: player.runs,
+                balls: player.balls,
+                id: player.id
+              }));
+            
             ws.send(
               JSON.stringify({
-                message: "Run number updated successfully",
+                message: "score updated successfully",
                 actionType: data.action,
-                body: existingScorecard,
+                body: {
+                  matchScore: matchLiveScore,
+                  batters: playingBatters,
+                },
                 status: true,
               })
             );
           } catch (error) {
-            console.error("Failed to update run number:", error.message);
+            console.error("Failed to update score:", error.message);
             ws.send(
               JSON.stringify({
                 message: "Something went wrong",
