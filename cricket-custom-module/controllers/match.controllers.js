@@ -6,7 +6,7 @@ import {
   validateObjectIds,
 } from "../utils/utils.js";
 import CustomTournament from "../models/tournament.models.js";
-import { CustomCityList } from "../models/common.models.js";
+import { CustomCityList, CustomMatchOfficial } from "../models/common.models.js";
 import CustomTeam from "../models/team.models.js";
 import helper from "../../helper/common.js";
 import CustomPlayers from "../models/player.models.js";
@@ -1069,12 +1069,22 @@ const getMatchSummary = async (req, res) => {
 
     // Fetch the scorecard details using the matchId
     const scorecard = await CustomMatchScorecard.findOne({ matchId });
+    const match = await CustomMatch.findById(matchId);
 
     if (!scorecard) {
       return apiResponse({
         res,
         status: false,
         message: "Scorecard not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    if(!match) {
+      return apiResponse({  
+        res,
+        status: false,
+        message: "Match not found",
         statusCode: StatusCodes.NOT_FOUND,
       });
     }
@@ -1106,6 +1116,11 @@ const getMatchSummary = async (req, res) => {
       }
     };
 
+    const city = await CustomCityList.findById(match.city).select("city");
+
+    // Fetch umpire names
+    const umpires = await CustomMatchOfficial.find({ _id: { $in: match.umpires } }).select("name");  
+
     const responseData = {
       batters: await Promise.all(
         batters.map(async (player) => {
@@ -1135,6 +1150,11 @@ const getMatchSummary = async (req, res) => {
           };
         })
       ),
+      matchInfo: {
+        location: city ? city.city : "",
+        venue: match.ground,
+        referee: umpires.map((umpire) => umpire.name).join(", "),
+      },
     };
     return apiResponse({
       res,
