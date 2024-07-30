@@ -1017,7 +1017,84 @@ const setupWebSocket = (server) => {
               })
             );
           }
-          break;
+        break;
+        case "changeBatterStrike":
+          try {
+            const { matchId, batterId } = data;
+
+            // Validate input
+            if (!matchId || !batterId) {
+              ws.send(
+                JSON.stringify({
+                  message: "Match ID and Batter ID are required",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Find the match scorecard
+            const scorecard = await CustomMatchScorecard.findOne({ matchId });
+            if (!scorecard) {
+              ws.send(
+                JSON.stringify({
+                  message: "Scorecard not found",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Determine the batting team
+            const battingTeamKey = scorecard.scorecard.homeTeam.players.some(player => player.status === 'not_out') ? 'homeTeam' : 'awayTeam';
+
+            // Find the player to change strike
+            const playerIndex = scorecard.scorecard[battingTeamKey].players.findIndex(player => player.id.toString() === batterId && player.status === 'not_out');
+            if (playerIndex === -1) {
+              ws.send(
+                JSON.stringify({
+                  message: "Batter not found or not currently batting",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Update the strike status
+            scorecard.scorecard[battingTeamKey].players.forEach(player => {
+              if (player.status === 'not_out') {
+                player.activeStriker = false;
+              }
+            });
+            scorecard.scorecard[battingTeamKey].players[playerIndex].activeStriker = true;
+
+            // Save the updated scorecard
+            await scorecard.save(); 
+
+            // Get the active striker data
+            const activeStriker = scorecard.scorecard[battingTeamKey].players[playerIndex];
+
+            ws.send(
+              JSON.stringify({
+                message: "Batter strike changed successfully",
+                actionType: data.action,
+                status: true,
+                data: activeStriker,
+              })
+            );
+          } catch (error) {
+            ws.send(
+              JSON.stringify({
+                message: "Internal server error",
+                actionType: data.action,
+                status: false,
+              })
+            );
+          }
+        break;
       }
     });
   });
