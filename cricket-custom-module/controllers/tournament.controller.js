@@ -303,7 +303,6 @@ const tournamentUpdate = async (req, res, next) => {
     { name: "tournamentImages", maxCount: 1 }, // Allow up to 5 tournament images
     { name: "tournamentBackgroundImage", maxCount: 1 }, // Allow only 1 background image
   ]);
-
   const tournamentData = await CustomTournament.findById(id);
   upload(req, res, async function (err, file, cb) {
     var createdBy = req.user._id;
@@ -353,10 +352,10 @@ const tournamentUpdate = async (req, res, next) => {
           var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
           resp.tournamentImage = resp.tournamentImage
             ? fullUrl + "tournament/" + resp.tournamentImage
-            : "";
+            : tournamentData.tournamentImage;
           resp.tournamentBackgroundImage = resp.tournamentBackgroundImage
             ? fullUrl + "tournament/" + resp.tournamentBackgroundImage
-            : "";
+            : tournamentData.tournamentBackgroundImage;
           return apiResponse({
             res,
             status: true,
