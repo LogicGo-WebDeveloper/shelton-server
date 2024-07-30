@@ -8,155 +8,142 @@ import { apiResponse } from "../../helper/apiResponse.js";
 import { CustomMatchOfficial } from "../models/common.models.js";
 import customUmpireList from "../models/umpire.models.js";
 import helper from "../../helper/common.js";
+import { uploadFile } from "../../helper/aws_s3.js";
+import { v4 as uuidv4 } from "uuid";
+import config from "../../config/config.js";
 
 const createTournament = async (req, res, next) => {
-  let fileSuffix = Date.now().toString();
+  const {
+    sportId,
+    name,
+    cityId,
+    groundName,
+    organiserName,
+    tournamentStartDate,
+    tournamentEndDate,
+    tournamentCategoryId,
+    moreTeams,
+    winningPrizeId,
+    matchOnId,
+    description,
+  } = req.body;
+  const { tournamentImages, tournamentBackgroundImage } = req.files;
 
-  const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      const uploadDir = path.join("cricket-custom-module/public/tournament"); // Use absolute path
-      fs.mkdir(uploadDir, { recursive: true }, (err) => {
-        if (err) {
-          console.error("Error creating upload directory:", err);
-          cb(err, null);
-        } else {
-          cb(null, uploadDir);
-        }
-      });
-    },
-    filename: function (req, file, cb) {
-      cb(null, `${fileSuffix}-${file.originalname}`);
-    },
-  });
-  const upload = multer({ storage: storage }).fields([
-    { name: "tournamentImages", maxCount: 1 }, // Allow up to 5 tournament images
-    { name: "tournamentBackgroundImage", maxCount: 1 }, // Allow only 1 background image
-  ]);
+  const requiredFields = [
+    "sportId",
+    "name",
+    "cityId",
+    "groundName",
+    "organiserName",
+    "tournamentStartDate",
+    "tournamentEndDate",
+    "tournamentCategoryId",
+    "moreTeams",
+    "winningPrizeId",
+    "matchOnId",
+    "description",
+    "umpireId",
+  ];
 
-  upload(req, res, async function (err, file, cb) {
-    var sportId = req.body.sportId;
-    var name = req.body.name;
-    var cityId = req.body.cityId;
-    var groundName = req.body.groundName;
-    var organiserName = req.body.organiserName;
-    var tournamentStartDate = req.body.tournamentStartDate;
-    var tournamentEndDate = req.body.tournamentEndDate;
-    var tournamentCategoryId = req.body.tournamentCategoryId;
-    var tournamentMatchTypeId = req.body.tournamentMatchTypeId;
-    const umpireIds = req.body.umpireId.replace(/^'(.*)'$/, "$1");
-
-    // Parse the string into an array
-    const array = JSON.parse(umpireIds);
-    var moreTeams = req.body.moreTeams;
-    var winningPrizeId = req.body.winningPrizeId;
-    var matchOnId = req.body.matchOnId;
-    var description = req.body.description;
-    var tournamentBackgroundImage = req.files
-      ? `${fileSuffix}-${req.files.tournamentBackgroundImage[0].originalname}`
-      : "";
-    var tournamentImage = req.files
-      ? `${fileSuffix}-${req.files.tournamentImages[0].originalname}`
-      : "";
-
-    const result = validate.createTournament.validate({
-      sportId: sportId,
-      name: name,
-      cityId: cityId,
-      groundName: groundName,
-      organiserName: organiserName,
-      tournamentStartDate: tournamentStartDate,
-      tournamentCategoryId: tournamentCategoryId,
-      tournamentMatchTypeId: tournamentMatchTypeId,
-      tournamentEndDate: tournamentEndDate,
-      moreTeams: moreTeams,
-      winningPrizeId: winningPrizeId,
-      matchOnId: matchOnId,
-    });
-    if (result.error) {
-      return res.status(400).json({
-        res,
-        status: false,
-        data: null,
-        message: result.error.details[0].message,
-        statusCode: StatusCodes.OK,
-      });
-    } else {
-      if (err) {
-        console.log(err);
-      }
-
-      const tournamentsData = await CustomTournament.findOne({
-        name: name,
-      });
-
-      if (!tournamentsData) {
-        let alldata = [];
-
-        const customTournament = await CustomTournament.create({
-          createdBy: req.user._id,
-          sportId: sportId,
-          name: name,
-          cityId: cityId,
-          groundName: groundName,
-          organiserName: organiserName,
-          tournamentStartDate: tournamentStartDate,
-          tournamentCategoryId: tournamentCategoryId,
-          tournamentMatchTypeId: tournamentMatchTypeId,
-          tournamentEndDate: tournamentEndDate,
-          moreTeams: 0,
-          winningPrizeId: winningPrizeId,
-          matchOnId: matchOnId,
-          description: description,
-          tournamentImage: tournamentImage,
-          tournamentBackgroundImage: tournamentBackgroundImage,
-        })
-
-          .then(async function (resp) {
-            array.forEach((umpireId) => {
-              let data = {
-                tournamentId: resp.id, // Assuming resp.id is the tournamentId
-                umpireId: umpireId,
-              };
-              alldata.push(data);
-            });
-
-            const result = await customUmpireList.insertMany(alldata);
-
-            var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
-            resp.tournamentImage = resp.tournamentImage
-              ? fullUrl + "tournament/" + resp.tournamentImage
-              : "";
-            resp.tournamentBackgroundImage = resp.tournamentBackgroundImage
-              ? fullUrl + "tournament/" + resp.tournamentBackgroundImage
-              : "";
-
-            return apiResponse({
-              res,
-              status: true,
-              data: resp,
-              message: "Tournament create successfully!",
-              statusCode: StatusCodes.OK,
-            });
-          })
-          .catch(function (err) {
-            console.log(err);
-            return apiResponse({
-              res,
-              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-              status: false,
-              message: "Internal server error",
-            });
-          });
-      } else {
-        return apiResponse({
-          res,
-          status: false,
-          message: "Tournament name already exists!",
-          statusCode: StatusCodes.OK,
-        });
-      }
+  let missingFields = {};
+  requiredFields.forEach((field) => {
+    if (!req.body[field]) {
+      missingFields[field] = `${field} is required`;
     }
   });
+
+  if (Object.keys(missingFields).length > 0) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: missingFields,
+      body: null,
+      status: false,
+    });
+  }
+
+  const umpireIds = req.body.umpireId.replace(/^'(.*)'$/, "$1");
+  const array = JSON.parse(umpireIds);
+
+  try {
+    const tournamentsData = await CustomTournament.findOne({ name });
+
+    if (tournamentsData) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Tournament name already exists!",
+        statusCode: StatusCodes.OK,
+      });
+    }
+
+    let imageName, backgroundImageName;
+
+    if (tournamentImages && tournamentImages.length > 0) {
+      const imageBuffer = tournamentImages[0].buffer;
+      const filename = `${uuidv4()}.${tournamentImages[0].originalname
+        .split(".")
+        .pop()}`;
+      await uploadFile({
+        filename: `${config.cloud.digitalocean.rootDirname}/custom_tournament/${filename}`,
+        file: imageBuffer,
+        ACL: "public-read",
+      });
+      imageName = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/custom_tournament/${filename}`;
+    }
+
+    if (tournamentBackgroundImage && tournamentBackgroundImage.length > 0) {
+      const backgroundImageBuffer = tournamentBackgroundImage[0].buffer;
+      const backgroundFilename = `${uuidv4()}.${tournamentBackgroundImage[0].originalname
+        .split(".")
+        .pop()}`;
+      await uploadFile({
+        filename: `${config.cloud.digitalocean.rootDirname}/custom_tournament/${backgroundFilename}`,
+        file: backgroundImageBuffer,
+        ACL: "public-read",
+      });
+      backgroundImageName = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/custom_tournament/${backgroundFilename}`;
+    }
+
+    const newTournament = await CustomTournament.create({
+      createdBy: req.user._id,
+      sportId,
+      name,
+      cityId,
+      groundName,
+      organiserName,
+      tournamentStartDate,
+      tournamentEndDate,
+      tournamentCategoryId,
+      moreTeams,
+      winningPrizeId,
+      matchOnId,
+      description,
+      tournamentImage: imageName,
+      tournamentBackgroundImage: backgroundImageName,
+    });
+
+    const umpireData = array.map((umpireId) => ({
+      tournamentId: newTournament._id,
+      umpireId,
+    }));
+
+    await customUmpireList.insertMany(umpireData);
+
+    return apiResponse({
+      res,
+      status: true,
+      data: newTournament,
+      message: "Tournament created successfully!",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    console.error(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
 };
 
 const listTournament = async (req, res) => {
@@ -281,52 +268,58 @@ const listTournament = async (req, res) => {
 };
 
 const tournamentUpdate = async (req, res, next) => {
-  const id = req.params.id;
-  let fileSuffix = Date.now().toString();
-  const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      const uploadDir = path.join("cricket-custom-module/public/tournament"); // Use absolute path
-      fs.mkdir(uploadDir, { recursive: true }, (err) => {
-        if (err) {
-          console.error("Error creating upload directory:", err);
-          cb(err, null);
-        } else {
-          cb(null, uploadDir);
-        }
+  const { id } = req.params;
+  const {
+    sportId,
+    name,
+    cityId,
+    groundName,
+    organiserName,
+    tournamentStartDate,
+    tournamentEndDate,
+    tournamentCategoryId,
+    tournamentMatchTypeId,
+    moreTeams,
+    winningPrizeId,
+    matchOnId,
+    description,
+  } = req.body;
+  const createdBy = req.user._id;
+  let imageName, backgroundImageName;
+
+  if (req.files) {
+    const { tournamentImages, tournamentBackgroundImage } = req.files;
+    if (tournamentImages && tournamentImages.length > 0) {
+      const imageBuffer = tournamentImages[0].buffer;
+      const filename = `${uuidv4()}.${tournamentImages[0].originalname
+        .split(".")
+        .pop()}`;
+      await uploadFile({
+        filename: `${config.cloud.digitalocean.rootDirname}/custom_tournament/${filename}`,
+        file: imageBuffer,
+        ACL: "public-read",
       });
-    },
-    filename: function (req, file, cb) {
-      cb(null, `${fileSuffix}-${file.originalname}`);
-    },
-  });
-  const upload = multer({ storage: storage }).fields([
-    { name: "tournamentImages", maxCount: 1 }, // Allow up to 5 tournament images
-    { name: "tournamentBackgroundImage", maxCount: 1 }, // Allow only 1 background image
-  ]);
-  const tournamentData = await CustomTournament.findById(id);
-  upload(req, res, async function (err, file, cb) {
-    var createdBy = req.user._id;
-    var sportId = req.body.sportId;
-    var name = req.body.name;
-    var cityId = req.body.cityId;
-    var groundName = req.body.groundName;
-    var organiserName = req.body.organiserName;
-    var tournamentStartDate = req.body.tournamentStartDate;
-    var tournamentEndDate = req.body.tournamentEndDate;
-    var tournamentCategoryId = req.body.tournamentCategoryId;
-    var tournamentMatchTypeId = req.body.tournamentMatchTypeId;
-    var moreTeams = req.body.moreTeams;
-    var winningPrizeId = req.body.winningPrizeId;
-    var matchOnId = req.body.matchOnId;
-    var description = req.body.description;
-    var tournamentBackgroundImage = req.files.tournamentBackgroundImage
-      ? `${fileSuffix}-${req.files.tournamentBackgroundImage[0].originalname}`
-      : tournamentData.tournamentBackgroundImage;
-    var tournamentImage = req.files.tournamentImages
-      ? `${fileSuffix}-${req.files.tournamentImages[0].originalname}`
-      : tournamentData.tournamentImage;
+      imageName = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/custom_tournament/${filename}`;
+    }
+
+    if (tournamentBackgroundImage && tournamentBackgroundImage.length > 0) {
+      const backgroundImageBuffer = tournamentBackgroundImage[0].buffer;
+      const backgroundFilename = `${uuidv4()}.${tournamentBackgroundImage[0].originalname
+        .split(".")
+        .pop()}`;
+      await uploadFile({
+        filename: `${config.cloud.digitalocean.rootDirname}/custom_tournament/${backgroundFilename}`,
+        file: backgroundImageBuffer,
+        ACL: "public-read",
+      });
+      backgroundImageName = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/custom_tournament/${backgroundFilename}`;
+    }
+  }
+
+  try {
+    const tournamentData = await CustomTournament.findById(id);
     if (tournamentData) {
-      await CustomTournament.findByIdAndUpdate(
+      const result = await CustomTournament.findByIdAndUpdate(
         id,
         {
           createdBy,
@@ -343,36 +336,19 @@ const tournamentUpdate = async (req, res, next) => {
           winningPrizeId,
           matchOnId,
           description,
-          tournamentImage,
-          tournamentBackgroundImage,
+          tournamentImage: imageName,
+          tournamentBackgroundImage: backgroundImageName,
         },
         { new: true }
-      )
-        .then(function (resp) {
-          var fullUrl = req.protocol + "://" + req.get("host") + "/images/";
-          resp.tournamentImage = resp.tournamentImage
-            ? fullUrl + "tournament/" + resp.tournamentImage
-            : tournamentData.tournamentImage;
-          resp.tournamentBackgroundImage = resp.tournamentBackgroundImage
-            ? fullUrl + "tournament/" + resp.tournamentBackgroundImage
-            : tournamentData.tournamentBackgroundImage;
-          return apiResponse({
-            res,
-            status: true,
-            data: resp,
-            message: "Tournament update successfully!",
-            statusCode: StatusCodes.OK,
-          });
-        })
-        .catch(function (err) {
-          console.log(err);
-          return apiResponse({
-            res,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-            status: false,
-            message: "Internal server error",
-          });
-        });
+      );
+
+      return apiResponse({
+        res,
+        status: true,
+        data: result,
+        message: "Tournament updated successfully!",
+        statusCode: StatusCodes.OK,
+      });
     } else {
       return apiResponse({
         res,
@@ -381,7 +357,15 @@ const tournamentUpdate = async (req, res, next) => {
         message: "Tournament not found",
       });
     }
-  });
+  } catch (error) {
+    console.error(error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
 };
 
 const tournamentAddUmpire = async (req, res, next) => {
