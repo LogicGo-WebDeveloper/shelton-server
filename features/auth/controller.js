@@ -18,8 +18,6 @@ const verifyToken = async (req, res) => {
       status: true,
     });
   } catch (error) {
-    console.log(error);
-
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -78,7 +76,6 @@ const registerByEmail = async (req, res) => {
       message: "Registration complete! Check your email for verification OTP",
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -131,7 +128,6 @@ const registerByMobile = async (req, res) => {
       data: { otp },
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -202,7 +198,6 @@ const loginByEmail = async (req, res) => {
       data: response,
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -273,7 +268,6 @@ const loginByMobile = async (req, res) => {
       data: response,
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -287,16 +281,10 @@ const loginByGoogle = async (req, res) => {
   try {
     const { email, name } = req.body;
 
-    const client = new OAuth2Client({
+    new OAuth2Client({
       clientId: config.google.clientId,
       clientSecret: config.google.clientSecret,
     });
-
-    // const ticket = await client.verifyIdToken({
-    //   email: email,
-    // });
-
-    // const payload = ticket.getPayload();
 
     if (!email) {
       return apiResponse({
@@ -306,8 +294,6 @@ const loginByGoogle = async (req, res) => {
         message: "Invalid authentication",
       });
     }
-
-    // const { sub, email_verified } = payload;
 
     let user = await userService.findOne({
       email: email,
@@ -400,7 +386,6 @@ const forgotPasswordEmail = async (req, res) => {
       message: "OTP send to your email address please check",
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -443,7 +428,6 @@ const forgotPasswordMobile = async (req, res) => {
       data: { otp },
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -508,7 +492,6 @@ const verifyEmailOTP = async (req, res) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -575,7 +558,6 @@ const verifyMobileOTP = async (req, res) => {
       message: "OTP verified successfully",
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -632,7 +614,6 @@ const resendEmailOTP = async (req, res) => {
       });
     }
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -673,7 +654,6 @@ const resendMobileOTP = async (req, res) => {
       data: { otp: otp },
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -752,7 +732,6 @@ const resetPassword = async (req, res) => {
       status: true,
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,

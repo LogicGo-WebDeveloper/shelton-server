@@ -1,9 +1,6 @@
 import { StatusCodes } from "http-status-codes";
-import * as path from "path";
 import validate from "../validation/validation.js";
 import CustomTournament from "../models/tournament.models.js";
-import multer from "multer";
-import fs from "fs";
 import { apiResponse } from "../../helper/apiResponse.js";
 import { CustomMatchOfficial } from "../models/common.models.js";
 import customUmpireList from "../models/umpire.models.js";
@@ -226,7 +223,6 @@ const listTournament = async (req, res) => {
     // Modify tournament image URLs
     const fullUrl = req.protocol + "://" + req.get("host") + "/images/";
     tournaments.forEach((tournament) => {
-      console.log(tournament.tournamentImage);
       tournament.tournamentImage = tournament.tournamentImage
         ? fullUrl + "tournament/" + tournament.tournamentImage
         : "";
@@ -406,7 +402,6 @@ const tournamentAddUmpire = async (req, res, next) => {
           });
         })
         .catch((error) => {
-          console.log(error);
           return apiResponse({
             res,
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR,

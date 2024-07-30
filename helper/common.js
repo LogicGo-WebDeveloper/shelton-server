@@ -6,7 +6,6 @@ import WebSocket from "ws";
 import RecentMatch from "../features/sport/models/recentMatchesSchema.js";
 import { createCanvas, loadImage } from "canvas";
 import {
-  S3Client,
   PutObjectCommand,
   ListBucketsCommand,
 } from "@aws-sdk/client-s3";

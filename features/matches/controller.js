@@ -21,7 +21,6 @@ import MatchH2H from "./models/matchH2HSchema.js";
 import MatchesScreenMatches from "./models/matchesDetails.js";
 import helper from "../../helper/common.js";
 import config from "../../config/config.js";
-import { uploadFile } from "../../helper/aws_s3.js";
 import FavouriteDetails from "../favourite/models/favouriteDetails.js";
 
 const getOverDetailsById = async (req, res, next) => {

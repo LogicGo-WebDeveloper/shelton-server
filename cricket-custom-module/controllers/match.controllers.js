@@ -1,7 +1,10 @@
 import { apiResponse } from "../../helper/apiResponse.js";
 import { StatusCodes } from "http-status-codes";
 import CustomMatch from "../models/match.models.js";
-import { updateMatchScorecardDetails, validateObjectIds } from "../utils/utils.js";
+import {
+  updateMatchScorecardDetails,
+  validateObjectIds,
+} from "../utils/utils.js";
 import CustomTournament from "../models/tournament.models.js";
 import { CustomCityList } from "../models/common.models.js";
 import CustomTeam from "../models/team.models.js";
@@ -28,9 +31,6 @@ const createMatch = async (req, res, next) => {
       umpires,
     } = req.body;
     const userId = req.user._id;
-    console.log(typeof umpires);
-    console.log(typeof homeTeamPlayingPlayer);
-    console.log(typeof awayTeamPlayingPlayer);
 
     const validation = validateObjectIds({
       homeTeamId,
@@ -944,10 +944,7 @@ const createScorecards = async (match, tournamentId) => {
       },
     });
 
-    console.log("Before saving scorecard:", matchScorecard);
-
-    const savedScorecard = await matchScorecard.save();
-    console.log("Scorecard saved successfully:", savedScorecard);
+    await matchScorecard.save();
   } catch (error) {
     console.error("Error in createScorecards:", error);
     throw error;
@@ -998,7 +995,8 @@ const getMatchScorecard = async (req, res) => {
 const updateStartingPlayerScorecard = async (req, res) => {
   try {
     const { matchId } = req.params;
-    const { bowlingTeamId, battingTeamId, bowlerId, strikerId, nonStrikerId } = req.body;
+    const { bowlingTeamId, battingTeamId, bowlerId, strikerId, nonStrikerId } =
+      req.body;
 
     const existingMatch = await CustomMatchScorecard.findOne({ matchId });
     if (!existingMatch) {
@@ -1040,7 +1038,7 @@ const updateStartingPlayerScorecard = async (req, res) => {
           activeBowler: false,
           status: "not_out",
         },
-      }
+      },
     ];
 
     await Promise.all(data.map(updateMatchScorecardDetails));
@@ -1082,16 +1080,25 @@ const getMatchSummary = async (req, res) => {
     }
 
     // Filter the players based on their status
-    const battingTeamKey = scorecard.scorecard.homeTeam.players.some(player => player.status === 'not_out') ? 'homeTeam' : 'awayTeam';
-    const bowlingTeamKey = battingTeamKey === 'homeTeam' ? 'awayTeam' : 'homeTeam';
+    const battingTeamKey = scorecard.scorecard.homeTeam.players.some(
+      (player) => player.status === "not_out"
+    )
+      ? "homeTeam"
+      : "awayTeam";
+    const bowlingTeamKey =
+      battingTeamKey === "homeTeam" ? "awayTeam" : "homeTeam";
 
-    const batters = scorecard.scorecard[battingTeamKey].players.filter(player => player.status === 'not_out');
-    const bowlers = scorecard.scorecard[bowlingTeamKey].players.filter(player => player.activeBowler);
+    const batters = scorecard.scorecard[battingTeamKey].players.filter(
+      (player) => player.status === "not_out"
+    );
+    const bowlers = scorecard.scorecard[bowlingTeamKey].players.filter(
+      (player) => player.activeBowler
+    );
 
     // Function to get player image from the database
     const getPlayerImageFromDB = async (playerId) => {
       try {
-        const player = await CustomPlayers.findById(playerId).select('image');
+        const player = await CustomPlayers.findById(playerId).select("image");
         return player?.image || "";
       } catch (error) {
         console.error(`Error fetching image for player ${playerId}:`, error);
@@ -1100,30 +1107,34 @@ const getMatchSummary = async (req, res) => {
     };
 
     const responseData = {
-      batters: await Promise.all(batters.map(async player => {
-        const image = await getPlayerImageFromDB(player.id);
-        return {
-          name: player.name,
-          runs: player.runs,
-          balls: player.balls,
-          fours: player.fours,
-          sixes: player.sixes,
-          id: player.id,
-          image: image,
-        };
-      })),
-      bowlers: await Promise.all(bowlers.map(async player => {
-        const image = await getPlayerImageFromDB(player.id);
-        return {
-          name: player.name,
-          overs: player.overs,
-          maidens: player.maidens,
-          runs: player.runs,
-          wickets: player.wickets,
-          id: player.id,
-          image: image,
-        };
-      })),
+      batters: await Promise.all(
+        batters.map(async (player) => {
+          const image = await getPlayerImageFromDB(player.id);
+          return {
+            name: player.name,
+            runs: player.runs,
+            balls: player.balls,
+            fours: player.fours,
+            sixes: player.sixes,
+            id: player.id,
+            image: image,
+          };
+        })
+      ),
+      bowlers: await Promise.all(
+        bowlers.map(async (player) => {
+          const image = await getPlayerImageFromDB(player.id);
+          return {
+            name: player.name,
+            overs: player.overs,
+            maidens: player.maidens,
+            runs: player.runs,
+            wickets: player.wickets,
+            id: player.id,
+            image: image,
+          };
+        })
+      ),
     };
     return apiResponse({
       res,
@@ -1142,7 +1153,7 @@ const getMatchSummary = async (req, res) => {
     });
   }
 };
-  
+
 export default {
   createMatch,
   listMatches,
@@ -1153,5 +1164,5 @@ export default {
   createScorecards,
   getMatchScorecard,
   updateStartingPlayerScorecard,
-  getMatchSummary
+  getMatchSummary,
 };

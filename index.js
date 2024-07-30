@@ -7,7 +7,6 @@ import morgan from "morgan";
 import errorHandler from "./middleware/errorHandler.js";
 import http from "http";
 import setupWebSocket from "./websocket/websocketServer.js";
-import customWebsocket from "./cricket-custom-module/websocket/socket.js";
 import {
   InsertBallType,
   InsertBannerList,
@@ -28,7 +27,6 @@ const server = http.createServer(app);
 
 // WebSocket server setup
 setupWebSocket(server);
-// customWebsocket(server);
 
 app.disable("x-powered-by");
 
@@ -58,7 +56,6 @@ InsertBannerList();
 InsertPlayerRole();
 playerOutReasons();
 InsertMatchStatus();
-// InsertMatchOfficials();
 
 app.use("/api/auth", route.authRoute);
 app.use("/api/v1/sport", route.sportRoute);

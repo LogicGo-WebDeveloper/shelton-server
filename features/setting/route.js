@@ -10,7 +10,6 @@ const route = express.Router();
 // ----------------
 route.get("/theme", settingController.getTheme);
 route.get("/aboutUs", settingController.getAboutUs);
-// route.get("/terms-and-conditions", settingController.getTermsAndConditions);
 
 // ----------------
 // POST routes
