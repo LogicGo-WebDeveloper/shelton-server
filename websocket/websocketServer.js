@@ -781,6 +781,8 @@ const setupWebSocket = (server) => {
           try {
             const { matchId, batters, bowlers, teamRuns } = data;
             const match = await CustomMatch.findOne({ _id: matchId });
+
+            //for update match scorecard
             if (!match) {
               ws.send(
                 JSON.stringify({
@@ -933,9 +935,10 @@ const setupWebSocket = (server) => {
             }
 
             await existingScorecard.save();
-
+            //for using match update score dtails
             const calculateAndUpdateTeamScores = async (teamKey) => {
               const teamPlayers = existingScorecard.scorecard[teamKey].players;
+
               const totalRuns = teamPlayers.reduce(
                 (acc, batters) => {
                   if (teamRuns.bye || teamRuns.legBye) {
@@ -950,32 +953,41 @@ const setupWebSocket = (server) => {
                 (acc, player) => acc + (player.overs || 0),
                 0
               );
+
               const totalWickets = teamPlayers.reduce(
                 (acc, player) => acc + (player.wickets || 0),
                 0
               );
-
-              if (totalOvers < match.noOfOvers) {
-                ws.send(
-                  JSON.stringify({
-                    message: "Overs is greater than Matches overs.",
+              if (totalOvers > match.noOfOvers) {
+                return {
+                  message: "Overs is greater than Matches overs.",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                }
+              } else {
+                  match[`${teamKey}Score`].runs = totalRuns;
+                  match[`${teamKey}Score`].overs = totalOvers;
+                  match[`${teamKey}Score`].wickets = totalWickets;
+                  return {
+                    message: "score updated successfully",
                     actionType: data.action,
                     body: null,
-                    status: false,
-                  })
-                );
-                return;
+                    status: true,
+                  }
               }
-
-              match[`${teamKey}Score`].runs = totalRuns;
-              match[`${teamKey}Score`].overs = totalOvers;
-              match[`${teamKey}Score`].wickets = totalWickets;
             };
 
-            calculateAndUpdateTeamScores(battingTeamKey);
-
-            await match.save();
-
+            const matchScore =await calculateAndUpdateTeamScores(battingTeamKey);
+            if(matchScore.status) {
+              await match.save();
+            } else{
+              ws.send(
+                JSON.stringify(matchScore)
+              );
+            }
+            // for using summary api
+            if(matchScore.status) {
             const matchDetails = await CustomMatch.findById(matchId);
             const scorecardDetails = await CustomMatchScorecard.findOne({ matchId });
 
@@ -1004,8 +1016,9 @@ const setupWebSocket = (server) => {
                   batters: playingBatters,
                 },
                 status: true,
-              })
-            );
+                })
+              );
+            }
           } catch (error) {
             console.error("Failed to update score:", error.message);
             ws.send(
