@@ -869,7 +869,8 @@ const setupWebSocket = (server) => {
               return;
             }
 
-            const battingTeamKey = existingScorecard.scorecard.homeTeam.players.some(
+            const battingTeamKey =
+              existingScorecard.scorecard.homeTeam.players.some(
                 (player) => player.id.toString() === batters.playerId
               )
                 ? "homeTeam"
@@ -884,10 +885,11 @@ const setupWebSocket = (server) => {
             );
 
             if (batterIndex !== -1) {
-              const player = existingScorecard.scorecard[battingTeamKey].players[
-                batterIndex
-              ];
-              if(!teamRuns.bye && !teamRuns.legBye) {
+              const player =
+                existingScorecard.scorecard[battingTeamKey].players[
+                  batterIndex
+                ];
+              if (!teamRuns.bye && !teamRuns.legBye) {
                 player.runs = (player.runs || 0) + batters.runs;
                 player.balls = (player.balls || 0) + (batters.balls ? 1 : 0);
                 player.fours = (player.fours || 0) + (batters.fours ? 1 : 0);
@@ -934,18 +936,32 @@ const setupWebSocket = (server) => {
 
             await existingScorecard.save();
 
+            let oversData = {
+              playerScoreCardId: existingScorecard._id,
+              battingPlayerId: batters.playerId,
+              bowlerId: bowlers.playerId,
+              balls: bowlers.balls,
+              runs: bowlers.runs,
+              overs_finished: bowlers.fininshed,
+              noBall: bowlers.noBalls,
+              whiteBall: bowlers.wides,
+              lbBall: bowlers.legBye,
+              byeBall: bowlers.byeBall,
+              isOut: bowlers.out,
+              oversNumber: bowlers.oversNumber,
+            };
+
+            // const overs = await CustomPlayerOvers.create(oversData);
+
             const calculateAndUpdateTeamScores = async (teamKey) => {
               const teamPlayers = existingScorecard.scorecard[teamKey].players;
-              const totalRuns = teamPlayers.reduce(
-                (acc, batters) => {
-                  if (teamRuns.bye || teamRuns.legBye) {
-                    return acc + (teamRuns.runs || 0);
-                  } else {
-                    return acc + (batters.runs || 0);
-                  }
-                },
-                0
-              );
+              const totalRuns = teamPlayers.reduce((acc, batters) => {
+                if (teamRuns.bye || teamRuns.legBye) {
+                  return acc + (teamRuns.runs || 0);
+                } else {
+                  return acc + (batters.runs || 0);
+                }
+              }, 0);
               const totalOvers = teamPlayers.reduce(
                 (acc, player) => acc + (player.overs || 0),
                 0
@@ -977,7 +993,9 @@ const setupWebSocket = (server) => {
             await match.save();
 
             const matchDetails = await CustomMatch.findById(matchId);
-            const scorecardDetails = await CustomMatchScorecard.findOne({ matchId });
+            const scorecardDetails = await CustomMatchScorecard.findOne({
+              matchId,
+            });
 
             const matchLiveScore = {
               homeTeam: matchDetails.homeTeamScore,
@@ -985,16 +1003,18 @@ const setupWebSocket = (server) => {
               noOfOvers: matchDetails.noOfOvers,
             };
 
-            const playingBatters = scorecardDetails.scorecard[battingTeamKey].players
-              .filter(player => player.status === "not_out")
+            const playingBatters = scorecardDetails.scorecard[
+              battingTeamKey
+            ].players
+              .filter((player) => player.status === "not_out")
               .slice(0, 2)
-              .map(player => ({
+              .map((player) => ({
                 name: player.name,
                 runs: player.runs,
                 balls: player.balls,
-                id: player.id
+                id: player.id,
               }));
-            
+
             ws.send(
               JSON.stringify({
                 message: "score updated successfully",
