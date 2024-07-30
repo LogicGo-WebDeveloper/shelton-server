@@ -673,8 +673,8 @@ const getTeamDetails = async (req, res, next) => {
     });
 
     data.favouriteTeamDetails = {
-      is_favourite: allExistingFavourite?.status || false
-    }
+      is_favourite: allExistingFavourite?.status || false,
+    };
 
     return apiResponse({
       res,
@@ -703,85 +703,6 @@ const getTeamDetails = async (req, res, next) => {
     }
   }
 };
-
-
-// const getTeamDetails = async (req, res, next) => {
-//   try {
-//     const { id } = req.params;
-//     const key = cacheService.getCacheKey(req);
-
-//     let data = cacheService.getCache(key);
-
-//     if (!data) {
-//       // Check if the data exists in the database
-//       let detailsTeam = await TeamDetails.findOne({ teamId: id });
-
-//       if (!detailsTeam) {
-//         // Fetch data from the API
-//         const apiData = await service.getTeamDetails(req.params);
-
-//         // Store the fetched data in the database
-//         const teamDetailsEntry = new TeamDetails({
-//           teamId: req.params.id,
-//           data: apiData,
-//         });
-//         await teamDetailsEntry.save();
-//         detailsTeam = teamDetailsEntry;
-//       }
-
-//       // Aggregate the data
-//       const aggregatedData = await TeamDetails.aggregate([
-//         { $match: { teamId: req.params.id } },
-//         {
-//           $lookup: {
-//             from: "favouriteteamdetails", // Collection name of FavouriteTeamDetails
-//             localField: "teamId", // Field from TeamDetails collection to match
-//             foreignField: "teamId", // Field from FavouriteTeamDetails collection to match
-//             as: "favouriteTeamDetails",
-//           },
-//         },
-//         {
-//           $project: {
-//             _id: 1,
-//             teamId: "$teamId",
-//             favouriteTeamDetails: {
-//               $cond: {
-//                 if: { $gt: [{ $size: "$favouriteTeamDetails" }, 0] },
-//                 then: {
-//                   is_favourite: { $arrayElemAt: ["$favouriteTeamDetails.status", 0] },
-//                   // Include other fields from FavouriteTeamDetails if needed
-//                 },
-//                 else: {
-//                   is_favourite: false,
-//                 },
-//               },
-//             },
-//             // Include other fields from TeamDetails if needed
-//           },
-//         },
-//       ]);
-
-//       data = aggregatedData[0];
-//       cacheService.setCache(key, data, cacheTTL.ONE_DAY);
-//     }
-
-//     return apiResponse({
-//       res,
-//       data: data,
-//       status: true,
-//       message: "Team details fetched successfully",
-//       statusCode: StatusCodes.OK,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     return apiResponse({
-//       res,
-//       status: false,
-//       message: "Internal server error",
-//       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-//     });
-//   }
-// };
 
 const getTeamPLayers = async (req, res, next) => {
   try {
@@ -847,9 +768,7 @@ const getTeamPLayers = async (req, res, next) => {
       if (teamPlayerData) {
         data = teamPlayerData;
       } else {
-        // Fetch data from the API
         data = await service.getTeamPLayers(req.params);
-        // console.log("data", data);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
         // Process player images
@@ -1235,7 +1154,6 @@ const getTeamPlayerStatisticsSeasons = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    // console.log(error);
     return apiResponse({
       res,
       status: false,
@@ -1263,11 +1181,9 @@ const getTeamMedia = async (req, res, next) => {
       if (teamPlayerData) {
         data = teamPlayerData;
       } else {
-        // Fetch data from the API
         data = await service.getTeamMedia(id);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
-        // Store the fetched data in the database
         const teamMediaEntry = new teamMedia({ teamId: req.params.id, data });
         await teamMediaEntry.save();
       }
@@ -1321,8 +1237,6 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
     };
 
     if (!data) {
-      // data = await service.getTeamFeaturedEventsByTeams(id);
-
       cacheService.setCache(key, data, cacheTTL.ONE_MINUTE);
       const teamFeaturedData = await TeamFeaturedMatches.findOne({
         teamId: id,
@@ -1351,7 +1265,6 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
 
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
-        // Store the fetched data in the database
         const teamFeaturedEntry = new TeamFeaturedMatches({ teamId: id, data });
         await teamFeaturedEntry.save();
       }
@@ -1497,7 +1410,7 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
           nextEvent: {
             $cond: {
               if: { $eq: [{ $ifNull: ["$data.nextEvent", null] }, null] },
-              then: null, // or {} if you want an empty object
+              then: null,
               else: {
                 tournament: {
                   name: { $ifNull: ["$data.nextEvent.tournament.name", null] },
@@ -1678,7 +1591,6 @@ const getSeasonStandingsbyTeam = async (req, res, next) => {
       } else {
         data = await service.getSeasonStandingsbyTeam(id, tournamentId);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
-        // Store the fetched data in the database
         const teamSeasonsEntry = new TeamSeasonsStanding({ teamId: id, data });
         await teamSeasonsEntry.save();
       }

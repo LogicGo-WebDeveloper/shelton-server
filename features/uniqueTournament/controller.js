@@ -30,10 +30,14 @@ const getTournamentById = async (req, res, next) => {
 
         const image = await helper.getTournamentImage(data.id);
         let imageUrl;
-        const folderName = "tournaments"
+        const folderName = "tournaments";
         if (image) {
-          await helper.uploadImageInS3Bucket(`${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${id}/image`, folderName, data.id);
-          imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${data.id}`
+          await helper.uploadImageInS3Bucket(
+            `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${id}/image`,
+            folderName,
+            data.id
+          );
+          imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${data.id}`;
         } else {
           imageUrl = "";
         }
@@ -73,9 +77,9 @@ const getTournamentById = async (req, res, next) => {
       { $match: { tournamentId: id } },
       {
         $lookup: {
-          from: "favouriteleaguedetails", // Collection name of FavouritePlayerDetails
-          localField: "_id", // Field from PlayerDetails collection to match
-          foreignField: "leagueId", // Field from FavouritePlayerDetails collection to match
+          from: "favouriteleaguedetails",
+          localField: "_id",
+          foreignField: "leagueId",
           as: "favouriteleaguedetails",
         },
       },
@@ -96,7 +100,6 @@ const getTournamentById = async (req, res, next) => {
                       is_favourite: {
                         $arrayElemAt: ["$favouriteleaguedetails.status", 0],
                       },
-                      // Include other fields from FavouritePlayerDetails if needed
                     },
                     else: {
                       is_favourite: false,

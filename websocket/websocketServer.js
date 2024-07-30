@@ -781,6 +781,8 @@ const setupWebSocket = (server) => {
           try {
             const { matchId, batters, bowlers, teamRuns } = data;
             const match = await CustomMatch.findOne({ _id: matchId });
+
+            //for update match scorecard
             if (!match) {
               ws.send(
                 JSON.stringify({
@@ -966,32 +968,41 @@ const setupWebSocket = (server) => {
                 (acc, player) => acc + (player.overs || 0),
                 0
               );
+
               const totalWickets = teamPlayers.reduce(
                 (acc, player) => acc + (player.wickets || 0),
                 0
               );
-
-              if (totalOvers < match.noOfOvers) {
-                ws.send(
-                  JSON.stringify({
-                    message: "Overs is greater than Matches overs.",
+              if (totalOvers > match.noOfOvers) {
+                return {
+                  message: "Overs is greater than Matches overs.",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                }
+              } else {
+                  match[`${teamKey}Score`].runs = totalRuns;
+                  match[`${teamKey}Score`].overs = totalOvers;
+                  match[`${teamKey}Score`].wickets = totalWickets;
+                  return {
+                    message: "score updated successfully",
                     actionType: data.action,
                     body: null,
-                    status: false,
-                  })
-                );
-                return;
+                    status: true,
+                  }
               }
-
-              match[`${teamKey}Score`].runs = totalRuns;
-              match[`${teamKey}Score`].overs = totalOvers;
-              match[`${teamKey}Score`].wickets = totalWickets;
             };
 
-            calculateAndUpdateTeamScores(battingTeamKey);
-
-            await match.save();
-
+            const matchScore =await calculateAndUpdateTeamScores(battingTeamKey);
+            if(matchScore.status) {
+              await match.save();
+            } else{
+              ws.send(
+                JSON.stringify(matchScore)
+              );
+            }
+            // for using summary api
+            if(matchScore.status) {
             const matchDetails = await CustomMatch.findById(matchId);
             const scorecardDetails = await CustomMatchScorecard.findOne({
               matchId,
@@ -1024,8 +1035,9 @@ const setupWebSocket = (server) => {
                   batters: playingBatters,
                 },
                 status: true,
-              })
-            );
+                })
+              );
+            }
           } catch (error) {
             console.error("Failed to update score:", error.message);
             ws.send(
@@ -1037,7 +1049,84 @@ const setupWebSocket = (server) => {
               })
             );
           }
-          break;
+        break;
+        case "changeBatterStrike":
+          try {
+            const { matchId, batterId } = data;
+
+            // Validate input
+            if (!matchId || !batterId) {
+              ws.send(
+                JSON.stringify({
+                  message: "Match ID and Batter ID are required",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Find the match scorecard
+            const scorecard = await CustomMatchScorecard.findOne({ matchId });
+            if (!scorecard) {
+              ws.send(
+                JSON.stringify({
+                  message: "Scorecard not found",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Determine the batting team
+            const battingTeamKey = scorecard.scorecard.homeTeam.players.some(player => player.status === 'not_out') ? 'homeTeam' : 'awayTeam';
+
+            // Find the player to change strike
+            const playerIndex = scorecard.scorecard[battingTeamKey].players.findIndex(player => player.id.toString() === batterId && player.status === 'not_out');
+            if (playerIndex === -1) {
+              ws.send(
+                JSON.stringify({
+                  message: "Batter not found or not currently batting",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Update the strike status
+            scorecard.scorecard[battingTeamKey].players.forEach(player => {
+              if (player.status === 'not_out') {
+                player.activeStriker = false;
+              }
+            });
+            scorecard.scorecard[battingTeamKey].players[playerIndex].activeStriker = true;
+
+            // Save the updated scorecard
+            await scorecard.save(); 
+
+            // Get the active striker data
+            const activeStriker = scorecard.scorecard[battingTeamKey].players[playerIndex];
+
+            ws.send(
+              JSON.stringify({
+                message: "Batter strike changed successfully",
+                actionType: data.action,
+                status: true,
+                data: activeStriker,
+              })
+            );
+          } catch (error) {
+            ws.send(
+              JSON.stringify({
+                message: "Internal server error",
+                actionType: data.action,
+                status: false,
+              })
+            );
+          }
+        break;
       }
     });
   });

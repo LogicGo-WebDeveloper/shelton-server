@@ -1,20 +1,24 @@
 import Joi from "joi";
 import enums from "../../config/enum.js";
 
-const createTournament = Joi.object().keys({
-  sportId: Joi.string().required(),
-  name: Joi.string().required(),
-  cityId: Joi.string().required(),
-  groundName: Joi.string().required(),
-  organiserName: Joi.string().required(),
-  tournamentStartDate: Joi.date().required(),
-  tournamentEndDate: Joi.date().required(),
-  tournamentCategoryId: Joi.string().required(),
-  tournamentMatchTypeId: Joi.string().required(),
-  moreTeams: Joi.string().required(),
-  winningPrizeId: Joi.string().required(),
-  matchOnId: Joi.string().required(),
-});
+const createTournament = {
+  body: Joi.object().keys({
+    sportId: Joi.string().required(),
+    name: Joi.string().required(),
+    cityId: Joi.string().required(),
+    groundName: Joi.string().required(),
+    organiserName: Joi.string().required(),
+    tournamentStartDate: Joi.date().required(),
+    tournamentEndDate: Joi.date().required(),
+    tournamentCategoryId: Joi.string().required(),
+    moreTeams: Joi.string().required(),
+    winningPrizeId: Joi.string().required(),
+    matchOnId: Joi.string().required(),
+    description: Joi.string().required(),
+    tournamentImages: Joi.string(),
+    tournamentBackgroundImage: Joi.string(),
+  }),
+};
 
 const createTeam = {
   body: Joi.object().keys({

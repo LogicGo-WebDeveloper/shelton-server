@@ -60,7 +60,6 @@ const createPlayer = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (err) {
-    console.log(err);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
