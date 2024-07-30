@@ -1,8 +1,14 @@
 import mongoose from "mongoose";
 
 const FavouriteDetailsSchema = new mongoose.Schema({
-  matchesId: { type: String, required: true },
-  userId: { type: String, required: true },
+  matchesId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "MatcheDetailsByMatchScreen",
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "users",
+  },
   type: { type: String, required: true },
   status: { type: Boolean, required: true },
 });

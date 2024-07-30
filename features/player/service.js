@@ -22,9 +22,12 @@ const getNationalTeamStatistics = async (id) => {
 };
 
 const getPlayerImage = async (id) => {
-  const { data } = await axiosInstance.get(`/api/v1/player/${id}/image`);
-
-  return data ?? [];
+  try {
+    const { data } = await axiosInstance.get(`/api/v1/player/${id}/image`);
+    return data ?? [];
+  } catch (error) {
+    return null
+  }
 };
 
 export default {

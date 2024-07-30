@@ -1,8 +1,11 @@
 import mongoose from "mongoose";
 
 const FavouritePlayerDetailsSchema = new mongoose.Schema({
-  playerId: { type: String, required: true },
-  userId: { type: String, required: true },
+  playerId: { type: mongoose.Schema.Types.ObjectId, ref: "PlayerDetails" },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "users",
+  },
   type: { type: String, required: true },
   status: { type: Boolean, required: true },
 });

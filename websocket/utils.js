@@ -1,18 +1,22 @@
+import helper from "../helper/common.js";
+import config from "../config/config.js";
+
 export const convertSportListToArray = (sportList) => {
+  let sportUrl = req.protocol + "://" + req.get("host") + "/sport/";
+
   return Object.keys(sportList).map((key) => ({
     id: key,
     name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
     live: sportList[key].live,
     total: sportList[key].total,
+    image: sportList[key].image ? sportUrl + sportList[key].image : "",
   }));
 };
 
-export const filterLiveMatchData = (data) => {
-  // console.log(data.data.event);
-  let match = data.data.event;
-
+export const filterLiveMatchData = (match, _id, isFavourite) => {
+  let isAllfavourite = isFavourite ? isFavourite.status : false;
   return {
-    _id: data._id,
+    _id: _id ? _id : undefined,
     tournament: {
       name: match?.tournament?.name || null,
       slug: match?.tournament?.slug || null,
@@ -21,8 +25,13 @@ export const filterLiveMatchData = (data) => {
         slug: match?.tournament?.category?.slug || null,
         id: match?.tournament?.category?.id || null,
         country: match?.tournament?.category?.country || null,
+        image: match?.tournament?.category?.image || null,
       },
       id: match?.tournament?.id || null,
+      image: match?.tournament?.image || null,
+    },
+    favouriteMatchDetails: {
+      is_favourite: isAllfavourite ? isAllfavourite : false,
     },
     customId: match?.customId || null,
     season: {
@@ -147,16 +156,34 @@ export const fractionalOddsToDecimal = (fractionalOdds) => {
   return numerator / denominator + 1;
 };
 
-export const filteredOversData = (data) => {
+const getImageUrl = async (playerId) => {
+  const folderName = "player";
+  let imageUrl;
+  const image = await helper.getPlayerImage(playerId);
+  if (image) {
+    await helper.uploadImageInS3Bucket(
+      `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${playerId}/image`,
+      folderName,
+      playerId
+    );
+    imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${playerId}`;
+  } else {
+    imageUrl = null;
+  }
+  return imageUrl;
+};
+
+export const filteredOversData = async (data) => {
   const result = [];
   const overMap = {};
 
-  data.forEach((item) => {
+  for (const item of data) {
     const over = item.over;
     if (!overMap[over]) {
       overMap[over] = {
         over: over.toString(),
         total_runs_in_this_over: 0,
+        image: (await getImageUrl(item?.bowler?.id)) || null,
         balls: [],
       };
       result.push(overMap[over]);
@@ -203,7 +230,7 @@ export const filteredOversData = (data) => {
       incidentClassLabel: item?.incidentClassLabel || null,
       zone: item?.zone || null,
     });
-  });
+  }
 
   return result;
 };

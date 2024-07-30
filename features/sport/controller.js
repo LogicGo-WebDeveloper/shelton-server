@@ -8,16 +8,11 @@ import CountryLeagueList from "./models/countryLeagueListSchema.js";
 import BannerSportList from "./models/BannerList.js";
 import ScheduleMatches from "./models/sheduleMatchesSchema.js";
 import service from "./service.js";
-import { uploadFile } from "../../helper/aws_s3.js";
 import config from "../../config/config.js";
-import axiosInstance from "../../config/axios.config.js";
 import RecentMatch from "./models/recentMatchesSchema.js";
-// import { verifyToken } from "../../middleware/verifyToken.js";
 import helper from "../../helper/common.js";
 import PlayerDetails from "../player/models/playerDetailsSchema.js";
 import TeamDetails from "../team/models/teamDetailsSchema.js";
-
-const folderName = "country";
 
 const getCountryLeagueList = async (req, res, next) => {
   try {
@@ -38,32 +33,17 @@ const getCountryLeagueList = async (req, res, next) => {
             const identifier = (alpha2 || flag).toLowerCase();
 
             if (identifier) {
-              const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
-              try {
-                const response = await fetch(baseUrl);
-                if (response.status !== 200) {
-                  item.image = null;
-                } else {
-                  item.image = baseUrl;
-                }
-                // console.log({ identifier }, "==>> free");
-              } catch (error) {
-                const response = await axiosInstance.get(
-                  `/static/images/flags/${identifier}.png`,
-                  {
-                    responseType: "arraybuffer",
-                  }
+              const folderName = "country";
+              const image = await helper.getFlagsOfCountry(identifier);
+              if (image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+                  folderName,
+                  identifier
                 );
-                // console.log({ identifier }, "==>> paid");
-                const buffer = Buffer.from(response.data, "binary");
-
-                await uploadFile({
-                  filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`,
-                  file: buffer,
-                  ACL: "public-read",
-                });
-                const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}.png`;
-                item.image = imageUrl;
+                item.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${identifier}`;
+              } else {
+                item.image = null;
               }
             }
             return item;
@@ -72,19 +52,38 @@ const getCountryLeagueList = async (req, res, next) => {
 
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
-        // const fetchAllCategories = async () => {
-        //   const promises = data.map(async (item) => {
-        //     const response = await sportService.getLeagueTournamentList(
-        //       item.id
-        //     );
-        //     item.tournamentlist = response;
-        //     return item;
-        //   });
+        const fetchAllCategories = async () => {
+          const promises = data.map(async (item) => {
+            const response = await sportService.getLeagueTournamentList(
+              item.id
+            );
+            item.tournamentlist = await Promise.all(
+              response.map(async (tournament) => {
+                const tournamentId = tournament?.id;
+                const folderName = "tournaments";
 
-        //   const results = await Promise.all(promises);
-        //   return results;
-        // };
-        // data = await fetchAllCategories();
+                const image = await helper.getTournamentImage(tournamentId);
+                if (image) {
+                  await helper.uploadImageInS3Bucket(
+                    `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${tournamentId}/image`,
+                    folderName,
+                    tournamentId
+                  );
+                  tournament.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${tournamentId}`;
+                } else {
+                  tournament.image = null;
+                }
+
+                return tournament;
+              })
+            );
+            return item;
+          });
+
+          const results = await Promise.all(promises);
+          return results;
+        };
+        data = await fetchAllCategories();
 
         const newCountryLeagueListEntry = new CountryLeagueList({
           sport,
@@ -122,6 +121,7 @@ const getCountryLeagueList = async (req, res, next) => {
                       },
                       userCount: "$$tournament.userCount",
                       id: "$$tournament.id",
+                      image: "$$tournament.image",
                     },
                   },
                 },
@@ -135,7 +135,6 @@ const getCountryLeagueList = async (req, res, next) => {
     return apiResponse({
       res,
       data: modifyData[0],
-      // data:  modifyData[0].data.sort((a, b) => a.name.localeCompare(b.name)),
       status: true,
       message: "Country league list fetched successfully",
       statusCode: StatusCodes.OK,
@@ -177,6 +176,10 @@ const getSportList = async (req, res, next) => {
       } else {
         // Fetch data from the API
         data = await sportService.getSportList(timezoneOffset);
+        data.football.image = "football.png";
+        data.tennis.image = "tennis.png";
+        data.cricket.image = "cricket.png";
+
         cacheService.setCache(key, data, cacheTTL.TEN_SECONDS);
 
         // Store the fetched data in the database
@@ -193,12 +196,15 @@ const getSportList = async (req, res, next) => {
         : "";
     });
 
+    let sportUrl = req.protocol + "://" + req.get("host") + "/sport/";
+
     let fildataaa = Object.keys(data).map((key) => {
       return {
         id: key,
         name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
         live: data[key].live,
         total: data[key].total,
+        image: data[key].image ? sportUrl + data[key].image : "",
       };
     });
 
@@ -270,21 +276,90 @@ const getAllScheduleMatches = async (req, res, next) => {
     const { sport, date } = req.params;
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
+
     if (!data) {
       const matches = await ScheduleMatches.findOne({ sport: sport });
+      const folderName = "team";
       if (matches) {
         const matchesData = matches.data.find((match) => match.date === date);
         if (matchesData) {
           data = matchesData.matches;
         } else {
           data = await sportService.getAllScheduleMatches(sport, date);
+          data.events.forEach((event) => {
+            const homeTeamId = event.homeTeam.id;
+            const awayTeamId = event.awayTeam.id;
+            if (homeTeamId) {
+              const image = helper.getTeamImages(homeTeamId);
+
+              if (image) {
+                helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${homeTeamId}/image`,
+                  folderName,
+                  homeTeamId
+                );
+                event.homeTeam.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${homeTeamId}`;
+              } else {
+                event.homeTeam.image = null;
+              }
+            }
+
+            if (awayTeamId) {
+              const image = helper.getTeamImages(awayTeamId);
+
+              if (image) {
+                helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${awayTeamId}/image`,
+                  folderName,
+                  awayTeamId
+                );
+                event.awayTeam.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${awayTeamId}`;
+              } else {
+                event.awayTeam.image = null;
+              }
+            }
+          });
           cacheService.setCache(key, data, cacheTTL.ONE_HOUR);
           matches.data.push({ date, matches: data });
           await matches.save();
         }
       } else {
         data = await sportService.getAllScheduleMatches(sport, date);
+        data.events.forEach((event) => {
+          const homeTeamId = event.homeTeam.id;
+          const awayTeamId = event.awayTeam.id;
+          if (homeTeamId) {
+            const image = helper.getTeamImages(homeTeamId);
+
+            if (image) {
+              helper.uploadImageInS3Bucket(
+                `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${homeTeamId}/image`,
+                folderName,
+                homeTeamId
+              );
+              event.homeTeam.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${homeTeamId}`;
+            } else {
+              event.homeTeam.image = null;
+            }
+          }
+
+          if (awayTeamId) {
+            const image = helper.getTeamImages(awayTeamId);
+
+            if (image) {
+              helper.uploadImageInS3Bucket(
+                `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${awayTeamId}/image`,
+                folderName,
+                awayTeamId
+              );
+              event.awayTeam.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${awayTeamId}`;
+            } else {
+              event.awayTeam.image = null;
+            }
+          }
+        });
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
+
         const matchesEntry = new ScheduleMatches({
           sport: sport,
           data: [{ date: date, matches: data }],
@@ -311,6 +386,7 @@ const getAllScheduleMatches = async (req, res, next) => {
         slug: match.homeTeam?.slug || null,
         shortName: match.homeTeam?.shortName || null,
         nameCode: match.homeTeam?.nameCode || null,
+        image: match.homeTeam?.image || null,
         id: match.homeTeam?.id || null,
       },
       awayTeam: {
@@ -318,6 +394,7 @@ const getAllScheduleMatches = async (req, res, next) => {
         slug: match.awayTeam?.slug || null,
         shortName: match.awayTeam?.shortName || null,
         nameCode: match.awayTeam?.nameCode || null,
+        image: match.awayTeam?.image || null,
         id: match.awayTeam?.id || null,
       },
       homeScore: {
@@ -373,16 +450,16 @@ const getAllScheduleMatches = async (req, res, next) => {
     let filteredStatusData;
     if (currentDate === date) {
       const filterSameDateData = formattedData.filter((item) =>
-        ["notstarted", "inprogress", "finished", "canceled"].includes(
+        ["finished", "notstarted", "inprogress", "canceled"].includes(
           item.status.type
         )
       );
       filteredStatusData = filterSameDateData.sort(
         (a, b) =>
-          ["notstarted", "inprogress", "finished", "canceled"].indexOf(
+          ["finished", "notstarted", "inprogress", "canceled"].indexOf(
             a.status.type
           ) -
-          ["notstarted", "inprogress", "finished", "canceled"].indexOf(
+          ["finished", "notstarted", "inprogress", "canceled"].indexOf(
             b.status.type
           )
       );
@@ -413,6 +490,7 @@ const getAllScheduleMatches = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     return apiResponse({
       res,
       status: false,
@@ -435,7 +513,6 @@ const getRecentMatches = async (req, res, next) => {
         const userRecentMatches = userAllRecentMatches?.data?.find(
           (item) => item.sport === sport
         );
-        console.log("userRecentMatches", userRecentMatches?.data);
         recentMatches = userRecentMatches?.data;
       }
     }
@@ -485,6 +562,10 @@ const globalSearch = async (req, res, next) => {
                   player: { $ifNull: ["$$dataObj.player.name", null] },
                   position: { $ifNull: ["$$dataObj.player.position", null] },
                   playerId: { $ifNull: ["$$dataObj.player.id", null] },
+                  image: { $ifNull: ["$$dataObj.player.image", null] },
+                  countryName: {
+                    $ifNull: ["$$dataObj.player.country.name", null],
+                  },
                   sport: {
                     $ifNull: ["$$dataObj.player.team.sport.name", null],
                   },
@@ -501,7 +582,6 @@ const globalSearch = async (req, res, next) => {
         {
           $project: {
             team: {
-              //This data only sending null  because of frontend side use standing model
               position: { $ifNull: ["$data.team.position", null] },
               matches: { $ifNull: ["$data.team.matches", null] },
               draws: { $ifNull: ["$data.team.draws", null] },
@@ -510,12 +590,12 @@ const globalSearch = async (req, res, next) => {
               netRunRate: { $ifNull: ["$data.team.netRunRate", null] },
               noResult: { $ifNull: ["$data.team.noResult", null] },
               wins: { $ifNull: ["$data.team.wins", null] },
-
-              //The data is coming from here
               id: { $ifNull: ["$data.team.id", null] },
               shortName: { $ifNull: ["$data.team.shortName", null] },
               teamName: { $ifNull: ["$data.team.name", null] },
               sport: { $ifNull: ["$data.team.sport.name", null] },
+              image: { $ifNull: ["$data.team.image", null] },
+              countryName: { $ifNull: ["$data.team.country.name", null] },
             },
           },
         },
@@ -542,6 +622,7 @@ const globalSearch = async (req, res, next) => {
               flag: "$data.tournamentlist.category.flag",
             },
             userCount: "$data.tournamentlist.userCount",
+            image: { $ifNull: ["$data.tournamentlist.image", null] },
             sport: "$data.tournamentlist.category.sport.name",
           },
         },
@@ -555,6 +636,8 @@ const globalSearch = async (req, res, next) => {
         statusCode: StatusCodes.BAD_REQUEST,
       });
     }
+
+    data = data.reverse().slice(0, 10);
 
     return apiResponse({
       res,

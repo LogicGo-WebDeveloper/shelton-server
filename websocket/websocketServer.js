@@ -9,14 +9,27 @@ import {
   filteredOversData,
   fractionalOddsToDecimal,
 } from "./utils.js";
+import helper from "../helper/common.js";
+import config from "../config/config.js";
+import CustomPlayerOvers from "../cricket-custom-module/models/playersOvers.models.js";
+import CustomMatchScorecard from "../cricket-custom-module/models/matchScorecard.models.js";
+import CustomMatch from "../cricket-custom-module/models/match.models.js";
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
   wss.on("connection", (ws) => {
+    const validateField = (field, value, type) => {
+      if (typeof value !== type) {
+        return `Invalid data format for ${field}`;
+      }
+      return null;
+    };
+
     ws.on("message", async (message) => {
+      const messageString = message.toString();
       let data;
       try {
-        data = JSON.parse(message);
+        data = JSON.parse(messageString);
       } catch (error) {
         console.error("Invalid JSON:", error);
         ws.send(
@@ -34,6 +47,79 @@ const setupWebSocket = (server) => {
             const liveMatches = await sportWebsocketService.getAllLiveMatches(
               data.sport
             );
+            for (const event of liveMatches.events) {
+              const folderName = "team";
+              const tournamentFolderName = "tournaments";
+              const countryFolderName = "country";
+
+              let homeImageUrl;
+              let awayImageUrl;
+              let tournamentImageUrl;
+              let countryImageUrl;
+
+              let uniqueTournamentId = event.tournament?.uniqueTournament?.id;
+              let alpha2 = event.tournament?.category?.alpha2 || undefined;
+              const flag = event.tournament?.category?.flag || undefined;
+              const identifier = (alpha2 || flag).toLowerCase();
+
+              const home_image = await helper.getTeamImages(event.homeTeam.id);
+              const away_image = await helper.getTeamImages(event.awayTeam.id);
+              const tournament_image = await helper.getTournamentImage(
+                uniqueTournamentId
+              );
+
+              if (home_image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${event.homeTeam.id}/image`,
+                  folderName,
+                  event.homeTeam.id
+                );
+                homeImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${event.homeTeam.id}`;
+              } else {
+                homeImageUrl = "";
+              }
+
+              if (away_image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${event.awayTeam.id}/image`,
+                  folderName,
+                  event.awayTeam.id
+                );
+                awayImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${event.awayTeam.id}`;
+              } else {
+                awayImageUrl = "";
+              }
+
+              if (tournament_image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${uniqueTournamentId}/image`,
+                  tournamentFolderName,
+                  uniqueTournamentId
+                );
+                tournamentImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${tournamentFolderName}/${uniqueTournamentId}`;
+              } else {
+                tournamentImageUrl = "";
+              }
+
+              if (identifier) {
+                const image = await helper.getFlagsOfCountry(identifier);
+                if (image) {
+                  await helper.uploadImageInS3Bucket(
+                    `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+                    countryFolderName,
+                    identifier
+                  );
+                  countryImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${countryFolderName}/${identifier}`;
+                } else {
+                  countryImageUrl = "";
+                }
+              }
+
+              event.homeTeam.image = homeImageUrl;
+              event.awayTeam.image = awayImageUrl;
+              event.tournament.image = tournamentImageUrl;
+              event.tournament.category.image = countryImageUrl;
+            }
             const filteredLiveMatches =
               liveMatches.events.map(filterLiveMatchData);
             ws.send(
@@ -107,6 +193,83 @@ const setupWebSocket = (server) => {
             const liveMatch = await sportWebsocketService.getLiveMatch(
               data.matchId
             );
+            let homeId = liveMatch.event.homeTeam.id;
+            let awayId = liveMatch.event.awayTeam.id;
+            let uniqueTournamentId =
+              liveMatch.event.tournament?.uniqueTournament?.id;
+            let alpha2 =
+              liveMatch.event.tournament?.category?.alpha2 || undefined;
+            const flag =
+              liveMatch.event.tournament?.category?.flag || undefined;
+            const identifier = (alpha2 || flag).toLowerCase();
+
+            const home_image = await helper.getTeamImages(homeId);
+            const away_image = await helper.getTeamImages(awayId);
+            const tournament_image = await helper.getTournamentImage(
+              uniqueTournamentId
+            );
+
+            let homeImageUrl;
+            let awayImageUrl;
+            let tournamentImageUrl;
+            let countryImageUrl;
+
+            const folderName = "team";
+            const tournamentFolderName = "tournaments";
+            const countryFolderName = "country";
+
+            if (home_image) {
+              await helper.uploadImageInS3Bucket(
+                `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${homeId}/image`,
+                folderName,
+                homeId
+              );
+              homeImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${homeId}`;
+            } else {
+              homeImageUrl = "";
+            }
+
+            if (away_image) {
+              await helper.uploadImageInS3Bucket(
+                `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${awayId}/image`,
+                folderName,
+                awayId
+              );
+              awayImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${awayId}`;
+            } else {
+              awayImageUrl = "";
+            }
+
+            if (tournament_image) {
+              await helper.uploadImageInS3Bucket(
+                `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${uniqueTournamentId}/image`,
+                tournamentFolderName,
+                uniqueTournamentId
+              );
+              tournamentImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${tournamentFolderName}/${uniqueTournamentId}`;
+            } else {
+              tournamentImageUrl = "";
+            }
+
+            if (identifier) {
+              const image = await helper.getFlagsOfCountry(identifier);
+              if (image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+                  countryFolderName,
+                  identifier
+                );
+                countryImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${countryFolderName}/${identifier}`;
+              } else {
+                countryImageUrl = "";
+              }
+            }
+
+            liveMatch.event.homeTeam.image = homeImageUrl;
+            liveMatch.event.awayTeam.image = awayImageUrl;
+            liveMatch.event.tournament.image = tournamentImageUrl;
+            liveMatch.event.tournament.category.image = countryImageUrl;
+
             const filteredLiveMatch = filterLiveMatchData(liveMatch.event);
             if (filteredLiveMatch?.status?.type === "finished") {
               ws.send(
@@ -189,6 +352,36 @@ const setupWebSocket = (server) => {
         case "squad":
           try {
             const squad = await sportWebsocketService.getSquad(data.matchId);
+            for (const player of squad.home.players) {
+              const image = await helper.getPlayerImage(player.player.id);
+              if (image) {
+                const folderName = "player";
+                helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${player.player.id}/image`,
+                  folderName,
+                  player.player.id
+                );
+                player.player.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${player.player.id}`;
+              } else {
+                player.player.image = "";
+              }
+            }
+
+            for (const player of squad.away.players) {
+              const image = await helper.getPlayerImage(player.player.id);
+              if (image) {
+                const folderName = "player";
+                helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${player.player.id}/image`,
+                  folderName,
+                  player.player.id
+                );
+                player.player.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${player.player.id}`;
+              } else {
+                player.player.image = "";
+              }
+            }
+
             const filteredSquad = {
               home: {
                 players: filterPlayerData(squad.home.players),
@@ -243,11 +436,11 @@ const setupWebSocket = (server) => {
             );
             const filteredOvers = {
               homeTeam: {
-                data: filteredOversData(filterHomeTeam),
+                data: await filteredOversData(filterHomeTeam),
                 teamId: data.homeTeamId,
               },
               awayTeam: {
-                data: filteredOversData(filterAwayTeam),
+                data: await filteredOversData(filterAwayTeam),
                 teamId: data.awayTeamId,
               },
             };
@@ -287,6 +480,80 @@ const setupWebSocket = (server) => {
             const matches = await sportWebsocketService.getMatches(
               data.customId
             );
+            for (const event of matches.events) {
+              const folderName = "team";
+              const tournamentFolderName = "tournaments";
+              const countryFolderName = "country";
+
+              let homeImageUrl;
+              let awayImageUrl;
+              let tournamentImageUrl;
+              let countryImageUrl;
+
+              let uniqueTournamentId = event.tournament?.uniqueTournament?.id;
+              let alpha2 = event.tournament?.category?.alpha2 || undefined;
+              const flag = event.tournament?.category?.flag || undefined;
+              const identifier = (alpha2 || flag).toLowerCase();
+
+              const home_image = await helper.getTeamImages(event.homeTeam.id);
+              const away_image = await helper.getTeamImages(event.awayTeam.id);
+              const tournament_image = await helper.getTournamentImage(
+                uniqueTournamentId
+              );
+
+              if (home_image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${event.homeTeam.id}/image`,
+                  folderName,
+                  event.homeTeam.id
+                );
+                homeImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${event.homeTeam.id}`;
+              } else {
+                homeImageUrl = "";
+              }
+
+              if (away_image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${event.awayTeam.id}/image`,
+                  folderName,
+                  event.awayTeam.id
+                );
+                awayImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${event.awayTeam.id}`;
+              } else {
+                awayImageUrl = "";
+              }
+
+              if (tournament_image) {
+                await helper.uploadImageInS3Bucket(
+                  `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${uniqueTournamentId}/image`,
+                  tournamentFolderName,
+                  uniqueTournamentId
+                );
+                tournamentImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${tournamentFolderName}/${uniqueTournamentId}`;
+              } else {
+                tournamentImageUrl = "";
+              }
+
+              if (identifier) {
+                const image = await helper.getFlagsOfCountry(identifier);
+                if (image) {
+                  await helper.uploadImageInS3Bucket(
+                    `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+                    countryFolderName,
+                    identifier
+                  );
+                  countryImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${countryFolderName}/${identifier}`;
+                } else {
+                  countryImageUrl = "";
+                }
+              }
+
+              event.homeTeam.image = homeImageUrl;
+              event.awayTeam.image = awayImageUrl;
+              event.tournament.image = tournamentImageUrl;
+              event.tournament.category.image = countryImageUrl;
+            }
+
             const filteredMatches = matches.events.map(filterLiveMatchData);
             ws.send(
               JSON.stringify({
@@ -510,6 +777,356 @@ const setupWebSocket = (server) => {
             return;
           }
           break;
+        case "cricketController":
+          try {
+            const { matchId, batters, bowlers, teamRuns } = data;
+            const match = await CustomMatch.findOne({ _id: matchId });
+
+            //for update match scorecard
+            if (!match) {
+              ws.send(
+                JSON.stringify({
+                  message: "Match not found",
+                  actionType: data.action,
+                  body: null,
+                  status: true,
+                })
+              );
+              return;
+            }
+
+            // Validation for batters
+            const batterErrors = [
+              validateField("batters.balls", batters.balls, "boolean"),
+              validateField("batters.fours", batters.fours, "boolean"),
+              validateField("batters.sixes", batters.sixes, "boolean"),
+            ].filter((error) => error !== null);
+
+            if (batterErrors.length > 0) {
+              ws.send(
+                JSON.stringify({
+                  message: batterErrors.join(", "),
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Validation for bowlers
+            const bowlerErrors = [
+              validateField("bowlers.balls", bowlers.balls, "boolean"),
+              validateField("bowlers.maidens", bowlers.maidens, "boolean"),
+              validateField("bowlers.runs", bowlers.runs, "number"),
+              validateField("bowlers.wickets", bowlers.wickets, "boolean"),
+              validateField("bowlers.noBalls", bowlers.noBalls, "boolean"),
+              validateField("bowlers.wides", bowlers.wides, "boolean"),
+            ].filter((error) => error !== null);
+
+            if (bowlerErrors.length > 0) {
+              ws.send(
+                JSON.stringify({
+                  message: bowlerErrors.join(", "),
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Validation for teamRuns
+            const teamRunsErrors = [
+              validateField("teamRuns.bye", teamRuns.bye, "boolean"),
+              validateField("teamRuns.legBye", teamRuns.legBye, "boolean"),
+              validateField("teamRuns.runs", teamRuns.runs, "number"),
+            ].filter((error) => error !== null);
+
+            if (teamRunsErrors.length > 0) {
+              ws.send(
+                JSON.stringify({
+                  message: teamRunsErrors.join(", "),
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            const existingScorecard = await CustomMatchScorecard.findOne({
+              matchId,
+            });
+
+            if (!existingScorecard) {
+              ws.send(
+                JSON.stringify({
+                  message: "Scorecard not found",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            const battingTeamKey =
+              existingScorecard.scorecard.homeTeam.players.some(
+                (player) => player.id.toString() === batters.playerId
+              )
+                ? "homeTeam"
+                : "awayTeam";
+            const bowlingTeamKey =
+              battingTeamKey === "homeTeam" ? "awayTeam" : "homeTeam";
+
+            const batterIndex = existingScorecard.scorecard[
+              battingTeamKey
+            ].players.findIndex(
+              (player) => player.id.toString() === batters.playerId
+            );
+
+            if (batterIndex !== -1) {
+              const player =
+                existingScorecard.scorecard[battingTeamKey].players[
+                  batterIndex
+                ];
+              if (!teamRuns.bye && !teamRuns.legBye) {
+                player.runs = (player.runs || 0) + batters.runs;
+                player.balls = (player.balls || 0) + (batters.balls ? 1 : 0);
+                player.fours = (player.fours || 0) + (batters.fours ? 1 : 0);
+                player.sixes = (player.sixes || 0) + (batters.sixes ? 1 : 0);
+              }
+            }
+
+            const bowlerIndex = existingScorecard.scorecard[
+              bowlingTeamKey
+            ].players.findIndex(
+              (player) => player.id.toString() === bowlers.playerId
+            );
+
+            const getDecimalPart = (num) => {
+              const parts = num.toString().split(".");
+              return parts.length > 1 ? parseInt(parts[1], 10) : 0;
+            };
+
+            if (bowlerIndex !== -1) {
+              const player =
+                existingScorecard.scorecard[bowlingTeamKey].players[
+                  bowlerIndex
+                ];
+              const currentOvers = player.overs || 0;
+              const ballsBowled = getDecimalPart(currentOvers);
+
+              if (bowlers.balls) {
+                const newBallsBowled = ballsBowled + 1;
+                if (newBallsBowled >= 6) {
+                  player.overs = Math.floor(currentOvers) + 1;
+                } else {
+                  player.overs = Math.floor(currentOvers) + newBallsBowled / 10;
+                }
+              }
+              player.maidens =
+                (player.maidens || 0) + (bowlers.maidens ? 1 : 0);
+              player.runs = (player.runs || 0) + bowlers.runs;
+              player.wickets =
+                (player.wickets || 0) + (bowlers.wickets ? 1 : 0);
+              player.noBalls =
+                (player.noBalls || 0) + (bowlers.noBalls ? 1 : 0);
+              player.wides = (player.wides || 0) + (bowlers.wides ? 1 : 0);
+            }
+
+            await existingScorecard.save();
+
+            let oversData = {
+              playerScoreCardId: existingScorecard._id,
+              battingPlayerId: batters.playerId,
+              bowlerId: bowlers.playerId,
+              balls: bowlers.balls,
+              runs: bowlers.runs,
+              overs_finished: bowlers.fininshed,
+              noBall: bowlers.noBalls,
+              whiteBall: bowlers.wides,
+              lbBall: bowlers.legBye,
+              byeBall: bowlers.byeBall,
+              isOut: bowlers.out,
+              oversNumber: bowlers.oversNumber,
+            };
+
+            // const overs = await CustomPlayerOvers.create(oversData);
+
+            const calculateAndUpdateTeamScores = async (teamKey) => {
+              const teamPlayers = existingScorecard.scorecard[teamKey].players;
+              const totalRuns = teamPlayers.reduce((acc, batters) => {
+                if (teamRuns.bye || teamRuns.legBye) {
+                  return acc + (teamRuns.runs || 0);
+                } else {
+                  return acc + (batters.runs || 0);
+                }
+              }, 0);
+              const totalOvers = teamPlayers.reduce(
+                (acc, player) => acc + (player.overs || 0),
+                0
+              );
+
+              const totalWickets = teamPlayers.reduce(
+                (acc, player) => acc + (player.wickets || 0),
+                0
+              );
+              if (totalOvers > match.noOfOvers) {
+                return {
+                  message: "Overs is greater than Matches overs.",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                }
+              } else {
+                  match[`${teamKey}Score`].runs = totalRuns;
+                  match[`${teamKey}Score`].overs = totalOvers;
+                  match[`${teamKey}Score`].wickets = totalWickets;
+                  return {
+                    message: "score updated successfully",
+                    actionType: data.action,
+                    body: null,
+                    status: true,
+                  }
+              }
+            };
+
+            const matchScore =await calculateAndUpdateTeamScores(battingTeamKey);
+            if(matchScore.status) {
+              await match.save();
+            } else{
+              ws.send(
+                JSON.stringify(matchScore)
+              );
+            }
+            // for using summary api
+            if(matchScore.status) {
+            const matchDetails = await CustomMatch.findById(matchId);
+            const scorecardDetails = await CustomMatchScorecard.findOne({
+              matchId,
+            });
+
+            const matchLiveScore = {
+              homeTeam: matchDetails.homeTeamScore,
+              awayTeam: matchDetails.awayTeamScore,
+              noOfOvers: matchDetails.noOfOvers,
+            };
+
+            const playingBatters = scorecardDetails.scorecard[
+              battingTeamKey
+            ].players
+              .filter((player) => player.status === "not_out")
+              .slice(0, 2)
+              .map((player) => ({
+                name: player.name,
+                runs: player.runs,
+                balls: player.balls,
+                id: player.id,
+              }));
+
+            ws.send(
+              JSON.stringify({
+                message: "score updated successfully",
+                actionType: data.action,
+                body: {
+                  matchScore: matchLiveScore,
+                  batters: playingBatters,
+                },
+                status: true,
+                })
+              );
+            }
+          } catch (error) {
+            console.error("Failed to update score:", error.message);
+            ws.send(
+              JSON.stringify({
+                message: "Something went wrong",
+                actionType: data.action,
+                body: null,
+                status: false,
+              })
+            );
+          }
+        break;
+        case "changeBatterStrike":
+          try {
+            const { matchId, batterId } = data;
+
+            // Validate input
+            if (!matchId || !batterId) {
+              ws.send(
+                JSON.stringify({
+                  message: "Match ID and Batter ID are required",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Find the match scorecard
+            const scorecard = await CustomMatchScorecard.findOne({ matchId });
+            if (!scorecard) {
+              ws.send(
+                JSON.stringify({
+                  message: "Scorecard not found",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Determine the batting team
+            const battingTeamKey = scorecard.scorecard.homeTeam.players.some(player => player.status === 'not_out') ? 'homeTeam' : 'awayTeam';
+
+            // Find the player to change strike
+            const playerIndex = scorecard.scorecard[battingTeamKey].players.findIndex(player => player.id.toString() === batterId && player.status === 'not_out');
+            if (playerIndex === -1) {
+              ws.send(
+                JSON.stringify({
+                  message: "Batter not found or not currently batting",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Update the strike status
+            scorecard.scorecard[battingTeamKey].players.forEach(player => {
+              if (player.status === 'not_out') {
+                player.activeStriker = false;
+              }
+            });
+            scorecard.scorecard[battingTeamKey].players[playerIndex].activeStriker = true;
+
+            // Save the updated scorecard
+            await scorecard.save(); 
+
+            // Get the active striker data
+            const activeStriker = scorecard.scorecard[battingTeamKey].players[playerIndex];
+
+            ws.send(
+              JSON.stringify({
+                message: "Batter strike changed successfully",
+                actionType: data.action,
+                status: true,
+                data: activeStriker,
+              })
+            );
+          } catch (error) {
+            ws.send(
+              JSON.stringify({
+                message: "Internal server error",
+                actionType: data.action,
+                status: false,
+              })
+            );
+          }
+        break;
       }
     });
   });

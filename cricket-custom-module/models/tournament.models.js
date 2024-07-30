@@ -1,20 +1,37 @@
 import mongoose from "mongoose";
 
 const customTournamentSchema = new mongoose.Schema({
-  sportId: String,
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  sportId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CustomSportList",
+  },
   tournamentImage: String,
   name: String,
-  cityId: String,
+  cityId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CustomCityList",
+  },
   groundName: String,
   organiserName: String,
   tournamentStartDate: Date,
-  tournamentEndDate: Date,
-  tournamentCategoryId: String,
-  tournamentMatchTypeId: String,
-  officials: Boolean,
+  tournamentCategoryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CustomTournamentCategory",
+  },
+  tournamentMatchTypeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CustomMatchType",
+  },
   moreTeams: Boolean,
-  winningPrizeId: String,
-  matchOnId: String,
+  winningPrizeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CustomTournamentWinningPrize",
+  },
+  matchOnId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CustomMatchOn",
+  },
   description: String,
   tournamentBackgroundImage: String,
 });

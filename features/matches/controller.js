@@ -21,12 +21,12 @@ import MatchH2H from "./models/matchH2HSchema.js";
 import MatchesScreenMatches from "./models/matchesDetails.js";
 import helper from "../../helper/common.js";
 import config from "../../config/config.js";
-import { uploadFile } from "../../helper/aws_s3.js";
+import FavouriteDetails from "../favourite/models/favouriteDetails.js";
 
 const getOverDetailsById = async (req, res, next) => {
+  
   try {
     const { matchId, homeTeamId, awayTeamId } = req.query;
-    console.log(req.query);
     let data;
 
     const teamTopPlayers = await MatchesOvers.findOne({
@@ -36,7 +36,7 @@ const getOverDetailsById = async (req, res, next) => {
     });
 
     if (teamTopPlayers) {
-      data = teamTopPlayers;
+      data = teamTopPlayers.data.incidents;
     } else {
       data = await service.getOvers(matchId);
 
@@ -47,21 +47,23 @@ const getOverDetailsById = async (req, res, next) => {
         data: data,
       });
       await overssEntry.save();
+      data = data.incidents;
     }
 
-    const filterHomeTeam = data.data.incidents?.filter(
+    const filterHomeTeam = data?.filter(
       (incident) => incident.battingTeamId == homeTeamId
     );
-    const filterAwayTeam = data.data.incidents?.filter(
+    const filterAwayTeam = data?.filter(
       (incident) => incident.battingTeamId == awayTeamId
     );
+
     const filteredOvers = {
       homeTeam: {
-        data: filteredOversData(filterHomeTeam),
+        data: await filteredOversData(filterHomeTeam),
         teamId: homeTeamId,
       },
       awayTeam: {
-        data: filteredOversData(filterAwayTeam),
+        data: await filteredOversData(filterAwayTeam),
         teamId: awayTeamId,
       },
     };
@@ -151,7 +153,7 @@ const getSquadDetailsById = async (req, res, next) => {
     const scoreCard = await MatchesSquad.findOne({ matchId });
 
     if (scoreCard) {
-      data = scoreCard;
+      data = scoreCard.data;
     } else {
       data = await service.getSquad(matchId);
 
@@ -159,30 +161,22 @@ const getSquadDetailsById = async (req, res, next) => {
         for (const player of players) {
           const playerId = player.player.id;
           try {
-            const name = playerId;
             const folderName = "player";
-            const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+            const image = await helper.getPlayerImage(playerId);
 
-            // Check if the image URL already exists
-            try {
-              const response = await fetch(baseUrl);
-              if (response.status !== 200) {
-                player.player.image = null;
-              } else {
-                player.player.image = baseUrl;
-              }
-              // console.log({ playerId }, "==> free");
-            } catch (error) {
-              const image = await service.getTopPlayersImage(playerId);
-              // console.log({ playerId }, "==> paid");
-              await uploadFile({
-                filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-                file: image,
-                ACL: "public-read",
-              });
-              const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
-              player.player.image = imageUrl;
+            let imageUrl;
+            if (image) {
+              await helper.uploadImageInS3Bucket(
+                `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${playerId}/image`,
+                folderName,
+                playerId
+              );
+              imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${playerId}`;
+            } else {
+              imageUrl = "";
             }
+
+            player.player.image = imageUrl;
           } catch (error) {
             console.error(
               `Failed to upload image for player ${playerId}:`,
@@ -213,12 +207,12 @@ const getSquadDetailsById = async (req, res, next) => {
 
     const filteredSquad = {
       home: {
-        players: filterPlayerData(data.data.home.players),
-        supportStaff: data.data.home.supportStaff,
+        players: filterPlayerData(data.home.players),
+        supportStaff: data.home.supportStaff,
       },
       away: {
-        players: filterPlayerData(data.data.away.players),
-        supportStaff: data.data.away.supportStaff,
+        players: filterPlayerData(data.away.players),
+        supportStaff: data.away.supportStaff,
       },
     };
 
@@ -264,6 +258,7 @@ const getSingleMatchDetail = async (req, res, next) => {
       decodedToken = null;
     }
 
+<<<<<<< HEAD
     const getImageUrl = async (teamId) => {
       const name = teamId;
       const folderName = "team";
@@ -292,6 +287,8 @@ const getSingleMatchDetail = async (req, res, next) => {
       return filename;
     };
 
+=======
+>>>>>>> origin/main
     if (!data) {
       let matchDetails = await MatcheDetailsByMatchScreen.findOne({
         matchId: id,
@@ -302,13 +299,88 @@ const getSingleMatchDetail = async (req, res, next) => {
       } else {
         const apiData = await service.getSingleMatchDetail(id);
 
-        // Fetch image URLs for home and away teams
-        const homeTeamImageUrl = await getImageUrl(apiData.event.homeTeam.id);
-        const awayTeamImageUrl = await getImageUrl(apiData.event.awayTeam.id);
+        // Check if apiData is valid before accessing its properties
+        if (
+          !apiData ||
+          !apiData.event ||
+          !apiData.event.homeTeam ||
+          !apiData.event.awayTeam
+        ) {
+          throw new Error("API data structure is incomplete or incorrect");
+        }
 
-        // Add image URLs to the team data
-        apiData.event.homeTeam.image = homeTeamImageUrl;
-        apiData.event.awayTeam.image = awayTeamImageUrl;
+        let homeId = apiData.event.homeTeam.id;
+        let awayId = apiData.event.awayTeam.id;
+        let uniqueTournamentId = apiData.event.tournament?.uniqueTournament?.id;
+        let alpha2 = apiData.event.tournament?.category?.alpha2 || undefined;
+        const flag = apiData.event.tournament?.category?.flag || undefined;
+        const identifier = (alpha2 || flag).toLowerCase();
+
+        const home_image = await helper.getTeamImages(homeId);
+        const away_image = await helper.getTeamImages(awayId);
+        const tournament_image = await helper.getTournamentImage(uniqueTournamentId);
+
+        let homeImageUrl;
+        let awayImageUrl;
+        let tournamentImageUrl;
+        let countryImageUrl;
+
+        const folderName = "team";
+        const tournamentFolderName = "tournaments";
+        const countryFolderName = "country";
+
+        if (home_image) {
+          await helper.uploadImageInS3Bucket(
+            `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${homeId}/image`,
+            folderName,
+            homeId
+          );
+          homeImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${homeId}`;
+        } else {
+          homeImageUrl = "";
+        }
+
+        if (away_image) {
+          await helper.uploadImageInS3Bucket(
+            `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${awayId}/image`,
+            folderName,
+            awayId
+          );
+          awayImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${awayId}`;
+        } else {
+          awayImageUrl = "";
+        }
+
+        if (tournament_image) {
+          await helper.uploadImageInS3Bucket(
+            `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${uniqueTournamentId}/image`,
+            tournamentFolderName,
+            uniqueTournamentId
+          );
+          tournamentImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${tournamentFolderName}/${uniqueTournamentId}`;
+        } else {
+          tournamentImageUrl = "";
+        }
+
+
+        if (identifier) {
+          const image = await helper.getFlagsOfCountry(identifier);
+          if (image) {
+            await helper.uploadImageInS3Bucket(
+              `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+              countryFolderName,
+              identifier
+            );
+            countryImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${countryFolderName}/${identifier}`;
+          } else {
+            countryImageUrl = "";
+          }
+        }
+
+        apiData.event.homeTeam.image = homeImageUrl;
+        apiData.event.awayTeam.image = awayImageUrl;
+        apiData.event.tournament.image = tournamentImageUrl;
+        apiData.event.tournament.category.image = countryImageUrl;
 
         const matchEntry = new MatcheDetailsByMatchScreen({
           matchId: id,
@@ -320,14 +392,25 @@ const getSingleMatchDetail = async (req, res, next) => {
       }
     }
 
-    const filteredMatchDetails = filterLiveMatchData(data);
+    let allData = data.data ? data.data.event : data.event;
+
+    const isFavourite = await FavouriteDetails.findOne({
+      matchesId: data._id,
+    });
+
+    const filteredMatchDetails = filterLiveMatchData(
+      allData,
+      data._id,
+      isFavourite
+    );
     if (decodedToken?.userId) {
       await helper.storeRecentMatch(
         decodedToken?.userId,
-        data?.event?.tournament?.category?.sport?.slug,
+        data?.data?.event?.tournament?.category?.sport?.slug,
         filteredMatchDetails
       );
     }
+
     return apiResponse({
       res,
       data: filteredMatchDetails,
@@ -337,7 +420,7 @@ const getSingleMatchDetail = async (req, res, next) => {
     });
   } catch (error) {
     console.log(error);
-    if (error.response.status === 404) {
+    if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
         status: true,
@@ -494,7 +577,6 @@ const getMatchOdds = async (req, res, next) => {
 const getStandingsDetailsById = async (req, res, next) => {
   try {
     const { tournamentId, seasonId } = req.query;
-    console.log(req.query);
     let data;
 
     const Standings = await MatchesStanding.findOne({
@@ -551,35 +633,6 @@ const getMatchesScreenDetailsById = async (req, res, next) => {
     const key = cacheService.getCacheKey(req);
     let data = cacheService.getCache(key);
 
-    const getImageUrl = async (teamId) => {
-      const name = teamId;
-      const folderName = "team";
-      let filename;
-      const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
-
-      // Check if the image URL already exists
-      try {
-        const response = await fetch(baseUrl);
-        if (response.status !== 200) {
-          filename = null;
-        } else {
-          filename = baseUrl;
-        }
-        // console.log({ teamId }, "==> free");
-      } catch (error) {
-        const image = await service.getTeamImages(teamId);
-        // console.log({ teamId }, "==> paid <==");
-        await uploadFile({
-          filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-          file: image,
-          ACL: "public-read",
-        });
-        filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
-      }
-
-      return filename;
-    };
-
     if (!data) {
       const matchesData = await MatchesScreenMatches.findOne({
         customId: customId,
@@ -590,8 +643,37 @@ const getMatchesScreenDetailsById = async (req, res, next) => {
         const apiData = await service.getMatches(customId);
 
         for (const event of apiData.events) {
-          event.homeTeam.image = await getImageUrl(event.homeTeam.id);
-          event.awayTeam.image = await getImageUrl(event.awayTeam.id);
+          const folderName = "team";
+          let homeImageUrl;
+          let awayImageUrl;
+
+          const home_image = await helper.getTeamImages(event.homeTeam.id);
+          const away_image = await helper.getTeamImages(event.awayTeam.id);
+
+          if (home_image) {
+            await helper.uploadImageInS3Bucket(
+              `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${event.homeTeam.id}/image`,
+              folderName,
+              event.homeTeam.id
+            );
+            homeImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${event.homeTeam.id}`;
+          } else {
+            homeImageUrl = "";
+          }
+
+          if (away_image) {
+            await helper.uploadImageInS3Bucket(
+              `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${event.awayTeam.id}/image`,
+              folderName,
+              event.awayTeam.id
+            );
+            awayImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${event.awayTeam.id}`;
+          } else {
+            awayImageUrl = "";
+          }
+
+          event.homeTeam.image = homeImageUrl;
+          event.awayTeam.image = awayImageUrl;
         }
 
         const matchesEntry = new MatchesScreenMatches({
@@ -604,7 +686,7 @@ const getMatchesScreenDetailsById = async (req, res, next) => {
       }
     }
 
-    const filteredMatches = data.events.map(filterLiveMatchData);
+    const filteredMatches = data?.events?.map(filterLiveMatchData);
 
     return apiResponse({
       res,

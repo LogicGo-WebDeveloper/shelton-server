@@ -12,8 +12,11 @@ import {
   InsertBannerList,
   InsertCityList,
   InsertMatchOn,
+  InsertMatchStatus,
   InsertMatchType,
   InsertPitchType,
+  InsertPlayerRole,
+  playerOutReasons,
   InsertSportList,
   InsertTournamentCategory,
   InsertTournamentWinningPrize,
@@ -39,6 +42,8 @@ app.use(
   })
 );
 app.use("/images", express.static("cricket-custom-module/public"));
+app.use("/sport", express.static("public/images"));
+
 InsertSportList();
 InsertCityList();
 InsertTournamentCategory();
@@ -48,6 +53,9 @@ InsertTournamentWinningPrize();
 InsertPitchType();
 InsertBallType();
 InsertBannerList();
+InsertPlayerRole();
+playerOutReasons();
+InsertMatchStatus();
 
 app.use("/api/auth", route.authRoute);
 app.use("/api/v1/sport", route.sportRoute);

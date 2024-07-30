@@ -18,8 +18,6 @@ const verifyToken = async (req, res) => {
       status: true,
     });
   } catch (error) {
-    console.log(error);
-
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -31,7 +29,7 @@ const verifyToken = async (req, res) => {
 
 const registerByEmail = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, name } = req.body;
 
     // find user by email
     const user = await userService.findOne({
@@ -65,6 +63,7 @@ const registerByEmail = async (req, res) => {
       password: hashPassword,
       provider: enums.authProviderEnum.EMAIL,
       otp: otp,
+      name: name,
       otpExpiresAt: otpExpiresAt,
     };
 
@@ -77,7 +76,6 @@ const registerByEmail = async (req, res) => {
       message: "Registration complete! Check your email for verification OTP",
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -130,10 +128,9 @@ const registerByMobile = async (req, res) => {
       data: { otp },
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       status: false,
       message: "Internal server error",
     });
@@ -189,6 +186,7 @@ const loginByEmail = async (req, res) => {
         role: user.role,
         email: user.email,
         mobileNumber: user.mobileNumber,
+        name: user.name,
       },
     };
 
@@ -200,7 +198,6 @@ const loginByEmail = async (req, res) => {
       data: response,
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -271,7 +268,6 @@ const loginByMobile = async (req, res) => {
       data: response,
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -283,29 +279,21 @@ const loginByMobile = async (req, res) => {
 
 const loginByGoogle = async (req, res) => {
   try {
-    const { idToken } = req.body;
+    const { email, name } = req.body;
 
-    const client = new OAuth2Client({
+    new OAuth2Client({
       clientId: config.google.clientId,
       clientSecret: config.google.clientSecret,
     });
 
-    const ticket = await client.verifyIdToken({
-      idToken: idToken,
-    });
-
-    const payload = ticket.getPayload();
-
-    if (!payload) {
+    if (!email) {
       return apiResponse({
         res,
         statusCode: StatusCodes.UNAUTHORIZED,
         status: false,
-        message: "Invalid id token",
+        message: "Invalid authentication",
       });
     }
-
-    const { email, sub, email_verified } = payload;
 
     let user = await userService.findOne({
       email: email,
@@ -314,18 +302,18 @@ const loginByGoogle = async (req, res) => {
     if (!user) {
       user = await userService.create({
         email: email,
-        providerId: sub,
+        name: name,
+        providerId: null,
         provider: enums.authProviderEnum.GOOGLE,
-        isVerified: email_verified,
+        isVerified: true,
       });
     } else {
-      user.isVerified = email_verified;
-      user.providerId = sub;
+      user.isVerified = true;
+      user.providerId = null;
       user.provider = enums.authProviderEnum.GOOGLE;
       user.password = null;
       user.otp = null;
       user.otpExpiresAt = null;
-
       // Save changes
       user = await user.save();
     }
@@ -339,6 +327,7 @@ const loginByGoogle = async (req, res) => {
         role: user.role,
         email: user.email,
         mobileNumber: user.mobileNumber,
+        name: user.name,
       },
     };
 
@@ -397,7 +386,6 @@ const forgotPasswordEmail = async (req, res) => {
       message: "OTP send to your email address please check",
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -440,7 +428,6 @@ const forgotPasswordMobile = async (req, res) => {
       data: { otp },
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -505,7 +492,6 @@ const verifyEmailOTP = async (req, res) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -572,7 +558,6 @@ const verifyMobileOTP = async (req, res) => {
       message: "OTP verified successfully",
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -629,7 +614,6 @@ const resendEmailOTP = async (req, res) => {
       });
     }
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -670,7 +654,6 @@ const resendMobileOTP = async (req, res) => {
       data: { otp: otp },
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -749,7 +732,6 @@ const resetPassword = async (req, res) => {
       status: true,
     });
   } catch (error) {
-    console.log(error);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -758,7 +740,6 @@ const resetPassword = async (req, res) => {
     });
   }
 };
-
 
 export default {
   registerByEmail,

@@ -1,0 +1,20 @@
+[
+    {
+        "status": "Drinks"
+    },
+    {
+        "status": "Timed Out"
+    },
+    {
+        "status": "Lunch"
+    },
+    {
+        "status": "Stumps"
+    },
+    {
+        "status": "Rain"
+    },
+    {
+        "status": "Others"
+    }
+]

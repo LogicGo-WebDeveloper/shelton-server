@@ -8,7 +8,6 @@ import favouriteLeagueDetails from "./models/favouriteLeagueDetails.js";
 const favouriteMatchesadd = async (req, res, next) => {
   try {
     const matchesId = req.body.matchesId;
-    const userId = req.body.userId;
     const type = req.body.type;
 
     // Check if the document already exists in the collection
@@ -44,7 +43,7 @@ const favouriteMatchesadd = async (req, res, next) => {
       // If document does not exist, create a new one with status 1
       const newFavourite = await FavouriteDetails.create({
         matchesId: matchesId,
-        userId: userId,
+        userId: req.user ? req.user._id : "",
         status: 1, // Set initial status to 1
         type: type,
         // Additional fields can be added here
@@ -72,19 +71,21 @@ const favouriteMatchesadd = async (req, res, next) => {
 const favouriteMatcheslist = async (req, res, next) => {
   try {
     // Fetch data using populate and select
-    const favoriteMatchList = await FavouriteDetails.find({ status: 1 })
+    const favoriteMatchList = await FavouriteDetails.find({
+      status: 1,
+      userId: req.user._id,
+    })
       .populate({
         path: "matchesId",
         model: "MatcheDetailsByMatchScreen",
         select: "data",
       })
       .exec();
-    console.log(favoriteMatchList);
 
     // Map through favoriteMatchList to reshape data
     const reshapedData = favoriteMatchList.map((favourite) => {
-      console.log(favourite);
       return {
+        _id: favourite.matchesId._id,
         tournament: {
           name: favourite.matchesId.data.event.tournament.name,
           slug: favourite.matchesId.data.event.tournament.slug,
@@ -103,6 +104,7 @@ const favouriteMatcheslist = async (req, res, next) => {
           shortName: favourite.matchesId.data.event.homeTeam.shortName,
           nameCode: favourite.matchesId.data.event.homeTeam.nameCode,
           id: favourite.matchesId.data.event.homeTeam.id,
+          image: favourite.matchesId.data.event.homeTeam.image,
         },
         awayTeam: {
           name: favourite.matchesId.data.event.awayTeam.name,
@@ -110,32 +112,15 @@ const favouriteMatcheslist = async (req, res, next) => {
           shortName: favourite.matchesId.data.event.awayTeam.shortName,
           nameCode: favourite.matchesId.data.event.awayTeam.nameCode,
           id: favourite.matchesId.data.event.awayTeam.id,
+          image: favourite.matchesId.data.event.awayTeam.image,
         },
         homeScore: {
           current: favourite.matchesId.data.event.homeScore.current,
           display: favourite.matchesId.data.event.homeScore.display,
-          innings: Object.entries(
-            favourite.matchesId.data.event.homeScore.innings
-          ).map(([key, value]) => ({
-            key,
-            score: value.score,
-            wickets: value.wickets,
-            overs: value.overs,
-            runRate: value.runRate,
-          })),
         },
         awayScore: {
           current: favourite.matchesId.data.event.awayScore.current,
           display: favourite.matchesId.data.event.awayScore.display,
-          innings: Object.entries(
-            favourite.matchesId.data.event.awayScore.innings
-          ).map(([key, value]) => ({
-            key,
-            score: value.score,
-            wickets: value.wickets,
-            overs: value.overs,
-            runRate: value.runRate,
-          })),
         },
         status: {
           code: favourite.matchesId.data.event.status.code,
@@ -159,6 +144,7 @@ const favouriteMatcheslist = async (req, res, next) => {
         umpire2Name: favourite.matchesId.data.event.umpire2Name,
         winnerCode: favourite.matchesId.data.event.winnerCode,
         id: favourite.matchesId.data.event.id,
+        is_favourite: favourite.status,
       };
     });
 
@@ -172,7 +158,6 @@ const favouriteMatcheslist = async (req, res, next) => {
       });
     }
   } catch (error) {
-    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
@@ -195,7 +180,6 @@ const favouriteMatcheslist = async (req, res, next) => {
 const favouritePlayersadd = async (req, res, next) => {
   try {
     const playerId = req.body.playerId;
-    const userId = req.body.userId;
     const type = req.body.type;
 
     const existingFavourite = await FavouritePlayerDetails.findOne({
@@ -227,13 +211,11 @@ const favouritePlayersadd = async (req, res, next) => {
         statusCode: StatusCodes.OK,
       });
     } else {
-      // If document does not exist, create a new one with status 1
       const newFavourite = await FavouritePlayerDetails.create({
         playerId: playerId,
-        userId: userId,
-        status: 1, // Set initial status to 1
+        userId: req.user ? req.user._id : "",
+        status: 1,
         type: type,
-        // Additional fields can be added here
       });
 
       return apiResponse({
@@ -270,6 +252,7 @@ const favouritePlayerlist = async (req, res, next) => {
     // Fetch data using populate and select
     const favoritePlayerList = await FavouritePlayerDetails.find({
       status: true,
+      userId: req.user._id,
     })
       .populate({
         path: "playerId",
@@ -282,81 +265,14 @@ const favouritePlayerlist = async (req, res, next) => {
     const reshapedData = favoritePlayerList.map((favourite) => {
       return {
         player: {
+          _id: favourite.playerId._id,
           name: favourite.playerId.data[0].player.name,
           slug: favourite.playerId.data[0].player.slug,
           id: favourite.playerId.data[0].player.id,
           position: favourite.playerId.data[0].player.position,
-
-          // category: {
-          //   name: favourite.playerId.data.player.category.name,
-          //   slug: favourite.playerId.data.player.category.slug,
-          //   id: favourite.playerId.data.player.category.id,
-          //   country: favourite.playerId.data.player.category.country,
-          // },
+          is_favourite: favourite.status,
+          image: favourite.playerId.data[0].player.image,
         },
-        // customId: favourite.playerId.data.player.customId,
-        // homeTeam: {
-        //   name: favourite.playerId.data.player.homeTeam.name,
-        //   slug: favourite.playerId.data.player.homeTeam.slug,
-        //   shortName: favourite.playerId.data.player.homeTeam.shortName,
-        //   nameCode: favourite.playerId.data.player.homeTeam.nameCode,
-        //   id: favourite.playerId.data.player.homeTeam.id,
-        // },
-        // awayTeam: {
-        //   name: favourite.playerId.data.player.awayTeam.name,
-        //   slug: favourite.playerId.data.player.awayTeam.slug,
-        //   shortName: favourite.playerId.data.player.awayTeam.shortName,
-        //   nameCode: favourite.playerId.data.player.awayTeam.nameCode,
-        //   id: favourite.playerId.data.player.awayTeam.id,
-        // },
-        // homeScore: {
-        //   current: favourite.playerId.data.player.homeScore.current,
-        //   display: favourite.playerId.data.player.homeScore.display,
-        //   innings: Object.entries(
-        //     favourite.playerId.data.player.homeScore.innings
-        //   ).map(([key, value]) => ({
-        //     key,
-        //     score: value.score,
-        //     wickets: value.wickets,
-        //     overs: value.overs,
-        //     runRate: value.runRate,
-        //   })),
-        // },
-        // awayScore: {
-        //   current: favourite.playerId.data.player.awayScore.current,
-        //   display: favourite.playerId.data.player.awayScore.display,
-        //   innings: Object.entries(
-        //     favourite.playerId.data.player.awayScore.innings
-        //   ).map(([key, value]) => ({
-        //     key,
-        //     score: value.score,
-        //     wickets: value.wickets,
-        //     overs: value.overs,
-        //     runRate: value.runRate,
-        //   })),
-        // },
-        // status: {
-        //   code: favourite.playerId.data.player.status.code,
-        //   description: favourite.playerId.data.player.status.description,
-        //   type: favourite.playerId.data.player.status.type,
-        // },
-        // season: {
-        //   name: favourite.playerId.data.player.season.name,
-        //   year: favourite.playerId.data.player.season.year,
-        //   id: favourite.playerId.data.player.season.id,
-        // },
-        // notes: favourite.playerId.data.player.note,
-        // currentBattingTeamId:
-        //   favourite.playerId.data.player.currentBattingTeamId,
-        // endTimestamp: favourite.playerId.data.player.endTimestamp,
-        // startTimestamp: favourite.playerId.data.player.startTimestamp,
-        // slug: favourite.playerId.data.player.slug,
-        // tvUmpireName: favourite.playerId.data.player.tvUmpireName,
-        // venue: favourite.playerId.data.player.venue,
-        // umpire1Name: favourite.playerId.data.player.umpire1Name,
-        // umpire2Name: favourite.playerId.data.player.umpire2Name,
-        // winnerCode: favourite.playerId.data.player.winnerCode,
-        // id: favourite.playerId.data.player.id,
       };
     });
 
@@ -393,7 +309,6 @@ const favouritePlayerlist = async (req, res, next) => {
 const favouriteTeamsadd = async (req, res, next) => {
   try {
     const teamId = req.body.teamId;
-    const userId = req.body.userId;
     const type = req.body.type;
 
     const existingFavourite = await FavouriteTeamDetails.findOne({
@@ -428,10 +343,9 @@ const favouriteTeamsadd = async (req, res, next) => {
       // If document does not exist, create a new one with status 1
       const newFavourite = await FavouriteTeamDetails.create({
         teamId: teamId,
-        userId: userId,
-        status: 1, // Set initial status to 1
+        userId: req.user ? req.user._id : "",
+        status: 1,
         type: type,
-        // Additional fields can be added here
       });
 
       return apiResponse({
@@ -466,7 +380,11 @@ const favouriteTeamsadd = async (req, res, next) => {
 const favouriteTeamList = async (req, res, next) => {
   try {
     // Fetch data using populate and select
-    const favoriteTeamList = await FavouriteTeamDetails.find({ status: 1 })
+
+    const favoriteTeamList = await FavouriteTeamDetails.find({
+      status: 1,
+      userId: req.user._id,
+    })
       .populate({
         path: "teamId",
         model: "TeamDetails",
@@ -478,80 +396,17 @@ const favouriteTeamList = async (req, res, next) => {
     const reshapedData = favoriteTeamList.map((favourite) => {
       return {
         team: {
+          _id: favourite.teamId._id,
           name: favourite.teamId.data.team.name,
           slug: favourite.teamId.data.team.slug,
           id: favourite.teamId.data.team.id,
           shortName: favourite.teamId.data.team.shortName,
-          // category: {
-          //   name: favourite.teamId.data.player.category.name,
-          //   slug: favourite.playerId.data.player.category.slug,
-          //   id: favourite.playerId.data.player.category.id,
-          //   country: favourite.playerId.data.player.category.country,
-          // },
+          is_favourite: favourite.status,
+          tournamentId: favourite.teamId.data.team.tournament.id,
+          uniquetournamentId:
+            favourite.teamId.data.team.tournament.uniqueTournament.id,
+          image: favourite.teamId.data.team.image,
         },
-        // customId: favourite.playerId.data.player.customId,
-        // homeTeam: {
-        //   name: favourite.playerId.data.player.homeTeam.name,
-        //   slug: favourite.playerId.data.player.homeTeam.slug,
-        //   shortName: favourite.playerId.data.player.homeTeam.shortName,
-        //   nameCode: favourite.playerId.data.player.homeTeam.nameCode,
-        //   id: favourite.playerId.data.player.homeTeam.id,
-        // },
-        // awayTeam: {
-        //   name: favourite.playerId.data.player.awayTeam.name,
-        //   slug: favourite.playerId.data.player.awayTeam.slug,
-        //   shortName: favourite.playerId.data.player.awayTeam.shortName,
-        //   nameCode: favourite.playerId.data.player.awayTeam.nameCode,
-        //   id: favourite.playerId.data.player.awayTeam.id,
-        // },
-        // homeScore: {
-        //   current: favourite.playerId.data.player.homeScore.current,
-        //   display: favourite.playerId.data.player.homeScore.display,
-        //   innings: Object.entries(
-        //     favourite.playerId.data.player.homeScore.innings
-        //   ).map(([key, value]) => ({
-        //     key,
-        //     score: value.score,
-        //     wickets: value.wickets,
-        //     overs: value.overs,
-        //     runRate: value.runRate,
-        //   })),
-        // },
-        // awayScore: {
-        //   current: favourite.playerId.data.player.awayScore.current,
-        //   display: favourite.playerId.data.player.awayScore.display,
-        //   innings: Object.entries(
-        //     favourite.playerId.data.player.awayScore.innings
-        //   ).map(([key, value]) => ({
-        //     key,
-        //     score: value.score,
-        //     wickets: value.wickets,
-        //     overs: value.overs,
-        //     runRate: value.runRate,
-        //   })),
-        // },
-        // status: {
-        //   code: favourite.playerId.data.player.status.code,
-        //   description: favourite.playerId.data.player.status.description,
-        //   type: favourite.playerId.data.player.status.type,
-        // },
-        // season: {
-        //   name: favourite.playerId.data.player.season.name,
-        //   year: favourite.playerId.data.player.season.year,
-        //   id: favourite.playerId.data.player.season.id,
-        // },
-        // notes: favourite.playerId.data.player.note,
-        // currentBattingTeamId:
-        //   favourite.playerId.data.player.currentBattingTeamId,
-        // endTimestamp: favourite.playerId.data.player.endTimestamp,
-        // startTimestamp: favourite.playerId.data.player.startTimestamp,
-        // slug: favourite.playerId.data.player.slug,
-        // tvUmpireName: favourite.playerId.data.player.tvUmpireName,
-        // venue: favourite.playerId.data.player.venue,
-        // umpire1Name: favourite.playerId.data.player.umpire1Name,
-        // umpire2Name: favourite.playerId.data.player.umpire2Name,
-        // winnerCode: favourite.playerId.data.player.winnerCode,
-        // id: favourite.playerId.data.player.id,
       };
     });
 
@@ -588,7 +443,6 @@ const favouriteTeamList = async (req, res, next) => {
 const favouriteLeagueadd = async (req, res, next) => {
   try {
     const leagueId = req.body.leagueId;
-    const userId = req.body.userId;
     const type = req.body.type;
 
     const existingFavourite = await favouriteLeagueDetails.findOne({
@@ -596,10 +450,8 @@ const favouriteLeagueadd = async (req, res, next) => {
     });
 
     if (existingFavourite) {
-      // Toggle the status field
       const newStatus = existingFavourite.status === true ? false : true;
 
-      // Update the document with the new status and type
       const updatedFavourite = await favouriteLeagueDetails.updateOne(
         { leagueId: leagueId },
         { type: type, status: newStatus }
@@ -623,10 +475,9 @@ const favouriteLeagueadd = async (req, res, next) => {
       // If document does not exist, create a new one with status 1
       const newFavourite = await favouriteLeagueDetails.create({
         leagueId: leagueId,
-        userId: userId,
-        status: 1, // Set initial status to 1
+        userId: req.user ? req.user._id : "",
+        status: 1,
         type: type,
-        // Additional fields can be added here
       });
 
       return apiResponse({
@@ -662,7 +513,7 @@ const favouriteLeagueList = async (req, res, next) => {
   try {
     // Fetch data using populate and select
     const favoriteTeamList = await favouriteLeagueDetails
-      .find({ status: 1 })
+      .find({ status: 1, userId: req.user._id })
       .populate({
         path: "leagueId",
         model: "Tournament",
@@ -673,83 +524,16 @@ const favouriteLeagueList = async (req, res, next) => {
     // Map through favoriteMatchList to reshape data
     const reshapedData = favoriteTeamList.map((favourite) => {
       return {
-        team: {
+        league: {
+          _id: favourite.leagueId._id,
           name: favourite.leagueId.data[0].name,
           slug: favourite.leagueId.data[0].slug,
           id: favourite.leagueId.data[0].id,
           categoryName: favourite.leagueId.data[0].category.name,
           sportName: favourite.leagueId.data[0].category.sport.name,
-
-          // category: {
-          //   name: favourite.teamId.data.player.category.name,
-          //   slug: favourite.playerId.data.player.category.slug,
-          //   id: favourite.playerId.data.player.category.id,
-          //   country: favourite.playerId.data.player.category.country,
-          // },
-          // },
-          // customId: favourite.playerId.data.player.customId,
-          // homeTeam: {
-          //   name: favourite.playerId.data.player.homeTeam.name,
-          //   slug: favourite.playerId.data.player.homeTeam.slug,
-          //   shortName: favourite.playerId.data.player.homeTeam.shortName,
-          //   nameCode: favourite.playerId.data.player.homeTeam.nameCode,
-          //   id: favourite.playerId.data.player.homeTeam.id,
+          is_favourite: favourite.status,
+          image: favourite.leagueId.data[0].image,
         },
-        // awayTeam: {
-        //   name: favourite.playerId.data.player.awayTeam.name,
-        //   slug: favourite.playerId.data.player.awayTeam.slug,
-        //   shortName: favourite.playerId.data.player.awayTeam.shortName,
-        //   nameCode: favourite.playerId.data.player.awayTeam.nameCode,
-        //   id: favourite.playerId.data.player.awayTeam.id,
-        // },
-        // homeScore: {
-        //   current: favourite.playerId.data.player.homeScore.current,
-        //   display: favourite.playerId.data.player.homeScore.display,
-        //   innings: Object.entries(
-        //     favourite.playerId.data.player.homeScore.innings
-        //   ).map(([key, value]) => ({
-        //     key,
-        //     score: value.score,
-        //     wickets: value.wickets,
-        //     overs: value.overs,
-        //     runRate: value.runRate,
-        //   })),
-        // },
-        // awayScore: {
-        //   current: favourite.playerId.data.player.awayScore.current,
-        //   display: favourite.playerId.data.player.awayScore.display,
-        //   innings: Object.entries(
-        //     favourite.playerId.data.player.awayScore.innings
-        //   ).map(([key, value]) => ({
-        //     key,
-        //     score: value.score,
-        //     wickets: value.wickets,
-        //     overs: value.overs,
-        //     runRate: value.runRate,
-        //   })),
-        // },
-        // status: {
-        //   code: favourite.playerId.data.player.status.code,
-        //   description: favourite.playerId.data.player.status.description,
-        //   type: favourite.playerId.data.player.status.type,
-        // },
-        // season: {
-        //   name: favourite.playerId.data.player.season.name,
-        //   year: favourite.playerId.data.player.season.year,
-        //   id: favourite.playerId.data.player.season.id,
-        // },
-        // notes: favourite.playerId.data.player.note,
-        // currentBattingTeamId:
-        //   favourite.playerId.data.player.currentBattingTeamId,
-        // endTimestamp: favourite.playerId.data.player.endTimestamp,
-        // startTimestamp: favourite.playerId.data.player.startTimestamp,
-        // slug: favourite.playerId.data.player.slug,
-        // tvUmpireName: favourite.playerId.data.player.tvUmpireName,
-        // venue: favourite.playerId.data.player.venue,
-        // umpire1Name: favourite.playerId.data.player.umpire1Name,
-        // umpire2Name: favourite.playerId.data.player.umpire2Name,
-        // winnerCode: favourite.playerId.data.player.winnerCode,
-        // id: favourite.playerId.data.player.id,
       };
     });
 

@@ -12,7 +12,8 @@ import TeamSeasons from "./models/teamSeasons.js";
 import TeamFeaturedMatches from "./models/teamFeaturedMatchesSchema.js";
 import TeamSeasonsStanding from "./models/teamSeasonsStandingSchema.js";
 import config from "../../config/config.js";
-import { uploadFile } from "../../helper/aws_s3.js";
+import helper from "../../helper/common.js";
+import FavouriteTeamDetails from "../favourite/models/favouriteTeamDetails.js";
 
 const getTeamPerformance = async (req, res, next) => {
   try {
@@ -76,37 +77,18 @@ const getTopPlayers = async (req, res, next) => {
         if (playerStatistics[category]) {
           for (const stat of playerStatistics[category]) {
             const playerId = stat.player.id;
-            try {
-              const name = playerId;
-              const folderName = "player";
+            const folderName = "player";
 
-              const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
-
-              // Check if the image URL already exists
-              try {
-                const response = await fetch(baseUrl);
-                if (response.status !== 200) {
-                  stat.player.image = null;
-                } else {
-                  stat.player.image = baseUrl;
-                }
-                // console.log({ playerId }, "==> free");
-              } catch (error) {
-                const image = await service.getTopPlayersImage(playerId);
-                // console.log({ playerId }, "==> paid");
-                await uploadFile({
-                  filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-                  file: image,
-                  ACL: "public-read",
-                });
-                const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
-                stat.player.image = imageUrl;
-              }
-            } catch (error) {
-              console.error(
-                `Failed to upload image for player ${playerId}:`,
-                error
+            const image = await helper.getPlayerImage(playerId);
+            if (image) {
+              await helper.uploadImageInS3Bucket(
+                `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${playerId}/image`,
+                folderName,
+                playerId
               );
+              stat.player.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${playerId}`;
+            } else {
+              stat.player.image = null;
             }
           }
         }
@@ -542,36 +524,67 @@ const getTeamDetails = async (req, res, next) => {
 
         const name = id;
         const folderName = "team";
-        let filename;
-        const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+        const image = await helper.getTeamImages(id);
 
-        // Check if the image URL already exists
-        try {
-          const response = await fetch(baseUrl);
-          if (response.status !== 200) {
-            filename = null;
-          } else {
-            filename = baseUrl;
-          }
-          // console.log({ id }, "==> free");
-        } catch (error) {
-          image = await service.getTeamImages(id);
-          // console.log({ id }, "==> paid");
-          await uploadFile({
-            filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-            file: image,
-            ACL: "public-read",
-          });
-          filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+        let filename;
+        if (image) {
+          await helper.uploadImageInS3Bucket(
+            `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${id}/image`,
+            folderName,
+            id
+          );
+          filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${id}`;
+        } else {
+          filename = null;
         }
 
         const apiData = await service.getTeamDetails(req.params);
+        let tournamentId = apiData.team.tournament.uniqueTournament.id;
+
+        const folderTournamentName = "tournaments";
+        let tournamentImageUrl;
+        let countryImageUrl;
+
+        let alpha2 = apiData.team?.category?.alpha2 || undefined;
+        const flag = apiData.team.category?.flag || undefined;
+        const identifier = (alpha2 || flag).toLowerCase();
+        const countryFolderName = "country";
+
+        if (identifier) {
+          const image = await helper.getFlagsOfCountry(identifier);
+          if (image) {
+            await helper.uploadImageInS3Bucket(
+              `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+              countryFolderName,
+              identifier
+            );
+            countryImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${countryFolderName}/${identifier}`;
+          } else {
+            countryImageUrl = "";
+          }
+        }
+
+        apiData.team.category.image = countryImageUrl;
+
+        const tournamentImage = await helper.getTournamentImage(tournamentId);
+        if (tournamentImage) {
+          await helper.uploadImageInS3Bucket(
+            `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/unique-tournament/${tournamentId}/image`,
+            folderName,
+            tournamentId
+          );
+          tournamentImageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderTournamentName}/${tournamentId}`;
+        } else {
+          tournamentImageUrl = "";
+        }
+
+        apiData.team.image = filename;
+        apiData.team.tournament.image = tournamentImageUrl;
 
         // Store the fetched data in the database
         const teamDetailsEntry = new TeamDetails({
           teamId: req.params.id,
           data: apiData,
-          image: filename,
         });
         await teamDetailsEntry.save();
         // Set the data to be used for aggregation
@@ -601,6 +614,9 @@ const getTeamDetails = async (req, res, next) => {
                 slug: "$data.team.tournament.slug",
                 isLive: { $ifNull: ["$data.team.tournament.isLive", null] },
                 id: { $ifNull: ["$data.team.tournament.id", null] },
+                tournamentImage: {
+                  $ifNull: ["$data.team.tournament.image", null],
+                },
               },
               primaryUniqueTournament: {
                 name: {
@@ -639,8 +655,10 @@ const getTeamDetails = async (req, res, next) => {
                 alpha2: { $ifNull: ["$data.team.country.alpha2", null] },
                 alpha3: { $ifNull: ["$data.team.country.alpha3", null] },
                 name: { $ifNull: ["$data.team.country.name", null] },
+                countryImage: { $ifNull: ["$data.team.category.image", null] },
               },
               fullName: { $ifNull: ["$data.team.fullName", null] },
+              image: { $ifNull: ["$data.team.image", null] },
             },
           },
         },
@@ -650,6 +668,14 @@ const getTeamDetails = async (req, res, next) => {
       cacheService.setCache(key, data, cacheTTL.ONE_DAY);
     }
 
+    const allExistingFavourite = await FavouriteTeamDetails.findOne({
+      teamId: data._id,
+    });
+
+    data.favouriteTeamDetails = {
+      is_favourite: allExistingFavourite?.status || false,
+    };
+
     return apiResponse({
       res,
       data: data,
@@ -658,6 +684,7 @@ const getTeamDetails = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
@@ -686,36 +713,38 @@ const getTeamPLayers = async (req, res, next) => {
     const processPlayerImages = async (players) => {
       for (const player of players) {
         const playerId = player.player.id;
-        try {
-          const name = playerId;
-          const folderName = "player";
-          const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
 
-          // Check if the image URL already exists
-          try {
-            const response = await fetch(baseUrl);
-            if (response.status !== 200) {
-              player.player.image = null;
-            } else {
-              player.player.image = baseUrl;
-            }
-            // console.log({ playerId }, "==> free");
-          } catch (error) {
-            const image = await service.getTopPlayersImage(playerId);
-            // console.log({ playerId }, "==> paid");
-            await uploadFile({
-              filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-              file: image,
-              ACL: "public-read",
-            });
-            const imageUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
-            player.player.image = imageUrl;
-          }
-        } catch (error) {
-          console.error(
-            `Failed to upload image for player ${playerId}:`,
-            error
+        const folderName = "player";
+        const image = await helper.getPlayerImage(playerId);
+
+        if (image) {
+          await helper.uploadImageInS3Bucket(
+            `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/player/${playerId}/image`,
+            folderName,
+            playerId
           );
+          player.player.image = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${playerId}`;
+        } else {
+          player.player.image = null;
+        }
+
+        let alpha2 = player.player.country.alpha2 || undefined;
+        const flag = player.player.country.flag || undefined;
+        const identifier = (alpha2 || flag).toLowerCase();
+
+        if (identifier) {
+          const countryFolderName = "country";
+          const image = await helper.getFlagsOfCountry(identifier);
+          if (image) {
+            await helper.uploadImageInS3Bucket(
+              `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/static/images/flags/${identifier}.png`,
+              countryFolderName,
+              identifier
+            );
+            player.player.countryImage = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${countryFolderName}/${identifier}`;
+          } else {
+            player.player.countryImage = null;
+          }
         }
       }
     };
@@ -730,7 +759,7 @@ const getTeamPLayers = async (req, res, next) => {
     };
 
     if (!data) {
-      data = await service.getTeamPLayers(req.params);
+      // data = await service.getTeamPLayers(req.params);
 
       const teamPlayerData = await PlayerTeam.findOne({
         teamId: req.params.id,
@@ -739,7 +768,6 @@ const getTeamPLayers = async (req, res, next) => {
       if (teamPlayerData) {
         data = teamPlayerData;
       } else {
-        // Fetch data from the API
         data = await service.getTeamPLayers(req.params);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
@@ -769,6 +797,7 @@ const getTeamPLayers = async (req, res, next) => {
                 image: "$$playerObj.player.image",
                 country: "$$playerObj.player.country.name",
                 dateOfBirthTimestamp: "$$playerObj.player.dateOfBirthTimestamp",
+                countryImage: "$$playerObj.player.countryImage",
               },
             },
           },
@@ -783,6 +812,7 @@ const getTeamPLayers = async (req, res, next) => {
                 image: "$$playerObj.player.image",
                 country: "$$playerObj.player.country.name",
                 dateOfBirthTimestamp: "$$playerObj.player.dateOfBirthTimestamp",
+                countryImage: "$$playerObj.player.countryImage",
               },
             },
           },
@@ -797,6 +827,7 @@ const getTeamPLayers = async (req, res, next) => {
                 image: "$$playerObj.player.image",
                 country: "$$playerObj.player.country.name",
                 dateOfBirthTimestamp: "$$playerObj.player.dateOfBirthTimestamp",
+                countryImage: "$$playerObj.player.countryImage",
               },
             },
           },
@@ -809,6 +840,7 @@ const getTeamPLayers = async (req, res, next) => {
                 role: "$$playerObj.role",
                 id: "$$playerObj.id",
                 image: "$$playerObj.image",
+                countryImage: "$$playerObj.countryImage",
               },
             },
           },
@@ -824,6 +856,7 @@ const getTeamPLayers = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
@@ -853,26 +886,18 @@ const getTeamMatchesByTeam = async (req, res, next) => {
       const name = teamId;
       const folderName = "team";
       let filename;
-      const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
 
-      // Check if the image URL already exists
-      try {
-        const response = await fetch(baseUrl);
-        if (response.status !== 200) {
-          filename = null;
-        } else {
-          filename = baseUrl;
-        }
-        // console.log({ teamId }, "==> free");
-      } catch (error) {
-        const image = await service.getTeamImages(teamId);
-        // console.log({ teamId }, "==> paid <==");
-        await uploadFile({
-          filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-          file: image,
-          ACL: "public-read",
-        });
+      const image = await helper.getTeamImages(name);
+
+      if (image) {
+        await helper.uploadImageInS3Bucket(
+          `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${name}/image`,
+          folderName,
+          name
+        );
         filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+      } else {
+        filename = null;
       }
 
       return filename;
@@ -1055,6 +1080,7 @@ const getTeamMatchesByTeam = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
+    console.log(error);
     if (error.response && error.response.status === 404) {
       return apiResponse({
         res,
@@ -1128,7 +1154,6 @@ const getTeamPlayerStatisticsSeasons = async (req, res, next) => {
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
-    // console.log(error);
     return apiResponse({
       res,
       status: false,
@@ -1156,11 +1181,9 @@ const getTeamMedia = async (req, res, next) => {
       if (teamPlayerData) {
         data = teamPlayerData;
       } else {
-        // Fetch data from the API
         data = await service.getTeamMedia(id);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
-        // Store the fetched data in the database
         const teamMediaEntry = new teamMedia({ teamId: req.params.id, data });
         await teamMediaEntry.save();
       }
@@ -1194,37 +1217,26 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
     let data = cacheService.getCache(key);
 
     const getImageUrl = async (teamId) => {
-      const name = teamId;
       const folderName = "team";
       let filename;
-      const baseUrl = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
 
-      // Check if the image URL already exists
-      try {
-        const response = await fetch(baseUrl);
-        if (response.status !== 200) {
-          filename = null;
-        } else {
-          filename = baseUrl;
-        }
-        // console.log({ teamId }, "==> free");
-      } catch (error) {
-        const image = await service.getTeamImages(teamId);
-        // console.log({ teamId }, "==> paid <==");
-        await uploadFile({
-          filename: `${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`,
-          file: image,
-          ACL: "public-read",
-        });
-        filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${name}`;
+      const image = await helper.getTeamImages(teamId);
+
+      if (image) {
+        await helper.uploadImageInS3Bucket(
+          `${process.env.SOFASCORE_FREE_IMAGE_API_URL}/api/v1/team/${teamId}/image`,
+          folderName,
+          teamId
+        );
+        filename = `${config.cloud.digitalocean.baseUrl}/${config.cloud.digitalocean.rootDirname}/${folderName}/${teamId}`;
+      } else {
+        filename = null;
       }
 
       return filename;
     };
 
     if (!data) {
-      // data = await service.getTeamFeaturedEventsByTeams(id);
-
       cacheService.setCache(key, data, cacheTTL.ONE_MINUTE);
       const teamFeaturedData = await TeamFeaturedMatches.findOne({
         teamId: id,
@@ -1253,7 +1265,6 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
 
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
 
-        // Store the fetched data in the database
         const teamFeaturedEntry = new TeamFeaturedMatches({ teamId: id, data });
         await teamFeaturedEntry.save();
       }
@@ -1399,7 +1410,7 @@ const getTeamFeaturedEventsByTeams = async (req, res, next) => {
           nextEvent: {
             $cond: {
               if: { $eq: [{ $ifNull: ["$data.nextEvent", null] }, null] },
-              then: null, // or {} if you want an empty object
+              then: null,
               else: {
                 tournament: {
                   name: { $ifNull: ["$data.nextEvent.tournament.name", null] },
@@ -1580,7 +1591,6 @@ const getSeasonStandingsbyTeam = async (req, res, next) => {
       } else {
         data = await service.getSeasonStandingsbyTeam(id, tournamentId);
         cacheService.setCache(key, data, cacheTTL.ONE_DAY);
-        // Store the fetched data in the database
         const teamSeasonsEntry = new TeamSeasonsStanding({ teamId: id, data });
         await teamSeasonsEntry.save();
       }

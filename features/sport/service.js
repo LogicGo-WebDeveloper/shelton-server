@@ -84,10 +84,19 @@ const getSportNews = async () => {
   });
 };
 
+const getUniqueTournamentImage = async (id) => {
+  console.log(id);
+  const { data } = await axiosInstance.get(
+    `/api/v1/unique-tournament/${id}/image`
+  );
+  return data ?? [];
+};
+
 export default {
   getCountryLeagueList,
   getSportList,
   getAllScheduleMatches,
   getLeagueTournamentList,
   getSportNews,
+  getUniqueTournamentImage,
 };
