@@ -546,7 +546,7 @@ const getRecentMatches = async (req, res, next) => {
 
 const globalSearch = async (req, res, next) => {
   try {
-    const { type, text } = req.body; // Changed from req.query or req.params to req.body
+    const { type, text } = req.body;
     let data;
     if (type === "player") {
       const players = await PlayerDetails.aggregate([
