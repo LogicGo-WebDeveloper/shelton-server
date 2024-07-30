@@ -40,12 +40,20 @@ route.get("/player/out-reasons", commonController.getPlayerOutReason);
 route.post(
   "/tournament/add",
   verifyToken,
+  upload.fields([
+    { name: "tournamentImages", maxCount: 1 },
+    { name: "tournamentBackgroundImage", maxCount: 1 },
+  ]),
   tournamentController.createTournament
 );
 route.get("/tournament/list", tournamentController.listTournament);
 route.post(
   "/tournament/update/:id",
   verifyToken,
+  upload.fields([
+    { name: "tournamentImages", maxCount: 1 },
+    { name: "tournamentBackgroundImage", maxCount: 1 },
+  ]),
   tournamentController.tournamentUpdate
 );
 
