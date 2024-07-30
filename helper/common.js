@@ -1,7 +1,6 @@
 import config from "../config/config.js";
 import jwt from "jsonwebtoken";
 import moment from "moment";
-import enums from "../config/enum.js";
 import WebSocket from "ws";
 import RecentMatch from "../features/sport/models/recentMatchesSchema.js";
 import { createCanvas, loadImage } from "canvas";
@@ -51,40 +50,6 @@ const extractFileKey = (url) => {
   const parts = url.split("/");
   const fileKey = parts.slice(3).join("/");
   return fileKey;
-};
-
-const calculatePrice = ({
-  unitPrice,
-  taxes,
-  isTaxIncluded,
-  discount,
-  discountType,
-}) => {
-  let basePrice = 0;
-  let finalPrice = 0;
-  const tax = taxes.reduce((total, tax) => total + tax.value, 0);
-
-  // Calculate base price
-  if (isTaxIncluded) {
-    basePrice = unitPrice / (1 + tax / 100);
-  } else {
-    basePrice = unitPrice;
-  }
-
-  // Apply discount
-  if (discountType === enums.discountTypeEnum.PERCENTAGE) {
-    finalPrice = basePrice * (1 - discount / 100);
-  } else {
-    finalPrice = basePrice - discount;
-  }
-
-  // Apply tax to final price
-  finalPrice *= 1 + tax / 100;
-
-  return {
-    basePrice: Number(basePrice.toFixed(2)),
-    finalPrice: Number(finalPrice.toFixed(2)),
-  };
 };
 
 const webSocketServer = (server) => {
@@ -257,7 +222,6 @@ export default {
   generateToken,
   paginationDetails,
   paginationFun,
-  calculatePrice,
   extractFileKey,
   webSocketServer,
   storeRecentMatch,
