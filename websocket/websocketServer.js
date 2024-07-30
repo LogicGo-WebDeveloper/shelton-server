@@ -14,6 +14,12 @@ import config from "../config/config.js";
 import CustomPlayerOvers from "../cricket-custom-module/models/playersOvers.models.js";
 import CustomMatchScorecard from "../cricket-custom-module/models/matchScorecard.models.js";
 import CustomMatch from "../cricket-custom-module/models/match.models.js";
+import {
+  CustomCityList,
+  CustomMatchOfficial,
+} from "../cricket-custom-module/models/common.models.js";
+import CustomPlayers from "../cricket-custom-module/models/player.models.js";
+import CustomTeam from "../cricket-custom-module/models/team.models.js";
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
@@ -938,63 +944,6 @@ const setupWebSocket = (server) => {
 
             await existingScorecard.save();
 
-            const matches = await CustomMatch.findOne({ _id: matchId });
-
-            const existingOvers = await CustomPlayerOvers.find({
-              matchId: matchId,
-              // Add other criteria as needed to identify the correct document
-            });
-
-            async function updateBallsAndTotal(existingOvers, bowlers) {
-              // Determine the balls count based on whether 'bowlers.finished' is true
-              let ballsCount;
-
-              if (bowlers.finished) {
-                // If finished, start counting from 1
-                ballsCount = 1;
-              } else {
-                // Otherwise, use the current ball count
-                ballsCount = bowlers.balls;
-              }
-
-              // Calculate total balls based on existing overs and current ball count
-              let totalBalls =
-                (existingOvers ? existingOvers.length : 0) + ballsCount;
-
-              // Store the current state before incrementing
-              let updatedBalls;
-              if (bowlers.finished) {
-                // If finished, start from 1 and then increment from the previous state
-                updatedBalls = ballsCount; // This will be 1 on reset
-              } else {
-                // Otherwise, calculate updatedBalls based on total balls
-                updatedBalls = totalBalls;
-              }
-
-              // Further processing or saving data
-              await CustomPlayerOvers.create({
-                matchId,
-                homeTeamId: match.homeTeamId,
-                awayTeamId: match.awayTeamId,
-                playerScoreCardId: existingScorecard._id,
-                battingPlayerId: batters.playerId,
-                bowlerId: bowlers.playerId,
-                balls: updatedBalls,
-                runs: bowlers.runs,
-                overs_finished: bowlers.finished,
-                noBall: bowlers.noBalls,
-                whiteBall: bowlers.wides,
-                lbBall: bowlers.legBye,
-                byeBall: teamRuns.bye,
-                isOut: bowlers.out,
-                oversNumber:
-                  Math.floor(totalBalls / 6) + (bowlers.finished ? 1 : 0),
-              });
-            }
-
-            // Example call
-            await updateBallsAndTotal(existingOvers, bowlers);
-
             const calculateAndUpdateTeamScores = async (teamKey) => {
               const teamPlayers = existingScorecard.scorecard[teamKey].players;
               const totalRuns = teamPlayers.reduce((acc, batters) => {
@@ -1008,7 +957,6 @@ const setupWebSocket = (server) => {
                 (acc, player) => acc + (player.overs || 0),
                 0
               );
-
               const totalWickets = teamPlayers.reduce(
                 (acc, player) => acc + (player.wickets || 0),
                 0
@@ -1021,9 +969,13 @@ const setupWebSocket = (server) => {
                   status: false,
                 };
               } else {
-                match[`${teamKey}Score`].runs = totalRuns;
-                match[`${teamKey}Score`].overs = totalOvers;
-                match[`${teamKey}Score`].wickets = totalWickets;
+                console.log("match111111111", match);
+                console.log("match22222222", match.awayTeamScore);
+                console.log("match3333333", match.noOfOvers);
+
+                match[`${teamKey}Score`]["runs"] = totalRuns;
+                match[`${teamKey}Score`]["overs"] = totalOvers;
+                match[`${teamKey}Score`]["wickets"] = totalWickets;
                 return {
                   message: "score updated successfully",
                   actionType: data.action,
@@ -1174,6 +1126,168 @@ const setupWebSocket = (server) => {
               JSON.stringify({
                 message: "Internal server error",
                 actionType: data.action,
+                status: false,
+              })
+            );
+          }
+          break;
+        case "getMatchSummary":
+          try {
+            const { matchId } = data;
+            const scorecard = await CustomMatchScorecard.findOne({ matchId });
+            const match = await CustomMatch.findById(matchId);
+
+            if (!scorecard) {
+              ws.send(
+                JSON.stringify({
+                  message: "Scorecard not found",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            if (!match) {
+              ws.send(
+                JSON.stringify({
+                  message: "Match not found",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Filter the players based on their status
+            const battingTeamKey = scorecard.scorecard.homeTeam.players.some(
+              (player) => player.status === "not_out"
+            )
+              ? "homeTeam"
+              : "awayTeam";
+            const bowlingTeamKey =
+              battingTeamKey === "homeTeam" ? "awayTeam" : "homeTeam";
+
+            const batters = scorecard.scorecard[battingTeamKey].players.filter(
+              (player) => player.status === "not_out"
+            );
+            const bowlers = scorecard.scorecard[bowlingTeamKey].players.filter(
+              (player) => player.activeBowler
+            );
+
+            // Function to get player image from the database
+            const getPlayerImageFromDB = async (playerId) => {
+              try {
+                const player = await CustomPlayers.findById(playerId).select(
+                  "image"
+                );
+                return player?.image || "";
+              } catch (error) {
+                console.error(
+                  `Error fetching image for player ${playerId}:`,
+                  error
+                );
+                return "";
+              }
+            };
+
+            // Function to get team details
+            const getTeamDetails = async (teamId) => {
+              try {
+                const team = await CustomTeam.findById(teamId).select(
+                  "teamName teamImage"
+                );
+                return {
+                  id: teamId,
+                  name: team?.teamName || "",
+                  image: team?.teamImage || "",
+                };
+              } catch (error) {
+                console.error(
+                  `Error fetching details for team ${teamId}:`,
+                  error
+                );
+                return {
+                  id: teamId,
+                  name: "",
+                  image: "",
+                };
+              }
+            };
+
+            const city = await CustomCityList.findById(match.city).select(
+              "city"
+            );
+
+            // Fetch umpire names
+            const umpires = await CustomMatchOfficial.find({
+              _id: { $in: match.umpires },
+            }).select("name");
+
+            // Fetch team data
+            const homeTeam = await getTeamDetails(match.homeTeamId);
+            homeTeam.score = match.homeTeamScore;
+
+            const awayTeam = await getTeamDetails(match.awayTeamId);
+            awayTeam.score = match.awayTeamScore;
+
+            const responseData = {
+              batters: await Promise.all(
+                batters.map(async (player) => {
+                  const image = await getPlayerImageFromDB(player.id);
+                  return {
+                    name: player.name,
+                    runs: player.runs,
+                    balls: player.balls,
+                    fours: player.fours,
+                    sixes: player.sixes,
+                    id: player.id,
+                    image: image,
+                  };
+                })
+              ),
+              bowlers: await Promise.all(
+                bowlers.map(async (player) => {
+                  const image = await getPlayerImageFromDB(player.id);
+                  return {
+                    name: player.name,
+                    overs: player.overs,
+                    maidens: player.maidens,
+                    runs: player.runs,
+                    wickets: player.wickets,
+                    id: player.id,
+                    image: image,
+                  };
+                })
+              ),
+              matchInfo: {
+                location: city ? city.city : "",
+                venue: match.ground,
+                referee: umpires.map((umpire) => umpire.name).join(", "),
+              },
+              teams: {
+                home: homeTeam,
+                away: awayTeam,
+              },
+            };
+
+            ws.send(
+              JSON.stringify({
+                message: "Summary fetched successfully",
+                actionType: data.action,
+                body: responseData,
+                status: true,
+              })
+            );
+          } catch (error) {
+            console.error("Error fetching match summary:", error);
+            ws.send(
+              JSON.stringify({
+                message: "Internal server error",
+                actionType: data.action,
+                body: null,
                 status: false,
               })
             );

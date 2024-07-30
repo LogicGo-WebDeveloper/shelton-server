@@ -242,6 +242,8 @@ const createMatch = async (req, res, next) => {
       homeTeamPlayingPlayer,
       awayTeamPlayingPlayer,
       umpires,
+      homeTeamScore: { runs: 0, overs: 0, wickets: 0 },
+      awayTeamScore: { runs: 0, overs: 0, wickets: 0 },
     });
 
     return apiResponse({
@@ -1063,117 +1065,6 @@ const updateStartingPlayerScorecard = async (req, res) => {
   }
 };
 
-const getMatchSummary = async (req, res) => {
-  try {
-    const { matchId } = req.params;
-
-    // Fetch the scorecard details using the matchId
-    const scorecard = await CustomMatchScorecard.findOne({ matchId });
-    const match = await CustomMatch.findById(matchId);
-
-    if (!scorecard) {
-      return apiResponse({
-        res,
-        status: false,
-        message: "Scorecard not found",
-        statusCode: StatusCodes.NOT_FOUND,
-      });
-    }
-
-    if(!match) {
-      return apiResponse({  
-        res,
-        status: false,
-        message: "Match not found",
-        statusCode: StatusCodes.NOT_FOUND,
-      });
-    }
-
-    // Filter the players based on their status
-    const battingTeamKey = scorecard.scorecard.homeTeam.players.some(
-      (player) => player.status === "not_out"
-    )
-      ? "homeTeam"
-      : "awayTeam";
-    const bowlingTeamKey =
-      battingTeamKey === "homeTeam" ? "awayTeam" : "homeTeam";
-
-    const batters = scorecard.scorecard[battingTeamKey].players.filter(
-      (player) => player.status === "not_out"
-    );
-    const bowlers = scorecard.scorecard[bowlingTeamKey].players.filter(
-      (player) => player.activeBowler
-    );
-
-    // Function to get player image from the database
-    const getPlayerImageFromDB = async (playerId) => {
-      try {
-        const player = await CustomPlayers.findById(playerId).select("image");
-        return player?.image || "";
-      } catch (error) {
-        console.error(`Error fetching image for player ${playerId}:`, error);
-        return "";
-      }
-    };
-
-    const city = await CustomCityList.findById(match.city).select("city");
-
-    // Fetch umpire names
-    const umpires = await CustomMatchOfficial.find({ _id: { $in: match.umpires } }).select("name");  
-
-    const responseData = {
-      batters: await Promise.all(
-        batters.map(async (player) => {
-          const image = await getPlayerImageFromDB(player.id);
-          return {
-            name: player.name,
-            runs: player.runs,
-            balls: player.balls,
-            fours: player.fours,
-            sixes: player.sixes,
-            id: player.id,
-            image: image,
-          };
-        })
-      ),
-      bowlers: await Promise.all(
-        bowlers.map(async (player) => {
-          const image = await getPlayerImageFromDB(player.id);
-          return {
-            name: player.name,
-            overs: player.overs,
-            maidens: player.maidens,
-            runs: player.runs,
-            wickets: player.wickets,
-            id: player.id,
-            image: image,
-          };
-        })
-      ),
-      matchInfo: {
-        location: city ? city.city : "",
-        venue: match.ground,
-        referee: umpires.map((umpire) => umpire.name).join(", "),
-      },
-    };
-    return apiResponse({
-      res,
-      status: true,
-      data: responseData,
-      message: "Summary fetched successfully",
-      statusCode: StatusCodes.OK,
-    });
-  } catch (error) {
-    console.error("Error fetching match summary:", error);
-    return apiResponse({
-      res,
-      status: false,
-      message: "Internal server error",
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    });
-  }
-};
-
 export default {
   createMatch,
   listMatches,
@@ -1184,5 +1075,4 @@ export default {
   createScorecards,
   getMatchScorecard,
   updateStartingPlayerScorecard,
-  getMatchSummary,
 };
