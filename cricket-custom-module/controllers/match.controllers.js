@@ -6,7 +6,10 @@ import {
   validateObjectIds,
 } from "../utils/utils.js";
 import CustomTournament from "../models/tournament.models.js";
-import { CustomCityList, CustomMatchOfficial } from "../models/common.models.js";
+import {
+  CustomCityList,
+  CustomMatchOfficial,
+} from "../models/common.models.js";
 import CustomTeam from "../models/team.models.js";
 import helper from "../../helper/common.js";
 import CustomPlayers from "../models/player.models.js";
@@ -14,6 +17,7 @@ import enums from "../../config/enum.js";
 import config from "../../config/enum.js";
 import customUmpireList from "../models/umpire.models.js";
 import CustomMatchScorecard from "../models/matchScorecard.models.js";
+import mongoose from "mongoose";
 
 const createMatch = async (req, res, next) => {
   try {
@@ -1080,8 +1084,8 @@ const getMatchSummary = async (req, res) => {
       });
     }
 
-    if(!match) {
-      return apiResponse({  
+    if (!match) {
+      return apiResponse({
         res,
         status: false,
         message: "Match not found",
@@ -1119,7 +1123,9 @@ const getMatchSummary = async (req, res) => {
     const city = await CustomCityList.findById(match.city).select("city");
 
     // Fetch umpire names
-    const umpires = await CustomMatchOfficial.find({ _id: { $in: match.umpires } }).select("name");  
+    const umpires = await CustomMatchOfficial.find({
+      _id: { $in: match.umpires },
+    }).select("name");
 
     const responseData = {
       batters: await Promise.all(
@@ -1174,6 +1180,131 @@ const getMatchSummary = async (req, res) => {
   }
 };
 
+const getMatchSquads = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let filter = {};
+    if (id) filter.matchId = new mongoose.Types.ObjectId(id);
+
+    const match = await CustomMatchScorecard.aggregate([
+      { $match: filter },
+      {
+        $lookup: {
+          from: "customteams",
+          localField: "scorecard.homeTeam.id",
+          foreignField: "_id",
+          as: "homeTeam",
+        },
+      },
+      {
+        $lookup: {
+          from: "customteams",
+          localField: "scorecard.awayTeam.id",
+          foreignField: "_id",
+          as: "awayTeam",
+        },
+      },
+      {
+        $lookup: {
+          from: "customplayers",
+          localField: "scorecard.homeTeam.players.id",
+          foreignField: "_id",
+          as: "homeTeamPlayersDetails",
+        },
+      },
+      {
+        $lookup: {
+          from: "customplayers",
+          localField: "scorecard.awayTeam.players.id",
+          foreignField: "_id",
+          as: "awayTeamPlayersDetails",
+        },
+      },
+      {
+        $lookup: {
+          from: "custommatches",
+          localField: "matchId",
+          foreignField: "_id",
+          as: "scores",
+        },
+      },
+      {
+        $addFields: {
+          scores: { $arrayElemAt: ["$scores", 0] },
+        },
+      },
+      {
+        $project: {
+          "scores.status": 1,
+          "scorecard.homeTeam.id": 1,
+          "scorecard.homeTeam.teamName": 1,
+          "scorecard.homeTeam.teamImage": 1,
+          "scorecard.awayTeam.id": 1,
+          "scorecard.awayTeam.teamName": 1,
+          "scorecard.awayTeam.teamImage": 1,
+          "scorecard.homeTeam.players.id": 1,
+          "scorecard.awayTeam.players.id": 1,
+          homeTeam: { $arrayElemAt: ["$homeTeam", 0] },
+          awayTeam: { $arrayElemAt: ["$awayTeam", 0] },
+          homeTeamPlayersDetails: 1,
+          awayTeamPlayersDetails: 1,
+        },
+      },
+      {
+        $project: {
+          status: "$scores.status",
+          homeTeam: {
+            _id: "$scorecard.homeTeam.id",
+            players: {
+              $map: {
+                input: "$homeTeamPlayersDetails",
+                as: "player",
+                in: {
+                  _id: "$$player._id",
+                  playerName: "$$player.playerName",
+                  image: "$$player.image",
+                  role: "$$player.role",
+                },
+              },
+            },
+          },
+          awayTeam: {
+            _id: "$scorecard.awayTeam.id",
+            players: {
+              $map: {
+                input: "$awayTeamPlayersDetails",
+                as: "player",
+                in: {
+                  _id: "$$player._id",
+                  playerName: "$$player.playerName",
+                  image: "$$player.image",
+                  role: "$$player.role",
+                },
+              },
+            },
+          },
+        },
+      },
+    ]);
+
+    return apiResponse({
+      res,
+      status: true,
+      data: match[0],
+      message: "Squads fetched successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    console.error("Error fetching match summary:", error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
+
 export default {
   createMatch,
   listMatches,
@@ -1185,4 +1316,5 @@ export default {
   getMatchScorecard,
   updateStartingPlayerScorecard,
   getMatchSummary,
+  getMatchSquads,
 };

@@ -115,6 +115,7 @@ route.post(
 route.delete("/match/delete/:id", verifyToken, matchController.deleteMatch);
 
 route.get("/match/scorecard/:matchId", matchController.getMatchScorecard);
+route.get("/match/:id/squads", matchController.getMatchSquads);
 
 route.post(
   "/match/scorecard/update-players-info/:matchId",
