@@ -125,7 +125,7 @@ route.post(
 
 route.get("/player/list", verifyToken, playerController.listPlayers);
 
-route.put(
+route.post(
   "/player/update/:id",
   verifyToken,
   upload.single("image"),

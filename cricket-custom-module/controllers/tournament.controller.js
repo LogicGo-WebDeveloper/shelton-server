@@ -1,4 +1,3 @@
-// import { apiResponse } from "../../helper/apiResponse.js";
 import { StatusCodes } from "http-status-codes";
 import * as path from "path";
 import validate from "../validation/validation.js";
@@ -240,6 +239,7 @@ const listTournament = async (req, res) => {
     // Modify tournament image URLs
     const fullUrl = req.protocol + "://" + req.get("host") + "/images/";
     tournaments.forEach((tournament) => {
+      console.log(tournament.tournamentImage);
       tournament.tournamentImage = tournament.tournamentImage
         ? fullUrl + "tournament/" + tournament.tournamentImage
         : "";
@@ -304,6 +304,7 @@ const tournamentUpdate = async (req, res, next) => {
     { name: "tournamentBackgroundImage", maxCount: 1 }, // Allow only 1 background image
   ]);
 
+  const tournamentData = await CustomTournament.findById(id);
   upload(req, res, async function (err, file, cb) {
     var createdBy = req.user._id;
     var sportId = req.body.sportId;
@@ -321,12 +322,10 @@ const tournamentUpdate = async (req, res, next) => {
     var description = req.body.description;
     var tournamentBackgroundImage = req.files.tournamentBackgroundImage
       ? `${fileSuffix}-${req.files.tournamentBackgroundImage[0].originalname}`
-      : "";
+      : tournamentData.tournamentBackgroundImage;
     var tournamentImage = req.files.tournamentImages
       ? `${fileSuffix}-${req.files.tournamentImages[0].originalname}`
-      : "";
-
-    const tournamentData = await CustomTournament.findById(id);
+      : tournamentData.tournamentImage;
     if (tournamentData) {
       await CustomTournament.findByIdAndUpdate(
         id,
