@@ -56,8 +56,16 @@ const customMatchSchema = new mongoose.Schema({
     wickets: { type: Number, default: 0 },
   },
   matchStatus: { type: String, default: null },
+  powerPlays: {
+    ranges: { type: String },
+    isActive: { type: Boolean, default: false },
+  },
+  endInnings: {
+    isDeclared: { type: Boolean, default: false },
+    isAllOut: { type: Boolean, default: false },
+  },
 });
 
-const CustomMatch = mongoose.model("CustomMatch", customMatchSchema); 
+const CustomMatch = mongoose.model("CustomMatch", customMatchSchema);
 
 export default CustomMatch;

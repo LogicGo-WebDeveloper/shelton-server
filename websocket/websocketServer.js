@@ -11,7 +11,6 @@ import {
 } from "./utils.js";
 import helper from "../helper/common.js";
 import config from "../config/config.js";
-import CustomPlayerOvers from "../cricket-custom-module/models/playersOvers.models.js";
 import CustomMatchScorecard from "../cricket-custom-module/models/matchScorecard.models.js";
 import CustomMatch from "../cricket-custom-module/models/match.models.js";
 import {
@@ -786,7 +785,15 @@ const setupWebSocket = (server) => {
           break;
         case "cricketController":
           try {
-            const { matchId, batters, bowlers, teamRuns } = data;
+            const {
+              matchId,
+              batters,
+              bowlers,
+              teamRuns,
+              ranges,
+              isDeclared,
+              isAllOut,
+            } = data;
             const match = await CustomMatch.findOne({ _id: matchId });
 
             //for update match scorecard
@@ -896,7 +903,7 @@ const setupWebSocket = (server) => {
             if (batterIndex !== -1) {
               const player =
                 existingScorecard.scorecard[battingTeamKey].players[
-                batterIndex
+                  batterIndex
                 ];
               if (!teamRuns.bye && !teamRuns.legBye) {
                 player.runs = (player.runs || 0) + batters.runs;
@@ -920,7 +927,7 @@ const setupWebSocket = (server) => {
             if (bowlerIndex !== -1) {
               const player =
                 existingScorecard.scorecard[bowlingTeamKey].players[
-                bowlerIndex
+                  bowlerIndex
                 ];
               const currentOvers = player.overs || 0;
               const ballsBowled = getDecimalPart(currentOvers);
@@ -970,25 +977,25 @@ const setupWebSocket = (server) => {
                   status: false,
                 };
               } else {
-                match[`${teamKey}Score`]['runs'] = totalRuns;
-                match[`${teamKey}Score`]['overs'] = totalOvers;
-                match[`${teamKey}Score`]['wickets'] = totalWickets;
+                match[`${teamKey}Score`]["runs"] = totalRuns;
+                match[`${teamKey}Score`]["overs"] = totalOvers;
+                match[`${teamKey}Score`]["wickets"] = totalWickets;
                 return {
                   message: "score updated successfully",
                   actionType: data.action,
                   body: null,
                   status: true,
-                }
+                };
               }
             };
 
-            const matchScore = await calculateAndUpdateTeamScores(battingTeamKey);
+            const matchScore = await calculateAndUpdateTeamScores(
+              battingTeamKey
+            );
             if (matchScore.status) {
               await match.save();
             } else {
-              ws.send(
-                JSON.stringify(matchScore)
-              );
+              ws.send(JSON.stringify(matchScore));
             }
             // for using summary api
             if (matchScore.status) {
@@ -1025,6 +1032,32 @@ const setupWebSocket = (server) => {
                   },
                   status: true,
                 })
+              );
+            }
+
+            if (ranges) {
+              await CustomMatch.findByIdAndUpdate(
+                matchId,
+                {
+                  $set: {
+                    "powerPlays.ranges": ranges,
+                    "powerPlays.isActive": true,
+                  },
+                },
+                { new: true }
+              );
+            }
+
+            if (isAllOut || isDeclared) {
+              await CustomMatch.findByIdAndUpdate(
+                matchId,
+                {
+                  $set: {
+                    "endInnings.isDeclared": isDeclared,
+                    "endInnings.isAllOut": isAllOut,
+                  },
+                },
+                { new: true }
               );
             }
           } catch (error) {
@@ -1266,8 +1299,8 @@ const setupWebSocket = (server) => {
                 referee: umpires.map((umpire) => umpire.name).join(", "),
                 tossResult: match.tossResult,
                 dateTime: match.dateTime,
-                status:   match.status,
-                matchStatus: match.matchStatus
+                status: match.status,
+                matchStatus: match.matchStatus,
               },
               teams: {
                 home: homeTeam,
@@ -1299,10 +1332,15 @@ const setupWebSocket = (server) => {
           try {
             const { matchId, nextBatterId, activeStriker } = data;
             // Validate input
-            if (!matchId || !nextBatterId || typeof activeStriker !== 'boolean') {
+            if (
+              !matchId ||
+              !nextBatterId ||
+              typeof activeStriker !== "boolean"
+            ) {
               ws.send(
                 JSON.stringify({
-                  message: "Match ID, Next Batter ID, and activeStriker (boolean) are required",
+                  message:
+                    "Match ID, Next Batter ID, and activeStriker (boolean) are required",
                   actionType: data.action,
                   status: false,
                 })
@@ -1337,10 +1375,18 @@ const setupWebSocket = (server) => {
             }
 
             // Determine the batting team
-            const battingTeamKey = scorecard.scorecard.homeTeam.players.some(player => player.status === 'not_out') ? 'homeTeam' : 'awayTeam';
+            const battingTeamKey = scorecard.scorecard.homeTeam.players.some(
+              (player) => player.status === "not_out"
+            )
+              ? "homeTeam"
+              : "awayTeam";
 
             // Find the player to update
-            const playerIndex = scorecard.scorecard[battingTeamKey].players.findIndex(player => player.id.toString() === nextBatterId);
+            const playerIndex = scorecard.scorecard[
+              battingTeamKey
+            ].players.findIndex(
+              (player) => player.id.toString() === nextBatterId
+            );
             if (playerIndex === -1) {
               ws.send(
                 JSON.stringify({
@@ -1353,16 +1399,21 @@ const setupWebSocket = (server) => {
             }
 
             // Update the player's status and activeStriker
-            scorecard.scorecard[battingTeamKey].players[playerIndex].status = 'not_out';
-            scorecard.scorecard[battingTeamKey].players[playerIndex].activeStriker = activeStriker;
+            scorecard.scorecard[battingTeamKey].players[playerIndex].status =
+              "not_out";
+            scorecard.scorecard[battingTeamKey].players[
+              playerIndex
+            ].activeStriker = activeStriker;
 
             // If activeStriker is true, set all other players' activeStriker to false
             if (activeStriker) {
-              scorecard.scorecard[battingTeamKey].players.forEach((player, index) => {
-                if (index !== playerIndex) {
-                  player.activeStriker = false;
+              scorecard.scorecard[battingTeamKey].players.forEach(
+                (player, index) => {
+                  if (index !== playerIndex) {
+                    player.activeStriker = false;
+                  }
                 }
-              });
+              );
             }
 
             // Save the updated scorecard
@@ -1385,7 +1436,7 @@ const setupWebSocket = (server) => {
               })
             );
           }
-        break;
+          break;
       }
     });
   });
