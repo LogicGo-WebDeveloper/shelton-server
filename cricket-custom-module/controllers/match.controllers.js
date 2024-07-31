@@ -1285,18 +1285,18 @@ const setMatchStatus = async (req, res, next) => {
       });
     }
 
-    // Validate description if status is "Other"
+    // Validate description if status is "Others"
     if (status.status === "Others" && !description) {
       return apiResponse({
         res,
         status: false,
-        message: "Description is required for 'Other' status",
+        message: "Description is required for 'Others' status",
         statusCode: StatusCodes.BAD_REQUEST,
       });
     }
 
     // Update the match status
-    const matchStatusDes = status.status === "Other" ? description : status.status
+    const matchStatusDes = status.status === "Others" ? description : status.status
     match.matchStatus = matchStatusDes
     await match.save(); 
 

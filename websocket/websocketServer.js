@@ -970,10 +970,6 @@ const setupWebSocket = (server) => {
                   status: false,
                 };
               } else {
-                console.log("match111111111", match)
-                console.log("match22222222", match.awayTeamScore)
-                console.log("match3333333", match.noOfOvers)
-
                 match[`${teamKey}Score`]['runs'] = totalRuns;
                 match[`${teamKey}Score`]['overs'] = totalOvers;
                 match[`${teamKey}Score`]['wickets'] = totalWickets;
@@ -1271,6 +1267,7 @@ const setupWebSocket = (server) => {
                 tossResult: match.tossResult,
                 dateTime: match.dateTime,
                 status:   match.status,
+                matchStatus: match.matchStatus
               },
               teams: {
                 home: homeTeam,
