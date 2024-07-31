@@ -31,6 +31,8 @@ const matchStatusEnum = {
   not_started: "not_started",
   finished: "finished",
   cancelled: "cancelled",
+  abandoned: "abandoned",
+  draw: "draw",
 };
 
 const tossChoiceEnum = {

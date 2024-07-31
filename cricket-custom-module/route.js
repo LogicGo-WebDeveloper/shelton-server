@@ -125,6 +125,8 @@ route.post(
 
 route.post("/match/match-status/update", matchController.setMatchStatus);
 
+route.post("/match/result/update", matchController.updateMatchResult);
+
 // ============================== For Player List ===========================================
 route.post(
   "/player/add",

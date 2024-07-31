@@ -371,7 +371,8 @@ const listMatches = async (req, res) => {
         : null,
       createdBy: match.createdBy,
       status: match.status,
-      matchStatus: match.matchStatus,
+      matchStatus: match.matchStatus ? match.matchStatus : null,
+      matchResultNote: match.matchResultNote ? match.matchResultNote : null,
       umpires: match.umpires.map((umpire) => ({
         id: umpire._id,
         name: umpire.name,
@@ -1316,6 +1317,118 @@ const setMatchStatus = async (req, res, next) => {
   }
 };
 
+const updateMatchResult = async (req, res, next) => {
+  try {
+    const { matchId, winnerTeamId, status, reason } = req.body;
+
+    // Validate input
+    const validation = validateObjectIds({ matchId, winnerTeamId });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Validate status
+    if (!Object.values(enums.matchStatusEnum).includes(status)) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Invalid status provided",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Find the match
+    const match = await CustomMatch.findById(matchId);
+    if (!match) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Fetch team names
+    const homeTeam = await CustomTeam.findById(match.homeTeamId);
+    const awayTeam = await CustomTeam.findById(match.awayTeamId);
+
+    if (!homeTeam || !awayTeam) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "One or both teams not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Determine the winner and calculate the margin
+    let matchResultNote = "";
+    if (winnerTeamId.toString() === match.homeTeamId.toString()) {
+      if (match.awayTeamScore.wickets === 10) {
+        const margin = match.homeTeamScore.runs - match.awayTeamScore.runs;
+        matchResultNote = `${homeTeam.teamName} won by ${margin} runs`;
+      } else {
+        const margin = 10 - match.homeTeamScore.wickets;
+        matchResultNote = `${homeTeam.teamName} won by ${margin} wickets`;
+      }
+    } else if (winnerTeamId.toString() === match.awayTeamId.toString()) {
+      if (match.homeTeamScore.wickets === 10) {
+        const margin = match.awayTeamScore.runs - match.homeTeamScore.runs;
+        matchResultNote = `${awayTeam.teamName} won by ${margin} runs`;
+      } else {
+        const margin = 10 - match.awayTeamScore.wickets;
+        matchResultNote = `${awayTeam.teamName} won by ${margin} wickets`;
+      }
+    }
+
+    // Update match result
+    if(status === enums.matchStatusEnum.finished){
+      match.status = enums.matchStatusEnum.finished;
+      match.matchResultNote = matchResultNote;
+    } else {
+      if (!reason) {
+        return apiResponse({
+          res,
+          status: false,
+          message: "Reason is required for statuses other than 'finished'",
+          statusCode: StatusCodes.BAD_REQUEST,
+        });
+      }
+      if ([enums.matchStatusEnum.in_progress, enums.matchStatusEnum.not_started, enums.matchStatusEnum.finished].includes(status)) {
+        return apiResponse({
+          res,
+          status: false,
+          message: "Cannot set status to 'in_progress' or 'not_started' or 'finished'",
+          statusCode: StatusCodes.BAD_REQUEST,
+        });
+      }
+      match.status = status;
+      match.matchResultNote = reason;
+    }
+
+    await match.save();
+
+    return apiResponse({
+      res,
+      status: true,
+      message: "Match result updated successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (err) {
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 export default {
   createMatch,
   listMatches,
@@ -1328,5 +1441,6 @@ export default {
   updateStartingPlayerScorecard,
   getMatchSummary,
   getMatchSquads,
-  setMatchStatus
+  setMatchStatus,
+  updateMatchResult
 };

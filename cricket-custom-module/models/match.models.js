@@ -56,6 +56,7 @@ const customMatchSchema = new mongoose.Schema({
     wickets: { type: Number, default: 0 },
   },
   matchStatus: { type: String, default: null },
+  matchResultNote: { type: String, default: null },
 });
 
 const CustomMatch = mongoose.model("CustomMatch", customMatchSchema); 
