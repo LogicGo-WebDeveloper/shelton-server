@@ -1029,9 +1029,11 @@ const setupWebSocket = (server) => {
                   body: {
                     matchScore: matchLiveScore,
                     batters: playingBatters,
-                    ranges: ranges,
-                    isDeclared: isDeclared,
-                    isAllOut: isAllOut,
+                    powerPlays: { ranges: ranges, isActive: true },
+                    endInnings: {
+                      isDeclared: isDeclared,
+                      isAllOut: isAllOut,
+                    },
                   },
                   status: true,
                 })
