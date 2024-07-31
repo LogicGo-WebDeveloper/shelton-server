@@ -14,7 +14,10 @@ import config from "../config/config.js";
 import CustomPlayerOvers from "../cricket-custom-module/models/playersOvers.models.js";
 import CustomMatchScorecard from "../cricket-custom-module/models/matchScorecard.models.js";
 import CustomMatch from "../cricket-custom-module/models/match.models.js";
-import { CustomCityList, CustomMatchOfficial } from "../cricket-custom-module/models/common.models.js";
+import {
+  CustomCityList,
+  CustomMatchOfficial,
+} from "../cricket-custom-module/models/common.models.js";
 import CustomPlayers from "../cricket-custom-module/models/player.models.js";
 import CustomTeam from "../cricket-custom-module/models/team.models.js";
 import enums from "../config/enum.js";
@@ -965,7 +968,7 @@ const setupWebSocket = (server) => {
                   actionType: data.action,
                   body: null,
                   status: false,
-                }
+                };
               } else {
                 console.log("match111111111", match)
                 console.log("match22222222", match.awayTeamScore)
@@ -1070,10 +1073,19 @@ const setupWebSocket = (server) => {
             }
 
             // Determine the batting team
-            const battingTeamKey = scorecard.scorecard.homeTeam.players.some(player => player.status === 'not_out') ? 'homeTeam' : 'awayTeam';
+            const battingTeamKey = scorecard.scorecard.homeTeam.players.some(
+              (player) => player.status === "not_out"
+            )
+              ? "homeTeam"
+              : "awayTeam";
 
             // Find the player to change strike
-            const playerIndex = scorecard.scorecard[battingTeamKey].players.findIndex(player => player.id.toString() === batterId && player.status === 'not_out');
+            const playerIndex = scorecard.scorecard[
+              battingTeamKey
+            ].players.findIndex(
+              (player) =>
+                player.id.toString() === batterId && player.status === "not_out"
+            );
             if (playerIndex === -1) {
               ws.send(
                 JSON.stringify({
@@ -1086,18 +1098,21 @@ const setupWebSocket = (server) => {
             }
 
             // Update the strike status
-            scorecard.scorecard[battingTeamKey].players.forEach(player => {
-              if (player.status === 'not_out') {
+            scorecard.scorecard[battingTeamKey].players.forEach((player) => {
+              if (player.status === "not_out") {
                 player.activeStriker = false;
               }
             });
-            scorecard.scorecard[battingTeamKey].players[playerIndex].activeStriker = true;
+            scorecard.scorecard[battingTeamKey].players[
+              playerIndex
+            ].activeStriker = true;
 
             // Save the updated scorecard
             await scorecard.save();
 
             // Get the active striker data
-            const activeStriker = scorecard.scorecard[battingTeamKey].players[playerIndex];
+            const activeStriker =
+              scorecard.scorecard[battingTeamKey].players[playerIndex];
 
             ws.send(
               JSON.stringify({
@@ -1124,22 +1139,26 @@ const setupWebSocket = (server) => {
             const match = await CustomMatch.findById(matchId);
 
             if (!scorecard) {
-              ws.send(JSON.stringify({
-                message: "Scorecard not found",
-                actionType: data.action,
-                body: null,
-                status: false,
-              }));
+              ws.send(
+                JSON.stringify({
+                  message: "Scorecard not found",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
               return;
             }
 
             if (!match) {
-              ws.send(JSON.stringify({
-                message: "Match not found",
-                actionType: data.action,
-                body: null,
-                status: false,
-              }));
+              ws.send(
+                JSON.stringify({
+                  message: "Match not found",
+                  actionType: data.action,
+                  body: null,
+                  status: false,
+                })
+              );
               return;
             }
 
@@ -1162,10 +1181,15 @@ const setupWebSocket = (server) => {
             // Function to get player image from the database
             const getPlayerImageFromDB = async (playerId) => {
               try {
-                const player = await CustomPlayers.findById(playerId).select("image");
+                const player = await CustomPlayers.findById(playerId).select(
+                  "image"
+                );
                 return player?.image || "";
               } catch (error) {
-                console.error(`Error fetching image for player ${playerId}:`, error);
+                console.error(
+                  `Error fetching image for player ${playerId}:`,
+                  error
+                );
                 return "";
               }
             };
@@ -1173,14 +1197,19 @@ const setupWebSocket = (server) => {
             // Function to get team details
             const getTeamDetails = async (teamId) => {
               try {
-                const team = await CustomTeam.findById(teamId).select("teamName teamImage");
+                const team = await CustomTeam.findById(teamId).select(
+                  "teamName teamImage"
+                );
                 return {
                   id: teamId,
                   name: team?.teamName || "",
                   image: team?.teamImage || "",
                 };
               } catch (error) {
-                console.error(`Error fetching details for team ${teamId}:`, error);
+                console.error(
+                  `Error fetching details for team ${teamId}:`,
+                  error
+                );
                 return {
                   id: teamId,
                   name: "",
@@ -1189,10 +1218,14 @@ const setupWebSocket = (server) => {
               }
             };
 
-            const city = await CustomCityList.findById(match.city).select("city");
+            const city = await CustomCityList.findById(match.city).select(
+              "city"
+            );
 
             // Fetch umpire names
-            const umpires = await CustomMatchOfficial.find({ _id: { $in: match.umpires } }).select("name");
+            const umpires = await CustomMatchOfficial.find({
+              _id: { $in: match.umpires },
+            }).select("name");
 
             // Fetch team data
             const homeTeam = await getTeamDetails(match.homeTeamId);
@@ -1245,20 +1278,24 @@ const setupWebSocket = (server) => {
               },
             };
 
-            ws.send(JSON.stringify({
-              message: "Summary fetched successfully",
-              actionType: data.action,
-              body: responseData,
-              status: true,
-            }));
+            ws.send(
+              JSON.stringify({
+                message: "Summary fetched successfully",
+                actionType: data.action,
+                body: responseData,
+                status: true,
+              })
+            );
           } catch (error) {
             console.error("Error fetching match summary:", error);
-            ws.send(JSON.stringify({
-              message: "Internal server error",
-              actionType: data.action,
-              body: null,
-              status: false,
-            }));
+            ws.send(
+              JSON.stringify({
+                message: "Internal server error",
+                actionType: data.action,
+                body: null,
+                status: false,
+              })
+            );
           }
           break;
           case "selectNextBatter":
