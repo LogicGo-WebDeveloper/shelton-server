@@ -4,12 +4,12 @@ import enums from "../../config/enum.js";
 const customMatchSchema = new mongoose.Schema({
   homeTeamId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Team",
+    ref: "CustomTeam",
     required: true,
   },
   awayTeamId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Team",
+    ref: "CustomTeam",
     required: true,
   },
   noOfOvers: { type: Number, required: true },

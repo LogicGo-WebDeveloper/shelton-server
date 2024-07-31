@@ -1186,155 +1186,30 @@ const getMatchSquads = async (req, res) => {
   try {
     const { id } = req.params;
     let filter = {};
-    if (id) filter.matchId = new mongoose.Types.ObjectId(id);
+    if (id) filter._id = new mongoose.Types.ObjectId(id);
 
-    const match = await CustomMatchScorecard.aggregate([
-      { $match: filter },
-      {
-        $lookup: {
-          from: "customteams",
-          localField: "scorecard.homeTeam.id",
-          foreignField: "_id",
-          as: "homeTeam",
+    const match = await CustomMatch.find(filter)
+      .populate({ path: "homeTeamId", select: "_id teamName teamImage" })
+      .populate({ path: "awayTeamId", select: "_id teamName teamImage" })
+      .populate({
+        path: "homeTeamPlayingPlayer",
+        select: "playerName role image",
+        populate: {
+          path: "role",
+          select: "role",
         },
-      },
-      {
-        $lookup: {
-          from: "customteams",
-          localField: "scorecard.awayTeam.id",
-          foreignField: "_id",
-          as: "awayTeam",
+      })
+      .populate({
+        path: "awayTeamPlayingPlayer",
+        select: "playerName role image",
+        populate: {
+          path: "role",
+          select: "role",
         },
-      },
-      {
-        $unwind: "$homeTeam",
-      },
-      {
-        $unwind: "$awayTeam",
-      },
-      {
-        $lookup: {
-          from: "customplayers",
-          localField: "scorecard.homeTeam.players.id",
-          foreignField: "_id",
-          as: "homeTeamPlayersDetails",
-        },
-      },
-      {
-        $lookup: {
-          from: "customplayers",
-          localField: "scorecard.awayTeam.players.id",
-          foreignField: "_id",
-          as: "awayTeamPlayersDetails",
-        },
-      },
-      {
-        $unwind: "$homeTeamPlayersDetails",
-      },
-      {
-        $lookup: {
-          from: "customplayerroles",
-          localField: "homeTeamPlayersDetails.role",
-          foreignField: "_id",
-          as: "homeTeamPlayersDetails.roleDetails",
-        },
-      },
-      {
-        $unwind: "$homeTeamPlayersDetails.roleDetails",
-      },
-      {
-        $lookup: {
-          from: "custommatches",
-          localField: "matchId",
-          foreignField: "_id",
-          as: "scores",
-        },
-      },
-      {
-        $addFields: {
-          status: { $arrayElemAt: ["$scores.status", 0] },
-        },
-      },
-      {
-        $group: {
-          _id: "$_id",
-          homeTeamPlayersDetails: { $push: "$homeTeamPlayersDetails" },
-          awayTeamPlayersDetails: { $first: "$awayTeamPlayersDetails" },
-          status: { $first: "$status" },
-          homeTeam: { $first: "$homeTeam" },
-          awayTeam: { $first: "$awayTeam" },
-        },
-      },
-      {
-        $unwind: "$awayTeamPlayersDetails",
-      },
-      {
-        $lookup: {
-          from: "customplayerroles",
-          localField: "awayTeamPlayersDetails.role",
-          foreignField: "_id",
-          as: "awayTeamPlayersDetails.roleDetails",
-        },
-      },
-      {
-        $unwind: "$awayTeamPlayersDetails.roleDetails",
-      },
-      {
-        $group: {
-          _id: "$_id",
-          homeTeamPlayersDetails: { $first: "$homeTeamPlayersDetails" },
-          awayTeamPlayersDetails: { $push: "$awayTeamPlayersDetails" },
-          status: { $first: "$status" },
-          homeTeam: { $first: "$homeTeam" },
-          awayTeam: { $first: "$awayTeam" },
-        },
-      },
-      {
-        $project: {
-          status: 1,
-          homeTeam: {
-            _id: "$homeTeam._id",
-            players: {
-              $map: {
-                input: "$homeTeamPlayersDetails",
-                as: "player",
-                in: {
-                  _id: "$$player._id",
-                  playerName: "$$player.playerName",
-                  image: "$$player.image",
-                  role: "$$player.roleDetails.role",
-                },
-              },
-            },
-          },
-          awayTeam: {
-            _id: "$awayTeam._id",
-            players: {
-              $map: {
-                input: "$awayTeamPlayersDetails",
-                as: "player",
-                in: {
-                  _id: "$$player._id",
-                  playerName: "$$player.playerName",
-                  image: "$$player.image",
-                  role: "$$player.roleDetails.role",
-                },
-              },
-            },
-          },
-        },
-      },
-    ]);
-
-    if (!Array.prototype.$sortArray) {
-      Array.prototype.$sortArray = function ({ input, sortBy }) {
-        return input.sort((a, b) => {
-          if (a[sortBy] < b[sortBy]) return 1;
-          if (a[sortBy] > b[sortBy]) return -1;
-          return 0;
-        });
-      };
-    }
+      })
+      .select(
+        "homeTeamId awayTeamId status homeTeamPlayingPlayer awayTeamPlayingPlayer"
+      );
 
     return apiResponse({
       res,
