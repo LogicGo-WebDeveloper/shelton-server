@@ -246,6 +246,8 @@ const createMatch = async (req, res, next) => {
       homeTeamPlayingPlayer,
       awayTeamPlayingPlayer,
       umpires,
+      homeTeamScore: { runs: 0, overs: 0, wickets: 0 },
+      awayTeamScore: { runs: 0, overs: 0, wickets: 0 },
     });
 
     return apiResponse({
@@ -1205,6 +1207,12 @@ const getMatchSquads = async (req, res) => {
         },
       },
       {
+        $unwind: "$homeTeam",
+      },
+      {
+        $unwind: "$awayTeam",
+      },
+      {
         $lookup: {
           from: "customplayers",
           localField: "scorecard.homeTeam.players.id",
@@ -1221,6 +1229,20 @@ const getMatchSquads = async (req, res) => {
         },
       },
       {
+        $unwind: "$homeTeamPlayersDetails",
+      },
+      {
+        $lookup: {
+          from: "customplayerroles",
+          localField: "homeTeamPlayersDetails.role",
+          foreignField: "_id",
+          as: "homeTeamPlayersDetails.roleDetails",
+        },
+      },
+      {
+        $unwind: "$homeTeamPlayersDetails.roleDetails",
+      },
+      {
         $lookup: {
           from: "custommatches",
           localField: "matchId",
@@ -1230,31 +1252,48 @@ const getMatchSquads = async (req, res) => {
       },
       {
         $addFields: {
-          scores: { $arrayElemAt: ["$scores", 0] },
+          status: { $arrayElemAt: ["$scores.status", 0] },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          homeTeamPlayersDetails: { $push: "$homeTeamPlayersDetails" },
+          awayTeamPlayersDetails: { $first: "$awayTeamPlayersDetails" },
+          status: { $first: "$status" },
+          homeTeam: { $first: "$homeTeam" },
+          awayTeam: { $first: "$awayTeam" },
+        },
+      },
+      {
+        $unwind: "$awayTeamPlayersDetails",
+      },
+      {
+        $lookup: {
+          from: "customplayerroles",
+          localField: "awayTeamPlayersDetails.role",
+          foreignField: "_id",
+          as: "awayTeamPlayersDetails.roleDetails",
+        },
+      },
+      {
+        $unwind: "$awayTeamPlayersDetails.roleDetails",
+      },
+      {
+        $group: {
+          _id: "$_id",
+          homeTeamPlayersDetails: { $first: "$homeTeamPlayersDetails" },
+          awayTeamPlayersDetails: { $push: "$awayTeamPlayersDetails" },
+          status: { $first: "$status" },
+          homeTeam: { $first: "$homeTeam" },
+          awayTeam: { $first: "$awayTeam" },
         },
       },
       {
         $project: {
-          "scores.status": 1,
-          "scorecard.homeTeam.id": 1,
-          "scorecard.homeTeam.teamName": 1,
-          "scorecard.homeTeam.teamImage": 1,
-          "scorecard.awayTeam.id": 1,
-          "scorecard.awayTeam.teamName": 1,
-          "scorecard.awayTeam.teamImage": 1,
-          "scorecard.homeTeam.players.id": 1,
-          "scorecard.awayTeam.players.id": 1,
-          homeTeam: { $arrayElemAt: ["$homeTeam", 0] },
-          awayTeam: { $arrayElemAt: ["$awayTeam", 0] },
-          homeTeamPlayersDetails: 1,
-          awayTeamPlayersDetails: 1,
-        },
-      },
-      {
-        $project: {
-          status: "$scores.status",
+          status: 1,
           homeTeam: {
-            _id: "$scorecard.homeTeam.id",
+            _id: "$homeTeam._id",
             players: {
               $map: {
                 input: "$homeTeamPlayersDetails",
@@ -1263,13 +1302,13 @@ const getMatchSquads = async (req, res) => {
                   _id: "$$player._id",
                   playerName: "$$player.playerName",
                   image: "$$player.image",
-                  role: "$$player.role",
+                  role: "$$player.roleDetails.role",
                 },
               },
             },
           },
           awayTeam: {
-            _id: "$scorecard.awayTeam.id",
+            _id: "$awayTeam._id",
             players: {
               $map: {
                 input: "$awayTeamPlayersDetails",
@@ -1278,7 +1317,7 @@ const getMatchSquads = async (req, res) => {
                   _id: "$$player._id",
                   playerName: "$$player.playerName",
                   image: "$$player.image",
-                  role: "$$player.role",
+                  role: "$$player.roleDetails.role",
                 },
               },
             },
@@ -1286,6 +1325,16 @@ const getMatchSquads = async (req, res) => {
         },
       },
     ]);
+
+    if (!Array.prototype.$sortArray) {
+      Array.prototype.$sortArray = function ({ input, sortBy }) {
+        return input.sort((a, b) => {
+          if (a[sortBy] < b[sortBy]) return 1;
+          if (a[sortBy] > b[sortBy]) return -1;
+          return 0;
+        });
+      };
+    }
 
     return apiResponse({
       res,

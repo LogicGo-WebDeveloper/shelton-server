@@ -51,6 +51,16 @@ const createMatch = {
     homeTeamPlayingPlayer: Joi.array().items(Joi.string()).min(11).required(),
     awayTeamPlayingPlayer: Joi.array().items(Joi.string()).min(11).required(),
     umpires: Joi.array().items(Joi.string()).max(5).required(),
+    homeTeamScore: Joi.object().keys({
+      runs: Joi.number().default(0),
+      overs: Joi.number().default(0),
+      wickets: Joi.number().default(0),
+    }),
+    awayTeamScore: Joi.object().keys({
+      runs: Joi.number().default(0),
+      overs: Joi.number().default(0),
+      wickets: Joi.number().default(0),
+    }),
   }),
 };
 
