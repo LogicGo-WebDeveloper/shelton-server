@@ -9,6 +9,7 @@ import CustomTournament from "../models/tournament.models.js";
 import {
   CustomCityList,
   CustomMatchOfficial,
+  CustomMatchStatus,
 } from "../models/common.models.js";
 import CustomTeam from "../models/team.models.js";
 import helper from "../../helper/common.js";
@@ -370,6 +371,7 @@ const listMatches = async (req, res) => {
         : null,
       createdBy: match.createdBy,
       status: match.status,
+      matchStatus: match.matchStatus,
       umpires: match.umpires.map((umpire) => ({
         id: umpire._id,
         name: umpire.name,
@@ -974,15 +976,33 @@ const getMatchScorecard = async (req, res) => {
       });
     }
 
+    // Fetch home and away team images
+    const homeTeam = await CustomTeam.findById(scorecard.scorecard.homeTeam.id).select("teamImage");
+    const awayTeam = await CustomTeam.findById(scorecard.scorecard.awayTeam.id).select("teamImage");
+
+    // Convert Mongoose documents to plain JavaScript objects
+    const scorecardObj = scorecard.toObject();
+    const homeTeamObj = homeTeam ? homeTeam.toObject() : null;
+    const awayTeamObj = awayTeam ? awayTeam.toObject() : null;
+
     return apiResponse({
       res,
       status: true,
       data: {
-        tournamentId: scorecard.tournamentId._id,
-        tournamentName: scorecard.tournamentId.name,
-        matchId: scorecard.matchId._id,
-        matchDateTime: scorecard.matchId.dateTime,
-        scorecard: scorecard.scorecard,
+        tournamentId: scorecardObj.tournamentId._id,
+        tournamentName: scorecardObj.tournamentId.name,
+        matchId: scorecardObj.matchId._id,
+        matchDateTime: scorecardObj.matchId.dateTime,
+        scorecard: {
+          homeTeam: {
+            ...scorecardObj.scorecard.homeTeam,
+            image: homeTeamObj ? homeTeamObj.teamImage : null,
+          },
+          awayTeam: {
+            ...scorecardObj.scorecard.awayTeam,
+            image: awayTeamObj ? awayTeamObj.teamImage : null,
+          },
+        },
       },
       message: "Scorecard retrieved successfully",
       statusCode: StatusCodes.OK,
@@ -1229,6 +1249,73 @@ const getMatchSquads = async (req, res) => {
   }
 };
 
+const setMatchStatus = async (req, res, next) => {
+  try {
+    const { matchId, statusId, description } = req.body;
+
+    // Validate input
+    if (!matchId || !statusId) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Match ID and status are required",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Find the match
+    const match = await CustomMatch.findById(matchId);
+    if (!match) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Find the status name from CustomMatchStatus
+    const status = await CustomMatchStatus.findById(statusId);
+    if (!status) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Status not found",  
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Validate description if status is "Other"
+    if (status.status === "Others" && !description) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Description is required for 'Other' status",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Update the match status
+    const matchStatusDes = status.status === "Other" ? description : status.status
+    match.matchStatus = matchStatusDes
+    await match.save(); 
+
+    return apiResponse({
+      res,
+      status: true,
+      message: "Match status updated successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (err) {
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 export default {
   createMatch,
   listMatches,
@@ -1241,4 +1328,5 @@ export default {
   updateStartingPlayerScorecard,
   getMatchSummary,
   getMatchSquads,
+  setMatchStatus
 };

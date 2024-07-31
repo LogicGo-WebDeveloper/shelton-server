@@ -1298,97 +1298,97 @@ const setupWebSocket = (server) => {
             );
           }
           break;
-          case "selectNextBatter":
-            try {
-              const { matchId, nextBatterId, activeStriker } = data;
-              // Validate input
-              if (!matchId || !nextBatterId || typeof activeStriker !== 'boolean') {
-                ws.send(
-                  JSON.stringify({
-                    message: "Match ID, Next Batter ID, and activeStriker (boolean) are required",
-                    actionType: data.action,
-                    status: false,
-                  })
-                );
-                return;
-              }
-
-              // Find the match scorecard
-              const scorecard = await CustomMatchScorecard.findOne({ matchId });
-              if (!scorecard) {
-                ws.send(
-                  JSON.stringify({
-                    message: "Scorecard not found",
-                    actionType: data.action,
-                    status: false,
-                  })
-                );
-                return;
-              }
-
-              // Check if match status is in_progress
-              const match = await CustomMatch.findById(matchId);
-              if (!match || match.status !== enums.matchStatusEnum.in_progress) {
-                ws.send(
-                  JSON.stringify({
-                    message: "Match is not in progress",
-                    actionType: data.action,
-                    status: false,
-                  })
-                );
-                return;
-              }
-
-              // Determine the batting team
-              const battingTeamKey = scorecard.scorecard.homeTeam.players.some(player => player.status === 'not_out') ? 'homeTeam' : 'awayTeam';
-
-              // Find the player to update
-              const playerIndex = scorecard.scorecard[battingTeamKey].players.findIndex(player => player.id.toString() === nextBatterId);
-              if (playerIndex === -1) {
-                ws.send(
-                  JSON.stringify({
-                    message: "Next batter not found",
-                    actionType: data.action,
-                    status: false,
-                  })
-                );
-                return;
-              }
-
-              // Update the player's status and activeStriker
-              scorecard.scorecard[battingTeamKey].players[playerIndex].status = 'not_out';
-              scorecard.scorecard[battingTeamKey].players[playerIndex].activeStriker = activeStriker;
-
-              // If activeStriker is true, set all other players' activeStriker to false
-              if (activeStriker) {
-                scorecard.scorecard[battingTeamKey].players.forEach((player, index) => {
-                  if (index !== playerIndex) {
-                    player.activeStriker = false;
-                  }
-                });
-              }
-
-              // Save the updated scorecard
-              await scorecard.save();
-
+        case "selectNextBatter":
+          try {
+            const { matchId, nextBatterId, activeStriker } = data;
+            // Validate input
+            if (!matchId || !nextBatterId || typeof activeStriker !== 'boolean') {
               ws.send(
                 JSON.stringify({
-                  message: "Next batter selected successfully",
-                  actionType: data.action,
-                  status: true,
-                  data: scorecard.scorecard[battingTeamKey].players[playerIndex],
-                })
-              );
-            } catch (error) {
-              ws.send(
-                JSON.stringify({
-                  message: "Internal server error",
+                  message: "Match ID, Next Batter ID, and activeStriker (boolean) are required",
                   actionType: data.action,
                   status: false,
                 })
               );
+              return;
             }
-          break;
+
+            // Find the match scorecard
+            const scorecard = await CustomMatchScorecard.findOne({ matchId });
+            if (!scorecard) {
+              ws.send(
+                JSON.stringify({
+                  message: "Scorecard not found",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Check if match status is in_progress
+            const match = await CustomMatch.findById(matchId);
+            if (!match || match.status !== enums.matchStatusEnum.in_progress) {
+              ws.send(
+                JSON.stringify({
+                  message: "Match is not in progress",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Determine the batting team
+            const battingTeamKey = scorecard.scorecard.homeTeam.players.some(player => player.status === 'not_out') ? 'homeTeam' : 'awayTeam';
+
+            // Find the player to update
+            const playerIndex = scorecard.scorecard[battingTeamKey].players.findIndex(player => player.id.toString() === nextBatterId);
+            if (playerIndex === -1) {
+              ws.send(
+                JSON.stringify({
+                  message: "Next batter not found",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Update the player's status and activeStriker
+            scorecard.scorecard[battingTeamKey].players[playerIndex].status = 'not_out';
+            scorecard.scorecard[battingTeamKey].players[playerIndex].activeStriker = activeStriker;
+
+            // If activeStriker is true, set all other players' activeStriker to false
+            if (activeStriker) {
+              scorecard.scorecard[battingTeamKey].players.forEach((player, index) => {
+                if (index !== playerIndex) {
+                  player.activeStriker = false;
+                }
+              });
+            }
+
+            // Save the updated scorecard
+            await scorecard.save();
+
+            ws.send(
+              JSON.stringify({
+                message: "Next batter selected successfully",
+                actionType: data.action,
+                status: true,
+                data: scorecard.scorecard[battingTeamKey].players[playerIndex],
+              })
+            );
+          } catch (error) {
+            ws.send(
+              JSON.stringify({
+                message: "Internal server error",
+                actionType: data.action,
+                status: false,
+              })
+            );
+          }
+        break;
       }
     });
   });

@@ -123,6 +123,8 @@ route.post(
   matchController.updateStartingPlayerScorecard
 );
 
+route.post("/match/match-status/update", matchController.setMatchStatus);
+
 // ============================== For Player List ===========================================
 route.post(
   "/player/add",
