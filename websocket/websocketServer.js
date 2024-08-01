@@ -1022,7 +1022,39 @@ const setupWebSocket = (server) => {
                   id: player.id,
                 }));
 
-                
+              let isActive;
+              if (ranges) {
+                const [startOver, endOver] = ranges
+                  .replace("to", "-")
+                  .split("-")
+                  .map(Number);
+
+                const currentOver = matchDetails.noOfOvers;
+                isActive = currentOver >= startOver && currentOver <= endOver;
+                await CustomMatch.findByIdAndUpdate(
+                  matchId,
+                  {
+                    $set: {
+                      "powerPlays.ranges": ranges,
+                      "powerPlays.isActive": isActive,
+                    },
+                  },
+                  { new: true }
+                );
+              }
+
+              if (isDeclared || isAllOut) {
+                await CustomMatch.findByIdAndUpdate(
+                  matchId,
+                  {
+                    $set: {
+                      "endInnings.isDeclared": isDeclared,
+                      "endInnings.isAllOut": isAllOut,
+                    },
+                  },
+                  { new: true }
+                );
+              }
 
               ws.send(
                 JSON.stringify({
@@ -1031,62 +1063,14 @@ const setupWebSocket = (server) => {
                   body: {
                     matchScore: matchLiveScore,
                     batters: playingBatters,
-                    
-                  },
-                  status: true,
-                })
-              );
-            }
-
-            if (ranges) {
-              await CustomMatch.findByIdAndUpdate(
-                matchId,
-                {
-                  $set: {
-                    "powerPlays.ranges": ranges,
-                    "powerPlays.isActive": true,
-                  },
-                },
-                { new: true }
-              );
-
-              ws.send(
-                JSON.stringify({
-                  message: "Power play added successfully.",
-                  actionType: data.action,
-                  body: {
-                    matchId: matchId,
                     powerPlays: {
-                      ranges: ranges,
-                      isActive: true,
+                      ranges: ranges ? ranges : null,
+                      isActive: isActive,
+                      message: isActive && ranges ? "Power play is active" : ""
                     },
-                  },
-                  status: true,
-                })
-              );
-            }
-
-            if (isAllOut || isDeclared) {
-              await CustomMatch.findByIdAndUpdate(
-                matchId,
-                {
-                  $set: {
-                    "endInnings.isDeclared": isDeclared,
-                    "endInnings.isAllOut": isAllOut,
-                  },
-                },
-                { new: true }
-              );
-
-              ws.send(
-                JSON.stringify({
-                  message: "Innings updated successfully.",
-                  actionType: data.action,
-                  body: {
-                    matchId: matchId,
                     endInnings: {
-                      isDeclared: isDeclared,
-                      isAllOut: isAllOut,
+                      isDeclared: isDeclared ? isDeclared : false,
+                      isAllOut: isAllOut ? isAllOut : false,
                     },
                   },
                   status: true,
