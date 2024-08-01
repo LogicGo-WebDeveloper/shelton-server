@@ -33,7 +33,7 @@ const updateTeam = {
   body: Joi.object().keys({
     teamName: Joi.string(),
     city: Joi.string(),
-    teamImage: Joi.string(),
+    teamImage: Joi.string().allow(null, ""),
     tournamentId: Joi.string(),
   }),
 };
@@ -215,8 +215,10 @@ const validateMatchResultUpdate = {
   body: Joi.object().keys({
     matchId: Joi.string().required(),
     winnerTeamId: Joi.string().required(),
-    status: Joi.string().valid(...Object.values(enums.matchStatusEnum)).required(),
-    reason: Joi.string().allow('', null).optional(),
+    status: Joi.string()
+      .valid(...Object.values(enums.matchStatusEnum))
+      .required(),
+    reason: Joi.string().allow("", null).optional(),
   }),
 };
 
@@ -238,5 +240,5 @@ export default {
   updatePlayerStatus,
   validateMatchStatusUpdate,
   validateMatchResultUpdate,
-  validateUpdateStartingPlayer
+  validateUpdateStartingPlayer,
 };
