@@ -1022,6 +1022,8 @@ const setupWebSocket = (server) => {
                   id: player.id,
                 }));
 
+                
+
               ws.send(
                 JSON.stringify({
                   message: "Score updated successfully.",
@@ -1029,6 +1031,7 @@ const setupWebSocket = (server) => {
                   body: {
                     matchScore: matchLiveScore,
                     batters: playingBatters,
+                    
                   },
                   status: true,
                 })
@@ -1467,6 +1470,8 @@ const setupWebSocket = (server) => {
             );
           }
           break;
+        case "playerOut":
+        break;
       }
     });
   });
