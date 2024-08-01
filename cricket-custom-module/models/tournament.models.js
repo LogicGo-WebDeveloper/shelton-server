@@ -15,6 +15,7 @@ const customTournamentSchema = new mongoose.Schema({
   groundName: String,
   organiserName: String,
   tournamentStartDate: Date,
+  tournamentEndDate: Date,
   tournamentCategoryId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "CustomTournamentCategory",

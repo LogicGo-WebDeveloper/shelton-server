@@ -792,7 +792,8 @@ const updateMatchStatus = async (req, res, next) => {
 
 const updateTossStatus = async (req, res) => {
   try {
-    const { matchId, tournamentId, tossWinnerTeamId, tossWinnerChoice } = req.body;
+    const { matchId, tournamentId, tossWinnerTeamId, tossWinnerChoice } =
+      req.body;
     const userId = req.user._id;
 
     // Validate input
@@ -828,7 +829,8 @@ const updateTossStatus = async (req, res) => {
       return apiResponse({
         res,
         status: false,
-        message: "You are not authorized to update the toss status for this match",
+        message:
+          "You are not authorized to update the toss status for this match",
         statusCode: StatusCodes.FORBIDDEN,
       });
     }
@@ -988,8 +990,12 @@ const getMatchScorecard = async (req, res) => {
     }
 
     // Fetch home and away team images
-    const homeTeam = await CustomTeam.findById(scorecard.scorecard.homeTeam.id).select("teamImage");
-    const awayTeam = await CustomTeam.findById(scorecard.scorecard.awayTeam.id).select("teamImage");
+    const homeTeam = await CustomTeam.findById(
+      scorecard.scorecard.homeTeam.id
+    ).select("teamImage");
+    const awayTeam = await CustomTeam.findById(
+      scorecard.scorecard.awayTeam.id
+    ).select("teamImage");
 
     // Convert Mongoose documents to plain JavaScript objects
     const scorecardObj = scorecard.toObject();
@@ -1032,7 +1038,8 @@ const getMatchScorecard = async (req, res) => {
 const updateStartingPlayerScorecard = async (req, res) => {
   try {
     const { matchId } = req.params;
-    const { bowlingTeamId, battingTeamId, bowlerId, strikerId, nonStrikerId } = req.body;
+    const { bowlingTeamId, battingTeamId, bowlerId, strikerId, nonStrikerId } =
+      req.body;
     const userId = req.user._id;
 
     const validation = validateObjectIds({
@@ -1083,7 +1090,9 @@ const updateStartingPlayerScorecard = async (req, res) => {
       { model: CustomPlayers, id: nonStrikerId, name: "Non-striker" },
     ];
 
-    const validationErrors = await validateEntitiesExistence(entitiesToValidate);
+    const validationErrors = await validateEntitiesExistence(
+      entitiesToValidate
+    );
 
     if (validationErrors.length > 0) {
       return apiResponse({
@@ -1341,7 +1350,7 @@ const setMatchStatus = async (req, res, next) => {
       return apiResponse({
         res,
         status: true,
-        message: "Status not found",  
+        message: "Status not found",
         statusCode: StatusCodes.NOT_FOUND,
       });
     }
@@ -1357,9 +1366,10 @@ const setMatchStatus = async (req, res, next) => {
     }
 
     // Update the match status
-    const matchStatusDes = status.status === "Others" ? description : status.status
-    match.matchStatus = matchStatusDes
-    await match.save(); 
+    const matchStatusDes =
+      status.status === "Others" ? description : status.status;
+    match.matchStatus = matchStatusDes;
+    await match.save();
 
     return apiResponse({
       res,
@@ -1404,8 +1414,8 @@ const updateMatchResult = async (req, res, next) => {
       });
     }
 
-     // Check if the user is the creator of the match
-     if (match.createdBy.toString() !== userId.toString()) {
+    // Check if the user is the creator of the match
+    if (match.createdBy.toString() !== userId.toString()) {
       return apiResponse({
         res,
         status: false,
@@ -1448,7 +1458,7 @@ const updateMatchResult = async (req, res, next) => {
     }
 
     // Update match result
-    if(status === enums.matchStatusEnum.finished){
+    if (status === enums.matchStatusEnum.finished) {
       match.status = enums.matchStatusEnum.finished;
       match.matchResultNote = matchResultNote;
     } else {
@@ -1460,7 +1470,13 @@ const updateMatchResult = async (req, res, next) => {
           statusCode: StatusCodes.BAD_REQUEST,
         });
       }
-      if ([enums.matchStatusEnum.in_progress, enums.matchStatusEnum.not_started, enums.matchStatusEnum.finished].includes(status)) {
+      if (
+        [
+          enums.matchStatusEnum.in_progress,
+          enums.matchStatusEnum.not_started,
+          enums.matchStatusEnum.finished,
+        ].includes(status)
+      ) {
         return apiResponse({
           res,
           status: false,
@@ -1503,5 +1519,5 @@ export default {
   getMatchSummary,
   getMatchSquads,
   setMatchStatus,
-  updateMatchResult
+  updateMatchResult,
 };

@@ -20,6 +20,7 @@ import {
 import CustomPlayers from "../cricket-custom-module/models/player.models.js";
 import CustomTeam from "../cricket-custom-module/models/team.models.js";
 import enums from "../config/enum.js";
+import CustomPlayerOvers from "../cricket-custom-module/models/playersOvers.models.js";
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
@@ -957,7 +958,6 @@ const setupWebSocket = (server) => {
             const matches = await CustomMatch.findOne({ _id: matchId });
 
             // Example call
-            // await updateBallsAndTotal(existingOvers, bowlers);
 
             const calculateAndUpdateTeamScores = async (teamKey) => {
               const teamPlayers = existingScorecard.scorecard[teamKey].players;
@@ -1065,12 +1065,26 @@ const setupWebSocket = (server) => {
                 );
               }
 
+              let allRuns;
+              let TeamRun;
+
+              if (
+                (bowlers.noBalls == true && batters.runs) ||
+                (batters.runs && bowlers.wides == true)
+              ) {
+                allRuns = batters.runs - 1;
+              } else if (teamRuns.bye == true && batters.runs) {
+                TeamRun = batters.runs - 1;
+              } else if (teamRuns.legBye == true && batters.runs) {
+                TeamRun = batters.runs - 1;
+              }
+
               let newIncident = {
                 playerScoreCardId: existingScorecard._id,
                 battingPlayerId: batters.playerId,
                 bowlerId: bowlers.playerId,
                 balls: totalBalls,
-                runs: batters.runs,
+                runs: batters.runs ? batters.runs : allRuns,
                 overs_finished: bowlers.finished,
                 noBall: bowlers.noBalls,
                 whiteBall: bowlers.wides,
