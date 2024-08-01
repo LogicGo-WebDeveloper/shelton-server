@@ -193,6 +193,33 @@ const updatePlayerStatus = {
   }),
 };
 
+const validateUpdateStartingPlayer = {
+  body: Joi.object().keys({
+    bowlingTeamId: Joi.string().required(),
+    battingTeamId: Joi.string().required(),
+    bowlerId: Joi.string().required(),
+    strikerId: Joi.string().required(),
+    nonStrikerId: Joi.string().required(),
+  }),
+};
+
+const validateMatchStatusUpdate = {
+  body: Joi.object().keys({
+    matchId: Joi.string().required(),
+    statusId: Joi.string().required(),
+    description: Joi.string().optional(),
+  }),
+};
+
+const validateMatchResultUpdate = {
+  body: Joi.object().keys({
+    matchId: Joi.string().required(),
+    winnerTeamId: Joi.string().required(),
+    status: Joi.string().valid(...Object.values(enums.matchStatusEnum)).required(),
+    reason: Joi.string().allow('', null).optional(),
+  }),
+};
+
 export default {
   createTournament,
   createTeam,
@@ -209,4 +236,7 @@ export default {
   updateCustomPlayerOvers,
   updateTossStatus,
   updatePlayerStatus,
+  validateMatchStatusUpdate,
+  validateMatchResultUpdate,
+  validateUpdateStartingPlayer
 };

@@ -3,6 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import CustomMatch from "../models/match.models.js";
 import {
   updateMatchScorecardDetails,
+  validateEntitiesExistence,
   validateObjectIds,
 } from "../utils/utils.js";
 import CustomTournament from "../models/tournament.models.js";
@@ -791,8 +792,8 @@ const updateMatchStatus = async (req, res, next) => {
 
 const updateTossStatus = async (req, res) => {
   try {
-    const { matchId, tournamentId, tossWinnerTeamId, tossWinnerChoice } =
-      req.body;
+    const { matchId, tournamentId, tossWinnerTeamId, tossWinnerChoice } = req.body;
+    const userId = req.user._id;
 
     // Validate input
     const validation = validateObjectIds({
@@ -820,6 +821,15 @@ const updateTossStatus = async (req, res) => {
         status: true,
         message: "Match not found",
         statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    if (match.createdBy.toString() !== userId.toString()) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "You are not authorized to update the toss status for this match",
+        statusCode: StatusCodes.FORBIDDEN,
       });
     }
 
@@ -1022,8 +1032,26 @@ const getMatchScorecard = async (req, res) => {
 const updateStartingPlayerScorecard = async (req, res) => {
   try {
     const { matchId } = req.params;
-    const { bowlingTeamId, battingTeamId, bowlerId, strikerId, nonStrikerId } =
-      req.body;
+    const { bowlingTeamId, battingTeamId, bowlerId, strikerId, nonStrikerId } = req.body;
+    const userId = req.user._id;
+
+    const validation = validateObjectIds({
+      matchId,
+      bowlingTeamId,
+      battingTeamId,
+      bowlerId,
+      strikerId,
+      nonStrikerId,
+    });
+
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
 
     const existingMatch = await CustomMatchScorecard.findOne({ matchId });
     if (!existingMatch) {
@@ -1031,6 +1059,37 @@ const updateStartingPlayerScorecard = async (req, res) => {
         res,
         status: true,
         message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Check if the user is authorized
+    const match = await CustomMatch.findById(matchId);
+    if (match.createdBy.toString() !== userId.toString()) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "You are not authorized to update the scorecard of this match",
+        statusCode: StatusCodes.FORBIDDEN,
+      });
+    }
+
+    // Validate if the teams and players exist
+    const entitiesToValidate = [
+      { model: CustomTeam, id: bowlingTeamId, name: "Bowling team" },
+      { model: CustomTeam, id: battingTeamId, name: "Batting team" },
+      { model: CustomPlayers, id: bowlerId, name: "Bowler" },
+      { model: CustomPlayers, id: strikerId, name: "Striker" },
+      { model: CustomPlayers, id: nonStrikerId, name: "Non-striker" },
+    ];
+
+    const validationErrors = await validateEntitiesExistence(entitiesToValidate);
+
+    if (validationErrors.length > 0) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validationErrors.join(", "),
         statusCode: StatusCodes.NOT_FOUND,
       });
     }
@@ -1253,16 +1312,7 @@ const getMatchSquads = async (req, res) => {
 const setMatchStatus = async (req, res, next) => {
   try {
     const { matchId, statusId, description } = req.body;
-
-    // Validate input
-    if (!matchId || !statusId) {
-      return apiResponse({
-        res,
-        status: false,
-        message: "Match ID and status are required",
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
+    const userId = req.user._id;
 
     // Find the match
     const match = await CustomMatch.findById(matchId);
@@ -1272,6 +1322,16 @@ const setMatchStatus = async (req, res, next) => {
         status: true,
         message: "Match not found",
         statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Check if the user is the creator of the match
+    if (match.createdBy.toString() !== userId.toString()) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "You are not authorized to set the status of this match",
+        statusCode: StatusCodes.FORBIDDEN,
       });
     }
 
@@ -1320,6 +1380,7 @@ const setMatchStatus = async (req, res, next) => {
 const updateMatchResult = async (req, res, next) => {
   try {
     const { matchId, winnerTeamId, status, reason } = req.body;
+    const userId = req.user._id;
 
     // Validate input
     const validation = validateObjectIds({ matchId, winnerTeamId });
@@ -1332,16 +1393,6 @@ const updateMatchResult = async (req, res, next) => {
       });
     }
 
-    // Validate status
-    if (!Object.values(enums.matchStatusEnum).includes(status)) {
-      return apiResponse({
-        res,
-        status: false,
-        message: "Invalid status provided",
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
-
     // Find the match
     const match = await CustomMatch.findById(matchId);
     if (!match) {
@@ -1350,6 +1401,16 @@ const updateMatchResult = async (req, res, next) => {
         status: true,
         message: "Match not found",
         statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+     // Check if the user is the creator of the match
+     if (match.createdBy.toString() !== userId.toString()) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "You are not authorized to update the result of this match",
+        statusCode: StatusCodes.FORBIDDEN,
       });
     }
 
@@ -1403,7 +1464,7 @@ const updateMatchResult = async (req, res, next) => {
         return apiResponse({
           res,
           status: false,
-          message: "Cannot set status to 'in_progress' or 'not_started' or 'finished'",
+          message: "Cannot set status to 'in_progress' or 'not_started'",
           statusCode: StatusCodes.BAD_REQUEST,
         });
       }
