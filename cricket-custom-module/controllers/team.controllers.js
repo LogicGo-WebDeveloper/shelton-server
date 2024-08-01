@@ -185,7 +185,7 @@ const updateTeam = async (req, res, next) => {
       {
         teamName,
         city,
-        teamImage: newUrl,
+        teamImage: newUrl ? newUrl : team.teamImage,
         createdBy: team.createdBy,
         tournamentId,
       },

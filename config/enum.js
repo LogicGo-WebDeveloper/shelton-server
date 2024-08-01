@@ -25,11 +25,14 @@ const sofascoreApiModeEnum = {
   PAID: "paid",
 };
 
+//don't change the order of the status because it is used in match filter
 const matchStatusEnum = {
   in_progress: "in_progress",
   not_started: "not_started",
   finished: "finished",
   cancelled: "cancelled",
+  abandoned: "abandoned",
+  draw: "draw",
 };
 
 const tossChoiceEnum = {

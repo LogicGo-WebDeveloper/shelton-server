@@ -4,12 +4,12 @@ import enums from "../../config/enum.js";
 const customMatchSchema = new mongoose.Schema({
   homeTeamId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Team",
+    ref: "CustomTeam",
     required: true,
   },
   awayTeamId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Team",
+    ref: "CustomTeam",
     required: true,
   },
   noOfOvers: { type: Number, required: true },
@@ -54,6 +54,16 @@ const customMatchSchema = new mongoose.Schema({
     runs: { type: Number, default: 0 },
     overs: { type: Number, default: 0 },
     wickets: { type: Number, default: 0 },
+  },
+  matchStatus: { type: String, default: null },
+  matchResultNote: { type: String, default: null },
+  powerPlays: {
+    ranges: { type: String },
+    isActive: { type: Boolean, default: false },
+  },
+  endInnings: {
+    isDeclared: { type: Boolean, default: false },
+    isAllOut: { type: Boolean, default: false },
   },
 });
 

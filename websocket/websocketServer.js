@@ -11,7 +11,6 @@ import {
 } from "./utils.js";
 import helper from "../helper/common.js";
 import config from "../config/config.js";
-import CustomPlayerOvers from "../cricket-custom-module/models/playersOvers.models.js";
 import CustomMatchScorecard from "../cricket-custom-module/models/matchScorecard.models.js";
 import CustomMatch from "../cricket-custom-module/models/match.models.js";
 import {
@@ -20,6 +19,7 @@ import {
 } from "../cricket-custom-module/models/common.models.js";
 import CustomPlayers from "../cricket-custom-module/models/player.models.js";
 import CustomTeam from "../cricket-custom-module/models/team.models.js";
+import enums from "../config/enum.js";
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
@@ -792,6 +792,9 @@ const setupWebSocket = (server) => {
               teamRuns,
               battingTeamId,
               incidents,
+              ranges,
+              isDeclared,
+              isAllOut,
             } = data;
             const match = await CustomMatch.findOne({ _id: matchId });
 
@@ -1112,19 +1115,62 @@ const setupWebSocket = (server) => {
                   bowlerId: bowlers.playerId,
                   data: { incidents: [newIncident] },
                 });
-              }
+                let isActive;
+                if (ranges) {
+                  const [startOver, endOver] = ranges
+                    .replace("to", "-")
+                    .split("-")
+                    .map(Number);
 
-              ws.send(
-                JSON.stringify({
-                  message: "score updated successfully",
-                  actionType: data.action,
-                  body: {
-                    matchScore: matchLiveScore,
-                    batters: playingBatters,
-                  },
-                  status: true,
-                })
-              );
+                  const currentOver = matchDetails.noOfOvers;
+                  isActive = currentOver >= startOver && currentOver <= endOver;
+                  await CustomMatch.findByIdAndUpdate(
+                    matchId,
+                    {
+                      $set: {
+                        "powerPlays.ranges": ranges,
+                        "powerPlays.isActive": isActive,
+                      },
+                    },
+                    { new: true }
+                  );
+                }
+
+                if (isDeclared || isAllOut) {
+                  await CustomMatch.findByIdAndUpdate(
+                    matchId,
+                    {
+                      $set: {
+                        "endInnings.isDeclared": isDeclared,
+                        "endInnings.isAllOut": isAllOut,
+                      },
+                    },
+                    { new: true }
+                  );
+                }
+
+                ws.send(
+                  JSON.stringify({
+                    message: "Score updated successfully.",
+                    actionType: data.action,
+                    body: {
+                      matchScore: matchLiveScore,
+                      batters: playingBatters,
+                      powerPlays: {
+                        ranges: ranges ? ranges : null,
+                        isActive: isActive,
+                        message:
+                          isActive && ranges ? "Power play is active" : "",
+                      },
+                      endInnings: {
+                        isDeclared: isDeclared ? isDeclared : false,
+                        isAllOut: isAllOut ? isAllOut : false,
+                      },
+                    },
+                    status: true,
+                  })
+                );
+              }
             }
           } catch (error) {
             console.error("Failed to update score:", error.message);
@@ -1339,6 +1385,7 @@ const setupWebSocket = (server) => {
                     balls: player.balls,
                     fours: player.fours,
                     sixes: player.sixes,
+                    activeStriker: player.activeStriker,
                     id: player.id,
                     image: image,
                   };
@@ -1362,6 +1409,10 @@ const setupWebSocket = (server) => {
                 location: city ? city.city : "",
                 venue: match.ground,
                 referee: umpires.map((umpire) => umpire.name).join(", "),
+                tossResult: match.tossResult,
+                dateTime: match.dateTime,
+                status: match.status,
+                matchStatus: match.matchStatus,
               },
               teams: {
                 home: homeTeam,
@@ -1388,6 +1439,117 @@ const setupWebSocket = (server) => {
               })
             );
           }
+          break;
+        case "selectNextBatter":
+          try {
+            const { matchId, nextBatterId, activeStriker } = data;
+            // Validate input
+            if (
+              !matchId ||
+              !nextBatterId ||
+              typeof activeStriker !== "boolean"
+            ) {
+              ws.send(
+                JSON.stringify({
+                  message:
+                    "Match ID, Next Batter ID, and activeStriker (boolean) are required",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Find the match scorecard
+            const scorecard = await CustomMatchScorecard.findOne({ matchId });
+            if (!scorecard) {
+              ws.send(
+                JSON.stringify({
+                  message: "Scorecard not found",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Check if match status is in_progress
+            const match = await CustomMatch.findById(matchId);
+            if (!match || match.status !== enums.matchStatusEnum.in_progress) {
+              ws.send(
+                JSON.stringify({
+                  message: "Match is not in progress",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Determine the batting team
+            const battingTeamKey = scorecard.scorecard.homeTeam.players.some(
+              (player) => player.status === "not_out"
+            )
+              ? "homeTeam"
+              : "awayTeam";
+
+            // Find the player to update
+            const playerIndex = scorecard.scorecard[
+              battingTeamKey
+            ].players.findIndex(
+              (player) => player.id.toString() === nextBatterId
+            );
+            if (playerIndex === -1) {
+              ws.send(
+                JSON.stringify({
+                  message: "Next batter not found",
+                  actionType: data.action,
+                  status: false,
+                })
+              );
+              return;
+            }
+
+            // Update the player's status and activeStriker
+            scorecard.scorecard[battingTeamKey].players[playerIndex].status =
+              "not_out";
+            scorecard.scorecard[battingTeamKey].players[
+              playerIndex
+            ].activeStriker = activeStriker;
+
+            // If activeStriker is true, set all other players' activeStriker to false
+            if (activeStriker) {
+              scorecard.scorecard[battingTeamKey].players.forEach(
+                (player, index) => {
+                  if (index !== playerIndex) {
+                    player.activeStriker = false;
+                  }
+                }
+              );
+            }
+
+            // Save the updated scorecard
+            await scorecard.save();
+
+            ws.send(
+              JSON.stringify({
+                message: "Next batter selected successfully",
+                actionType: data.action,
+                status: true,
+                data: scorecard.scorecard[battingTeamKey].players[playerIndex],
+              })
+            );
+          } catch (error) {
+            ws.send(
+              JSON.stringify({
+                message: "Internal server error",
+                actionType: data.action,
+                status: false,
+              })
+            );
+          }
+          break;
+        case "playerOut":
           break;
       }
     });

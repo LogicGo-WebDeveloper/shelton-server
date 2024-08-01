@@ -52,4 +52,15 @@ export const updateMatchScorecardDetails = async (request) => {
     console.error("Error in updateMatchScorecardDetails:", error);
   }
 };
+
+
+export const validateEntitiesExistence = async (entities) => {
+  const results = await Promise.all(
+    entities.map(async ({ model, id, name }) => {
+      const entity = await model.findById(id);
+      return entity ? null : `${name} with ID ${id} not found`;
+    })
+  );
+  return results.filter((result) => result !== null);
+};
   

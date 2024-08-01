@@ -3,12 +3,12 @@ import mongoose from "mongoose";
 const customStatndingSchema = new mongoose.Schema({
   homeTeamId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Team",
+    ref: "CustomTeam",
     required: true,
   },
   awayTeamId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Team",
+    ref: "CustomTeam",
     required: true,
   },
   whiteBall: { type: Number, required: true },

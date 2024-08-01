@@ -3,10 +3,15 @@ import { StatusCodes } from "http-status-codes";
 import CustomMatch from "../models/match.models.js";
 import {
   updateMatchScorecardDetails,
+  validateEntitiesExistence,
   validateObjectIds,
 } from "../utils/utils.js";
 import CustomTournament from "../models/tournament.models.js";
-import { CustomCityList, CustomMatchOfficial } from "../models/common.models.js";
+import {
+  CustomCityList,
+  CustomMatchOfficial,
+  CustomMatchStatus,
+} from "../models/common.models.js";
 import CustomTeam from "../models/team.models.js";
 import helper from "../../helper/common.js";
 import CustomPlayers from "../models/player.models.js";
@@ -14,6 +19,7 @@ import enums from "../../config/enum.js";
 import config from "../../config/enum.js";
 import customUmpireList from "../models/umpire.models.js";
 import CustomMatchScorecard from "../models/matchScorecard.models.js";
+import mongoose from "mongoose";
 
 const createMatch = async (req, res, next) => {
   try {
@@ -366,6 +372,8 @@ const listMatches = async (req, res) => {
         : null,
       createdBy: match.createdBy,
       status: match.status,
+      matchStatus: match.matchStatus ? match.matchStatus : null,
+      matchResultNote: match.matchResultNote ? match.matchResultNote : null,
       umpires: match.umpires.map((umpire) => ({
         id: umpire._id,
         name: umpire.name,
@@ -784,8 +792,8 @@ const updateMatchStatus = async (req, res, next) => {
 
 const updateTossStatus = async (req, res) => {
   try {
-    const { matchId, tournamentId, tossWinnerTeamId, tossWinnerChoice } =
-      req.body;
+    const { matchId, tournamentId, tossWinnerTeamId, tossWinnerChoice } = req.body;
+    const userId = req.user._id;
 
     // Validate input
     const validation = validateObjectIds({
@@ -813,6 +821,15 @@ const updateTossStatus = async (req, res) => {
         status: true,
         message: "Match not found",
         statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    if (match.createdBy.toString() !== userId.toString()) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "You are not authorized to update the toss status for this match",
+        statusCode: StatusCodes.FORBIDDEN,
       });
     }
 
@@ -970,15 +987,33 @@ const getMatchScorecard = async (req, res) => {
       });
     }
 
+    // Fetch home and away team images
+    const homeTeam = await CustomTeam.findById(scorecard.scorecard.homeTeam.id).select("teamImage");
+    const awayTeam = await CustomTeam.findById(scorecard.scorecard.awayTeam.id).select("teamImage");
+
+    // Convert Mongoose documents to plain JavaScript objects
+    const scorecardObj = scorecard.toObject();
+    const homeTeamObj = homeTeam ? homeTeam.toObject() : null;
+    const awayTeamObj = awayTeam ? awayTeam.toObject() : null;
+
     return apiResponse({
       res,
       status: true,
       data: {
-        tournamentId: scorecard.tournamentId._id,
-        tournamentName: scorecard.tournamentId.name,
-        matchId: scorecard.matchId._id,
-        matchDateTime: scorecard.matchId.dateTime,
-        scorecard: scorecard.scorecard,
+        tournamentId: scorecardObj.tournamentId._id,
+        tournamentName: scorecardObj.tournamentId.name,
+        matchId: scorecardObj.matchId._id,
+        matchDateTime: scorecardObj.matchId.dateTime,
+        scorecard: {
+          homeTeam: {
+            ...scorecardObj.scorecard.homeTeam,
+            image: homeTeamObj ? homeTeamObj.teamImage : null,
+          },
+          awayTeam: {
+            ...scorecardObj.scorecard.awayTeam,
+            image: awayTeamObj ? awayTeamObj.teamImage : null,
+          },
+        },
       },
       message: "Scorecard retrieved successfully",
       statusCode: StatusCodes.OK,
@@ -997,8 +1032,26 @@ const getMatchScorecard = async (req, res) => {
 const updateStartingPlayerScorecard = async (req, res) => {
   try {
     const { matchId } = req.params;
-    const { bowlingTeamId, battingTeamId, bowlerId, strikerId, nonStrikerId } =
-      req.body;
+    const { bowlingTeamId, battingTeamId, bowlerId, strikerId, nonStrikerId } = req.body;
+    const userId = req.user._id;
+
+    const validation = validateObjectIds({
+      matchId,
+      bowlingTeamId,
+      battingTeamId,
+      bowlerId,
+      strikerId,
+      nonStrikerId,
+    });
+
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
 
     const existingMatch = await CustomMatchScorecard.findOne({ matchId });
     if (!existingMatch) {
@@ -1006,6 +1059,37 @@ const updateStartingPlayerScorecard = async (req, res) => {
         res,
         status: true,
         message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Check if the user is authorized
+    const match = await CustomMatch.findById(matchId);
+    if (match.createdBy.toString() !== userId.toString()) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "You are not authorized to update the scorecard of this match",
+        statusCode: StatusCodes.FORBIDDEN,
+      });
+    }
+
+    // Validate if the teams and players exist
+    const entitiesToValidate = [
+      { model: CustomTeam, id: bowlingTeamId, name: "Bowling team" },
+      { model: CustomTeam, id: battingTeamId, name: "Batting team" },
+      { model: CustomPlayers, id: bowlerId, name: "Bowler" },
+      { model: CustomPlayers, id: strikerId, name: "Striker" },
+      { model: CustomPlayers, id: nonStrikerId, name: "Non-striker" },
+    ];
+
+    const validationErrors = await validateEntitiesExistence(entitiesToValidate);
+
+    if (validationErrors.length > 0) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validationErrors.join(", "),
         statusCode: StatusCodes.NOT_FOUND,
       });
     }
@@ -1065,6 +1149,347 @@ const updateStartingPlayerScorecard = async (req, res) => {
   }
 };
 
+const getMatchSummary = async (req, res) => {
+  try {
+    const { matchId } = req.params;
+
+    // Fetch the scorecard details using the matchId
+    const scorecard = await CustomMatchScorecard.findOne({ matchId });
+    const match = await CustomMatch.findById(matchId);
+
+    if (!scorecard) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Scorecard not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    if (!match) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Filter the players based on their status
+    const battingTeamKey = scorecard.scorecard.homeTeam.players.some(
+      (player) => player.status === "not_out"
+    )
+      ? "homeTeam"
+      : "awayTeam";
+    const bowlingTeamKey =
+      battingTeamKey === "homeTeam" ? "awayTeam" : "homeTeam";
+
+    const batters = scorecard.scorecard[battingTeamKey].players.filter(
+      (player) => player.status === "not_out"
+    );
+    const bowlers = scorecard.scorecard[bowlingTeamKey].players.filter(
+      (player) => player.activeBowler
+    );
+
+    // Function to get player image from the database
+    const getPlayerImageFromDB = async (playerId) => {
+      try {
+        const player = await CustomPlayers.findById(playerId).select("image");
+        return player?.image || "";
+      } catch (error) {
+        console.error(`Error fetching image for player ${playerId}:`, error);
+        return "";
+      }
+    };
+
+    const city = await CustomCityList.findById(match.city).select("city");
+
+    // Fetch umpire names
+    const umpires = await CustomMatchOfficial.find({
+      _id: { $in: match.umpires },
+    }).select("name");
+
+    const responseData = {
+      batters: await Promise.all(
+        batters.map(async (player) => {
+          const image = await getPlayerImageFromDB(player.id);
+          return {
+            name: player.name,
+            runs: player.runs,
+            balls: player.balls,
+            fours: player.fours,
+            sixes: player.sixes,
+            id: player.id,
+            image: image,
+          };
+        })
+      ),
+      bowlers: await Promise.all(
+        bowlers.map(async (player) => {
+          const image = await getPlayerImageFromDB(player.id);
+          return {
+            name: player.name,
+            overs: player.overs,
+            maidens: player.maidens,
+            runs: player.runs,
+            wickets: player.wickets,
+            id: player.id,
+            image: image,
+          };
+        })
+      ),
+      matchInfo: {
+        location: city ? city.city : "",
+        venue: match.ground,
+        referee: umpires.map((umpire) => umpire.name).join(", "),
+      },
+    };
+    return apiResponse({
+      res,
+      status: true,
+      data: responseData,
+      message: "Summary fetched successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    console.error("Error fetching match summary:", error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
+
+const getMatchSquads = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let filter = {};
+    if (id) filter._id = new mongoose.Types.ObjectId(id);
+
+    const match = await CustomMatch.find(filter)
+      .populate({ path: "homeTeamId", select: "_id teamName teamImage" })
+      .populate({ path: "awayTeamId", select: "_id teamName teamImage" })
+      .populate({
+        path: "homeTeamPlayingPlayer",
+        select: "playerName role image",
+        populate: {
+          path: "role",
+          select: "role",
+        },
+      })
+      .populate({
+        path: "awayTeamPlayingPlayer",
+        select: "playerName role image",
+        populate: {
+          path: "role",
+          select: "role",
+        },
+      })
+      .select(
+        "homeTeamId awayTeamId status homeTeamPlayingPlayer awayTeamPlayingPlayer"
+      );
+
+    return apiResponse({
+      res,
+      status: true,
+      data: match[0],
+      message: "Squads fetched successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    console.error("Error fetching match summary:", error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
+
+const setMatchStatus = async (req, res, next) => {
+  try {
+    const { matchId, statusId, description } = req.body;
+    const userId = req.user._id;
+
+    // Find the match
+    const match = await CustomMatch.findById(matchId);
+    if (!match) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Check if the user is the creator of the match
+    if (match.createdBy.toString() !== userId.toString()) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "You are not authorized to set the status of this match",
+        statusCode: StatusCodes.FORBIDDEN,
+      });
+    }
+
+    // Find the status name from CustomMatchStatus
+    const status = await CustomMatchStatus.findById(statusId);
+    if (!status) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Status not found",  
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Validate description if status is "Others"
+    if (status.status === "Others" && !description) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Description is required for 'Others' status",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Update the match status
+    const matchStatusDes = status.status === "Others" ? description : status.status
+    match.matchStatus = matchStatusDes
+    await match.save(); 
+
+    return apiResponse({
+      res,
+      status: true,
+      message: "Match status updated successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (err) {
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const updateMatchResult = async (req, res, next) => {
+  try {
+    const { matchId, winnerTeamId, status, reason } = req.body;
+    const userId = req.user._id;
+
+    // Validate input
+    const validation = validateObjectIds({ matchId, winnerTeamId });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Find the match
+    const match = await CustomMatch.findById(matchId);
+    if (!match) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+     // Check if the user is the creator of the match
+     if (match.createdBy.toString() !== userId.toString()) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "You are not authorized to update the result of this match",
+        statusCode: StatusCodes.FORBIDDEN,
+      });
+    }
+
+    // Fetch team names
+    const homeTeam = await CustomTeam.findById(match.homeTeamId);
+    const awayTeam = await CustomTeam.findById(match.awayTeamId);
+
+    if (!homeTeam || !awayTeam) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "One or both teams not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Determine the winner and calculate the margin
+    let matchResultNote = "";
+    if (winnerTeamId.toString() === match.homeTeamId.toString()) {
+      if (match.awayTeamScore.wickets === 10) {
+        const margin = match.homeTeamScore.runs - match.awayTeamScore.runs;
+        matchResultNote = `${homeTeam.teamName} won by ${margin} runs`;
+      } else {
+        const margin = 10 - match.homeTeamScore.wickets;
+        matchResultNote = `${homeTeam.teamName} won by ${margin} wickets`;
+      }
+    } else if (winnerTeamId.toString() === match.awayTeamId.toString()) {
+      if (match.homeTeamScore.wickets === 10) {
+        const margin = match.awayTeamScore.runs - match.homeTeamScore.runs;
+        matchResultNote = `${awayTeam.teamName} won by ${margin} runs`;
+      } else {
+        const margin = 10 - match.awayTeamScore.wickets;
+        matchResultNote = `${awayTeam.teamName} won by ${margin} wickets`;
+      }
+    }
+
+    // Update match result
+    if(status === enums.matchStatusEnum.finished){
+      match.status = enums.matchStatusEnum.finished;
+      match.matchResultNote = matchResultNote;
+    } else {
+      if (!reason) {
+        return apiResponse({
+          res,
+          status: false,
+          message: "Reason is required for statuses other than 'finished'",
+          statusCode: StatusCodes.BAD_REQUEST,
+        });
+      }
+      if ([enums.matchStatusEnum.in_progress, enums.matchStatusEnum.not_started, enums.matchStatusEnum.finished].includes(status)) {
+        return apiResponse({
+          res,
+          status: false,
+          message: "Cannot set status to 'in_progress' or 'not_started'",
+          statusCode: StatusCodes.BAD_REQUEST,
+        });
+      }
+      match.status = status;
+      match.matchResultNote = reason;
+    }
+
+    await match.save();
+
+    return apiResponse({
+      res,
+      status: true,
+      message: "Match result updated successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (err) {
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 export default {
   createMatch,
   listMatches,
@@ -1075,4 +1500,8 @@ export default {
   createScorecards,
   getMatchScorecard,
   updateStartingPlayerScorecard,
+  getMatchSummary,
+  getMatchSquads,
+  setMatchStatus,
+  updateMatchResult
 };

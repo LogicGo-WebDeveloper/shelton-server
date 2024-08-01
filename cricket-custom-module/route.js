@@ -89,7 +89,10 @@ route.post(
   matchController.createMatch
 );
 
-route.get("/match/list", matchController.listMatches);
+route.get(
+  "/match/list",
+  matchController.listMatches
+);
 
 route.post(
   "/match/update/:id",
@@ -112,14 +115,40 @@ route.post(
   matchController.updateTossStatus
 );
 
-route.delete("/match/delete/:id", verifyToken, matchController.deleteMatch);
+route.delete(
+  "/match/delete/:id",
+  verifyToken, matchController.deleteMatch
+);
 
-route.get("/match/scorecard/:matchId", matchController.getMatchScorecard);
+route.get(
+  "/match/scorecard/:matchId",
+  matchController.getMatchScorecard
+);
+
+route.get(
+  "/match/:id/squads",
+  matchController.getMatchSquads
+);
 
 route.post(
   "/match/scorecard/update-players-info/:matchId",
-  // validate(validation.updatePlayerStatus),
+  verifyToken,
+  validate(validation.validateUpdateStartingPlayer),
   matchController.updateStartingPlayerScorecard
+);
+
+route.post(
+  "/match/match-status/update",
+  verifyToken,
+  validate(validation.validateMatchStatusUpdate),
+  matchController.setMatchStatus
+);
+
+route.post(
+  "/match/result/update",
+  verifyToken,
+  validate(validation.validateMatchResultUpdate),
+  matchController.updateMatchResult
 );
 
 // ============================== For Player List ===========================================
