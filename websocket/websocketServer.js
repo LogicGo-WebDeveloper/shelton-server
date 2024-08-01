@@ -785,7 +785,14 @@ const setupWebSocket = (server) => {
           break;
         case "cricketController":
           try {
-            const { matchId, batters, bowlers, teamRuns } = data;
+            const {
+              matchId,
+              batters,
+              bowlers,
+              teamRuns,
+              battingTeamId,
+              incidents,
+            } = data;
             const match = await CustomMatch.findOne({ _id: matchId });
 
             //for update match scorecard
@@ -944,6 +951,11 @@ const setupWebSocket = (server) => {
 
             await existingScorecard.save();
 
+            const matches = await CustomMatch.findOne({ _id: matchId });
+
+            // Example call
+            // await updateBallsAndTotal(existingOvers, bowlers);
+
             const calculateAndUpdateTeamScores = async (teamKey) => {
               const teamPlayers = existingScorecard.scorecard[teamKey].players;
               const totalRuns = teamPlayers.reduce((acc, batters) => {
@@ -969,10 +981,6 @@ const setupWebSocket = (server) => {
                   status: false,
                 };
               } else {
-                console.log("match111111111", match);
-                console.log("match22222222", match.awayTeamScore);
-                console.log("match3333333", match.noOfOvers);
-
                 match[`${teamKey}Score`]["runs"] = totalRuns;
                 match[`${teamKey}Score`]["overs"] = totalOvers;
                 match[`${teamKey}Score`]["wickets"] = totalWickets;
@@ -993,6 +1001,7 @@ const setupWebSocket = (server) => {
             } else {
               ws.send(JSON.stringify(matchScore));
             }
+
             // for using summary api
             if (matchScore.status) {
               const matchDetails = await CustomMatch.findById(matchId);
@@ -1017,6 +1026,93 @@ const setupWebSocket = (server) => {
                   balls: player.balls,
                   id: player.id,
                 }));
+
+              const existingOvers = await CustomPlayerOvers.find({
+                matchId: matchId,
+              });
+
+              let currentOvers = existingOvers[0]
+                ? existingOvers[0]?.currentOvers
+                : 1;
+
+              let totalBalls = existingOvers[0]
+                ? existingOvers[0]?.totalBalls
+                : 0;
+
+              if (bowlers.balls && bowlers.finished === false) {
+                totalBalls += 1;
+
+                const result = await CustomPlayerOvers.updateOne(
+                  { matchId: matchId },
+                  { $set: { totalBalls: totalBalls } }
+                );
+              }
+
+              if (bowlers.balls && bowlers.finished === true) {
+                currentOvers += 1;
+
+                const result = await CustomPlayerOvers.updateOne(
+                  { matchId: matchId },
+                  {
+                    $set: {
+                      currentOvers: currentOvers,
+                      totalBalls: 1, // Reset totalBalls to 1 or set the desired value
+                    },
+                  }
+                );
+              }
+
+              let newIncident = {
+                playerScoreCardId: existingScorecard._id,
+                battingPlayerId: batters.playerId,
+                bowlerId: bowlers.playerId,
+                balls: totalBalls,
+                runs: batters.runs,
+                overs_finished: bowlers.finished,
+                noBall: bowlers.noBalls,
+                whiteBall: bowlers.wides,
+                lbBall: bowlers.legBye,
+                byeBall: teamRuns.bye,
+                isOut: bowlers.out,
+                oversNumber: currentOvers,
+                battingTeamId: battingTeamId,
+              };
+
+              //   // Find or create the document in CustomPlayerOvers
+              const playerOvers = await CustomPlayerOvers.findOne({
+                matchId: matchId,
+                homeTeamId: matches.homeTeamId,
+                awayTeamId: matches.awayTeamId,
+              });
+
+              if (playerOvers) {
+                // Ensure data and incidents are initialized
+                if (!playerOvers.data) {
+                  playerOvers.data = {};
+                }
+                // console.log(playerOvers.data.incidents);
+                if (!Array.isArray(playerOvers.data.incidents)) {
+                  playerOvers.data.incidents = [];
+                }
+
+                await CustomPlayerOvers.updateOne(
+                  {
+                    _id: playerOvers._id,
+                  },
+                  {
+                    $push: { "data.incidents": newIncident },
+                  }
+                );
+              } else {
+                // Document does not exist: create a new one
+                await CustomPlayerOvers.create({
+                  matchId: matchId,
+                  homeTeamId: matches.homeTeamId,
+                  awayTeamId: matches.awayTeamId,
+                  bowlerId: bowlers.playerId,
+                  data: { incidents: [newIncident] },
+                });
+              }
 
               ws.send(
                 JSON.stringify({

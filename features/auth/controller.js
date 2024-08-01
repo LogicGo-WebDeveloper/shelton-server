@@ -281,10 +281,10 @@ const loginByGoogle = async (req, res) => {
   try {
     const { email, name } = req.body;
 
-    new OAuth2Client({
-      clientId: config.google.clientId,
-      clientSecret: config.google.clientSecret,
-    });
+    // new OAuth2Client({
+    //   clientId: config.google.clientId,
+    //   clientSecret: config.google.clientSecret,
+    // });
 
     if (!email) {
       return apiResponse({
@@ -303,7 +303,7 @@ const loginByGoogle = async (req, res) => {
       user = await userService.create({
         email: email,
         name: name,
-        providerId: null,
+        // providerId: null,
         provider: enums.authProviderEnum.GOOGLE,
         isVerified: true,
       });

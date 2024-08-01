@@ -144,11 +144,7 @@ route.post(
 route.delete("/player/delete/:id", verifyToken, playerController.deletePlayer);
 
 // ============================== For Player Overs ===========================================
-route.get(
-  "/player/overs/:id",
-  verifyToken,
-  playerOverController.getPlayerOvers
-);
+route.get("/player/overs", playerOverController.getPlayerOvers);
 
 route.post(
   "/player/overs/update/:id",
