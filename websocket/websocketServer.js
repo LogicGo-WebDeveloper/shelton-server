@@ -1024,16 +1024,11 @@ const setupWebSocket = (server) => {
 
               ws.send(
                 JSON.stringify({
-                  message: "score updated successfully",
+                  message: "Score updated successfully.",
                   actionType: data.action,
                   body: {
                     matchScore: matchLiveScore,
                     batters: playingBatters,
-                    powerPlays: { ranges: ranges, isActive: true },
-                    endInnings: {
-                      isDeclared: isDeclared,
-                      isAllOut: isAllOut,
-                    },
                   },
                   status: true,
                 })
@@ -1051,6 +1046,21 @@ const setupWebSocket = (server) => {
                 },
                 { new: true }
               );
+
+              ws.send(
+                JSON.stringify({
+                  message: "Power play added successfully.",
+                  actionType: data.action,
+                  body: {
+                    matchId: matchId,
+                    powerPlays: {
+                      ranges: ranges,
+                      isActive: true,
+                    },
+                  },
+                  status: true,
+                })
+              );
             }
 
             if (isAllOut || isDeclared) {
@@ -1063,6 +1073,21 @@ const setupWebSocket = (server) => {
                   },
                 },
                 { new: true }
+              );
+
+              ws.send(
+                JSON.stringify({
+                  message: "Innings updated successfully.",
+                  actionType: data.action,
+                  body: {
+                    matchId: matchId,
+                    endInnings: {
+                      isDeclared: isDeclared,
+                      isAllOut: isAllOut,
+                    },
+                  },
+                  status: true,
+                })
               );
             }
           } catch (error) {
