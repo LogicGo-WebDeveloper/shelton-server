@@ -943,6 +943,8 @@ const createScorecards = async (match, tournamentId) => {
           status: enums.matchScorecardStatusEnum.yet_to_bat,
           activeBowler: false,
           activeStriker: false,
+          outType: null,
+          wicketByFielder: null,
         })),
       };
     };
