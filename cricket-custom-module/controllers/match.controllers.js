@@ -197,17 +197,16 @@ const createMatch = async (req, res, next) => {
       const foundUmpireIds = validUmpires.map((umpire) =>
         umpire.umpireId.toString()
       );
-      const notFoundUmpireIds = umpires.filter(
-        (id) => !foundUmpireIds.includes(id)
-      );
-      return apiResponse({
-        res,
-        status: false,
-        message: `The following umpire IDs were not found: ${notFoundUmpireIds.join(
-          ", "
-        )}`,
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
+      const notFoundUmpireIds = umpires.filter((id) => !foundUmpireIds.includes(id));
+
+      if(notFoundUmpireIds.length > 0){
+          return apiResponse({
+            res,
+            status: false,
+            message: `The following umpire IDs were not found: ${notFoundUmpireIds.join( ", ")}`,
+            statusCode: StatusCodes.BAD_REQUEST,
+          });
+      }
     }
 
     // Validate players belong to their respective teams
