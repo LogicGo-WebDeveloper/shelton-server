@@ -8,7 +8,6 @@ import {
   filterStandingsData,
   filteredOversData,
   fractionalOddsToDecimal,
-  handlePlayerOut,
 } from "./utils.js";
 import helper from "../helper/common.js";
 import config from "../config/config.js";
@@ -792,7 +791,7 @@ const setupWebSocket = (server) => {
               batters,
               bowlers,
               teamRuns,
-              battingTeamId,
+              // battingTeamId,
               incidents,
               ranges,
               isDeclared,
@@ -801,6 +800,7 @@ const setupWebSocket = (server) => {
               fielderId
             } = data;
             const match = await CustomMatch.findOne({ _id: matchId });
+            // console.log(match);
             //for update match scorecard
             if (!match) {
               ws.send(
@@ -933,7 +933,6 @@ const setupWebSocket = (server) => {
                   player.sixes = (player.sixes || 0) + (batters.sixes ? 1 : 0);
                 }
               }
-  
               const bowlerIndex = existingScorecard.scorecard[
                 bowlingTeamKey
               ].players.findIndex(
@@ -973,11 +972,6 @@ const setupWebSocket = (server) => {
   
               await existingScorecard.save();
             }
-
-
-            const matches = await CustomMatch.findOne({ _id: matchId });
-
-            // Example call
 
             const calculateAndUpdateTeamScores = async (teamKey) => {
               const teamPlayers = existingScorecard.scorecard[teamKey].players;
@@ -1099,9 +1093,14 @@ const setupWebSocket = (server) => {
                 TeamRun = batters.runs - 1;
               }
 
+              const matches = await CustomMatch.findOne({
+                _id: matchId,
+              });
+
               let newIncident = {
                 playerScoreCardId: existingScorecard._id,
                 battingPlayerId: batters.playerId,
+                // battingTeamId: matches.awayTeamId,
                 bowlerId: bowlers.playerId,
                 balls: totalBalls,
                 runs: batters.runs ? batters.runs : allRuns,
@@ -1112,7 +1111,7 @@ const setupWebSocket = (server) => {
                 byeBall: teamRuns.bye,
                 isOut: bowlers.out,
                 oversNumber: currentOvers,
-                battingTeamId: battingTeamId,
+                battingTeamId: existingScorecard.scorecard[battingTeamKey].id,
               };
 
               // Find or create the document in CustomPlayerOvers
