@@ -969,8 +969,23 @@ const setupWebSocket = (server) => {
               await existingScorecard.save();
             }
 
-            const calculateAndUpdateTeamScores = async (teamKey) => {
+            const calculateTotalOvers = (players) => {
+              let totalBalls = 0;
+            
+              players.forEach(player => {
+                if (player.overs) {
+                  const [wholeOvers, balls] = player.overs.toString().split('.').map(Number);
+                  totalBalls += (wholeOvers * 6) + (balls || 0);
+                }
+              });
+            
+              const totalOvers = Math.floor(totalBalls / 6) + (totalBalls % 6) / 10;
+              return totalOvers;
+            };
+
+            const calculateAndUpdateTeamScores = async (teamKey, bowlingTeamKey) => {
               const teamPlayers = existingScorecard.scorecard[teamKey].players;
+              const bowlingTeamPlayers = existingScorecard.scorecard[bowlingTeamKey].players;
               const totalRuns = teamPlayers.reduce((acc, batters) => {
                 if (teamRuns.bye || teamRuns.legBye) {
                   return acc + (teamRuns.runs || 0);
@@ -978,11 +993,9 @@ const setupWebSocket = (server) => {
                   return acc + (batters.runs || 0);
                 }
               }, 0);
-              const totalOvers = teamPlayers.reduce(
-                (acc, player) => acc + (player.overs || 0),
-                0
-              );
-              const totalWickets = teamPlayers.reduce(
+
+              const totalOvers = calculateTotalOvers(bowlingTeamPlayers);
+              const totalWickets = bowlingTeamPlayers.reduce(
                 (acc, player) => acc + (player.wickets || 0),
                 0
               );
@@ -1006,9 +1019,7 @@ const setupWebSocket = (server) => {
               }
             };
 
-            const matchScore = await calculateAndUpdateTeamScores(
-              battingTeamKey
-            );
+            const matchScore = await calculateAndUpdateTeamScores(battingTeamKey, bowlingTeamKey);
             if (matchScore.status) {
               await match.save();
             } else {
