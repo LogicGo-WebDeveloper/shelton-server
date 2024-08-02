@@ -181,7 +181,7 @@ export const filteredOversData = async (data) => {
     const over = item.over;
     if (!overMap[over]) {
       overMap[over] = {
-        over: over.toString(),
+        over: over?.toString(),
         total_runs_in_this_over: 0,
         image: (await getImageUrl(item?.bowler?.id)) || null,
         balls: [],
@@ -192,8 +192,8 @@ export const filteredOversData = async (data) => {
     overMap[over].total_runs_in_this_over += item.totalRuns;
     overMap[over].balls.push({
       id: item.id,
-      ball: item.ball.toString(),
-      runs: item.runs !== null ? item.runs.toString() : null,
+      ball: item.ball?.toString(),
+      runs: item.runs !== null ? item.runs?.toString() : null,
       totalRuns: item.totalRuns,
       commentary: item.commentary,
       score: item.score,
