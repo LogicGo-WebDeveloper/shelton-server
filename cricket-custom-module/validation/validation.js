@@ -200,6 +200,7 @@ const validateUpdateStartingPlayer = {
     bowlerId: Joi.string().required(),
     strikerId: Joi.string().required(),
     nonStrikerId: Joi.string().required(),
+    status: Joi.string().valid(...Object.values(enums.matchStatusEnum)).required(),
   }),
 };
 
