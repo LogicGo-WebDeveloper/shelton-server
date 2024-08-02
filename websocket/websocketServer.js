@@ -8,6 +8,7 @@ import {
   filterStandingsData,
   filteredOversData,
   fractionalOddsToDecimal,
+  handlePlayerOut,
 } from "./utils.js";
 import helper from "../helper/common.js";
 import config from "../config/config.js";
@@ -795,6 +796,9 @@ const setupWebSocket = (server) => {
               ranges,
               isDeclared,
               isAllOut,
+              outTypeId,
+              fielderId,
+              runsScored,
             } = data;
             const match = await CustomMatch.findOne({ _id: matchId });
 
@@ -902,57 +906,76 @@ const setupWebSocket = (server) => {
               (player) => player.id.toString() === batters.playerId
             );
 
-            if (batterIndex !== -1) {
-              const player =
-                existingScorecard.scorecard[battingTeamKey].players[
-                  batterIndex
-                ];
-              if (!teamRuns.bye && !teamRuns.legBye) {
-                player.runs = (player.runs || 0) + batters.runs;
-                player.balls = (player.balls || 0) + (batters.balls ? 1 : 0);
-                player.fours = (player.fours || 0) + (batters.fours ? 1 : 0);
-                player.sixes = (player.sixes || 0) + (batters.sixes ? 1 : 0);
-              }
-            }
-
-            const bowlerIndex = existingScorecard.scorecard[
-              bowlingTeamKey
-            ].players.findIndex(
-              (player) => player.id.toString() === bowlers.playerId
-            );
-
-            const getDecimalPart = (num) => {
-              const parts = num.toString().split(".");
-              return parts.length > 1 ? parseInt(parts[1], 10) : 0;
-            };
-
-            if (bowlerIndex !== -1) {
-              const player =
-                existingScorecard.scorecard[bowlingTeamKey].players[
-                  bowlerIndex
-                ];
-              const currentOvers = player.overs || 0;
-              const ballsBowled = getDecimalPart(currentOvers);
-
-              if (bowlers.balls) {
-                const newBallsBowled = ballsBowled + 1;
-                if (newBallsBowled >= 6) {
-                  player.overs = Math.floor(currentOvers) + 1;
-                } else {
-                  player.overs = Math.floor(currentOvers) + newBallsBowled / 10;
+            if(batters.isOut){
+              await handlePlayerOut(
+                {
+                  matchId,
+                  batters,
+                  bowlers,
+                  teamRuns,
+                  ranges,
+                  isDeclared,
+                  isAllOut,
+                  outTypeId,
+                  fielderId,
+                  runsScored,
+                },
+                ws
+              );
+            } else {
+              if (batterIndex !== -1) {
+                const player =
+                  existingScorecard.scorecard[battingTeamKey].players[
+                    batterIndex
+                  ];
+                if (!teamRuns.bye && !teamRuns.legBye) {
+                  player.runs = (player.runs || 0) + batters.runs;
+                  player.balls = (player.balls || 0) + (batters.balls ? 1 : 0);
+                  player.fours = (player.fours || 0) + (batters.fours ? 1 : 0);
+                  player.sixes = (player.sixes || 0) + (batters.sixes ? 1 : 0);
                 }
               }
-              player.maidens =
-                (player.maidens || 0) + (bowlers.maidens ? 1 : 0);
-              player.runs = (player.runs || 0) + bowlers.runs;
-              player.wickets =
-                (player.wickets || 0) + (bowlers.wickets ? 1 : 0);
-              player.noBalls =
-                (player.noBalls || 0) + (bowlers.noBalls ? 1 : 0);
-              player.wides = (player.wides || 0) + (bowlers.wides ? 1 : 0);
+  
+              const bowlerIndex = existingScorecard.scorecard[
+                bowlingTeamKey
+              ].players.findIndex(
+                (player) => player.id.toString() === bowlers.playerId
+              );
+  
+              const getDecimalPart = (num) => {
+                const parts = num.toString().split(".");
+                return parts.length > 1 ? parseInt(parts[1], 10) : 0;
+              };
+  
+              if (bowlerIndex !== -1) {
+                const player =
+                  existingScorecard.scorecard[bowlingTeamKey].players[
+                    bowlerIndex
+                  ];
+                const currentOvers = player.overs || 0;
+                const ballsBowled = getDecimalPart(currentOvers);
+  
+                if (bowlers.balls) {
+                  const newBallsBowled = ballsBowled + 1;
+                  if (newBallsBowled >= 6) {
+                    player.overs = Math.floor(currentOvers) + 1;
+                  } else {
+                    player.overs = Math.floor(currentOvers) + newBallsBowled / 10;
+                  }
+                }
+                player.maidens =
+                  (player.maidens || 0) + (bowlers.maidens ? 1 : 0);
+                player.runs = (player.runs || 0) + bowlers.runs;
+                player.wickets =
+                  (player.wickets || 0) + (bowlers.wickets ? 1 : 0);
+                player.noBalls =
+                  (player.noBalls || 0) + (bowlers.noBalls ? 1 : 0);
+                player.wides = (player.wides || 0) + (bowlers.wides ? 1 : 0);
+              }
+  
+              await existingScorecard.save();
             }
 
-            await existingScorecard.save();
 
             const matches = await CustomMatch.findOne({ _id: matchId });
 

@@ -1,5 +1,6 @@
 import helper from "../helper/common.js";
 import config from "../config/config.js";
+import { CustomOutReason } from "../cricket-custom-module/models/common.models.js";
 
 export const convertSportListToArray = (sportList) => {
   let sportUrl = req.protocol + "://" + req.get("host") + "/sport/";
@@ -233,4 +234,73 @@ export const filteredOversData = async (data) => {
   }
 
   return result;
+};
+
+
+export const handlePlayerOut = async (data, existingScorecard, ws) => {
+  const {
+    batters,
+    bowlers,
+    outTypeId,
+    fielderId,
+    runsScored,
+  } = data;
+
+  // Fetch the outType details from the database
+  const outTypeDetails = await CustomOutReason.findById(outTypeId);
+  if (!outTypeDetails) {
+    throw new Error("Invalid outTypeId provided");
+  }
+  const outType = outTypeDetails.reason;
+
+  const battingTeamKey =
+    existingScorecard.scorecard.homeTeam.players.some(
+      (player) => player.id.toString() === batters.playerId
+    )
+      ? "homeTeam"
+      : "awayTeam";
+  const bowlingTeamKey = battingTeamKey === "homeTeam" ? "awayTeam" : "homeTeam";
+
+  const batterIndex = existingScorecard.scorecard[battingTeamKey].players.findIndex(
+    (player) => player.id.toString() === batters.playerId
+  );
+
+  const bowlerIndex = existingScorecard.scorecard[bowlingTeamKey].players.findIndex(
+    (player) => player.id.toString() === bowlers.playerId
+  );
+
+  if (batterIndex !== -1) {
+    const player = existingScorecard.scorecard[battingTeamKey].players[batterIndex];
+    player.status = "out";
+    player.outType = outType;
+
+    if (outType !== "Retired Hurt" && outType !== "Timed Out") {
+      player.balls = (player.balls || 0) + (batters.balls ? 1 : 0);
+    }
+
+    if (outType === "Run Out") {
+      player.runs = (player.runs || 0) + runsScored;
+    } else if (outType !== "Retired Hurt" && outType !== "Timed Out") {
+      player.runs = (player.runs || 0) + batters.runs;
+      player.fours = (player.fours || 0) + (batters.fours ? 1 : 0);
+      player.sixes = (player.sixes || 0) + (batters.sixes ? 1 : 0);
+    }
+
+    if (["Caught", "Stumped"].includes(outType)) {
+      player.wicketByFielder = fielderId;
+    }
+  }
+
+  if (bowlerIndex !== -1) {
+    const player = existingScorecard.scorecard[bowlingTeamKey].players[bowlerIndex];
+    if (outType !== "Retired Hurt" && outType !== "Timed Out") {
+      player.balls = (player.balls || 0) + (bowlers.balls ? 1 : 0);
+    }
+
+    if (["Bowled", "Caught", "Stumped", "Hit Wicket", "LBW"].includes(outType)) {
+      player.wickets = (player.wickets || 0) + 1;
+    }
+  }
+
+  await existingScorecard.save();
 };
