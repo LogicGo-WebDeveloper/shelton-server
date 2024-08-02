@@ -797,7 +797,7 @@ const setupWebSocket = (server) => {
               isDeclared,
               isAllOut,
               outTypeId,
-              fielderId
+              fielderId,
             } = data;
             const match = await CustomMatch.findOne({ _id: matchId });
             // console.log(match);
@@ -905,7 +905,7 @@ const setupWebSocket = (server) => {
               (player) => player.id.toString() === batters.playerId
             );
 
-            if(batters.isOut){
+            if (batters.isOut) {
               const result = await handlePlayerOut(
                 {
                   batters,
@@ -916,7 +916,6 @@ const setupWebSocket = (server) => {
                 existingScorecard,
                 ws
               );
-              console.log("result", result);
               if (result) {
                 await existingScorecard.save();
               }
@@ -938,12 +937,12 @@ const setupWebSocket = (server) => {
               ].players.findIndex(
                 (player) => player.id.toString() === bowlers.playerId
               );
-  
+
               const getDecimalPart = (num) => {
                 const parts = num.toString().split(".");
                 return parts.length > 1 ? parseInt(parts[1], 10) : 0;
               };
-  
+
               if (bowlerIndex !== -1) {
                 const player =
                   existingScorecard.scorecard[bowlingTeamKey].players[
@@ -951,13 +950,14 @@ const setupWebSocket = (server) => {
                   ];
                 const currentOvers = player.overs || 0;
                 const ballsBowled = getDecimalPart(currentOvers);
-  
+
                 if (bowlers.balls) {
                   const newBallsBowled = ballsBowled + 1;
                   if (newBallsBowled >= 6) {
                     player.overs = Math.floor(currentOvers) + 1;
                   } else {
-                    player.overs = Math.floor(currentOvers) + newBallsBowled / 10;
+                    player.overs =
+                      Math.floor(currentOvers) + newBallsBowled / 10;
                   }
                 }
                 player.maidens =
@@ -969,7 +969,7 @@ const setupWebSocket = (server) => {
                   (player.noBalls || 0) + (bowlers.noBalls ? 1 : 0);
                 player.wides = (player.wides || 0) + (bowlers.wides ? 1 : 0);
               }
-  
+
               await existingScorecard.save();
             }
 
@@ -1139,9 +1139,9 @@ const setupWebSocket = (server) => {
                     $push: { "data.incidents": newIncident },
                   }
                 );
-              }  else {
+              } else {
                 // Document does not exist: create a new one
-                await CustomPlayerOvers.create({
+                const alloversData = await CustomPlayerOvers.create({
                   matchId: matchId,
                   homeTeamId: matches.homeTeamId,
                   awayTeamId: matches.awayTeamId,
@@ -1156,7 +1156,7 @@ const setupWebSocket = (server) => {
                   .replace("to", "-")
                   .split("-")
                   .map(Number);
-  
+
                 const currentOver = matchDetails.noOfOvers;
                 isActive = currentOver >= startOver && currentOver <= endOver;
                 await CustomMatch.findByIdAndUpdate(
@@ -1170,7 +1170,7 @@ const setupWebSocket = (server) => {
                   { new: true }
                 );
               }
-  
+
               if (isDeclared || isAllOut) {
                 await CustomMatch.findByIdAndUpdate(
                   matchId,
@@ -1191,11 +1191,11 @@ const setupWebSocket = (server) => {
                   body: {
                     matchScore: matchLiveScore,
                     batters: playingBatters,
+                    playerOvers: playerOvers,
                     powerPlays: {
                       ranges: ranges ? ranges : null,
                       isActive: isActive,
-                      message:
-                        isActive && ranges ? "Power play is active" : "",
+                      message: isActive && ranges ? "Power play is active" : "",
                     },
                     endInnings: {
                       isDeclared: isDeclared ? isDeclared : false,
@@ -1206,9 +1206,6 @@ const setupWebSocket = (server) => {
                 })
               );
             }
-
-
-
           } catch (error) {
             console.error("Failed to update score:", error.message);
             ws.send(
