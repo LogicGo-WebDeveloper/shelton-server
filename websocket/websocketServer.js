@@ -8,6 +8,7 @@ import {
   filterStandingsData,
   filteredOversData,
   fractionalOddsToDecimal,
+  handlePlayerOut,
 } from "./utils.js";
 import helper from "../helper/common.js";
 import config from "../config/config.js";
@@ -916,7 +917,6 @@ const setupWebSocket = (server) => {
                 existingScorecard,
                 ws
               );
-              console.log("result", result);
               if (result) {
                 await existingScorecard.save();
               }
@@ -933,9 +933,7 @@ const setupWebSocket = (server) => {
                   player.sixes = (player.sixes || 0) + (batters.sixes ? 1 : 0);
                 }
               }
-              const bowlerIndex = existingScorecard.scorecard[
-                bowlingTeamKey
-              ].players.findIndex(
+              const bowlerIndex = existingScorecard.scorecard[bowlingTeamKey].players.findIndex(
                 (player) => player.id.toString() === bowlers.playerId
               );
   
@@ -946,9 +944,7 @@ const setupWebSocket = (server) => {
   
               if (bowlerIndex !== -1) {
                 const player =
-                  existingScorecard.scorecard[bowlingTeamKey].players[
-                    bowlerIndex
-                  ];
+                  existingScorecard.scorecard[bowlingTeamKey].players[bowlerIndex];
                 const currentOvers = player.overs || 0;
                 const ballsBowled = getDecimalPart(currentOvers);
   

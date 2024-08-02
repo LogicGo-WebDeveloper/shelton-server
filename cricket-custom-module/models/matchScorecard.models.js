@@ -20,6 +20,8 @@ const CustomPlayerScoreSchema = new mongoose.Schema({
   },
   activeBowler: { type: Boolean, default: false },
   activeStriker: { type: Boolean, default: false },
+  outType: { type: String, default: null },
+  wicketByFielder: { type: mongoose.Schema.Types.ObjectId, ref: "CustomPlayers" },
 });
 
 const TeamScoreSchema = new mongoose.Schema({

@@ -238,44 +238,37 @@ export const filteredOversData = async (data) => {
 
 
 export const handlePlayerOut = async (data, existingScorecard, ws) => {
-  console.log("1111111111111111111111");
   const { batters, bowlers, outTypeId, fielderId } = data;
 
-  console.log("2222222222222222222222");
   // Fetch the outType details from the database
   const outTypeDetails = await CustomOutReason.findById(outTypeId);
   if (!outTypeDetails) {
     throw new Error("Invalid outTypeId provided");
   }
-  console.log("3333333333333333333333", existingScorecard);
+
   const outType = outTypeDetails.reason;
 
   if (!existingScorecard || !existingScorecard.scorecard) {
     throw new Error("Scorecard not found or not properly initialized");
   }
-  console.log("4444444444444444444444");
   const battingTeamKey = existingScorecard.scorecard.homeTeam.players.some(
     (player) => player.id.toString() === batters.playerId
   )
     ? "homeTeam"
     : "awayTeam";
   const bowlingTeamKey = battingTeamKey === "homeTeam" ? "awayTeam" : "homeTeam";
-  console.log("5555555555555555555555");
   const batterIndex = existingScorecard.scorecard[battingTeamKey].players.findIndex(
     (player) => player.id.toString() === batters.playerId
   );
-  console.log("6666666666666666666666");
+
   const bowlerIndex = existingScorecard.scorecard[bowlingTeamKey].players.findIndex(
     (player) => player.id.toString() === bowlers.playerId
   );
-  console.log("7777777777777777777777");
 
   if (batterIndex !== -1) {
     const player = existingScorecard.scorecard[battingTeamKey].players[batterIndex];
-    console.log("8888888888888888888888");
     player.status = "out";
     player.outType = outType;
-    console.log("9999999999999999999999");
 
     if (outType !== "Retired Hurt" && outType !== "Timed Out") {
       player.balls = (player.balls || 0) + (batters.balls ? 1 : 0);
@@ -296,7 +289,6 @@ export const handlePlayerOut = async (data, existingScorecard, ws) => {
 
   if (bowlerIndex !== -1) {
     const player = existingScorecard.scorecard[bowlingTeamKey].players[bowlerIndex];
-    console.log("1010101010101010101010");
     if (outType !== "Retired Hurt" && outType !== "Timed Out") {
       player.balls = (player.balls || 0) + (bowlers.balls ? 1 : 0);
     }
