@@ -21,6 +21,7 @@ import {
 import CustomPlayers from "../cricket-custom-module/models/player.models.js";
 import CustomTeam from "../cricket-custom-module/models/team.models.js";
 import enums from "../config/enum.js";
+import CustomPlayerOvers from "../cricket-custom-module/models/playersOvers.models.js";
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
@@ -799,9 +800,10 @@ const setupWebSocket = (server) => {
               outTypeId,
               fielderId,
               runsScored,
+              teamId,
+              playerId,
             } = data;
             const match = await CustomMatch.findOne({ _id: matchId });
-
             //for update match scorecard
             if (!match) {
               ws.send(
@@ -980,7 +982,6 @@ const setupWebSocket = (server) => {
             const matches = await CustomMatch.findOne({ _id: matchId });
 
             // Example call
-            // await updateBallsAndTotal(existingOvers, bowlers);
 
             const calculateAndUpdateTeamScores = async (teamKey) => {
               const teamPlayers = existingScorecard.scorecard[teamKey].players;
@@ -1088,12 +1089,26 @@ const setupWebSocket = (server) => {
                 );
               }
 
+              let allRuns;
+              let TeamRun;
+
+              if (
+                (bowlers.noBalls == true && batters.runs) ||
+                (batters.runs && bowlers.wides == true)
+              ) {
+                allRuns = batters.runs - 1;
+              } else if (teamRuns.bye == true && batters.runs) {
+                TeamRun = batters.runs - 1;
+              } else if (teamRuns.legBye == true && batters.runs) {
+                TeamRun = batters.runs - 1;
+              }
+
               let newIncident = {
                 playerScoreCardId: existingScorecard._id,
                 battingPlayerId: batters.playerId,
                 bowlerId: bowlers.playerId,
                 balls: totalBalls,
-                runs: batters.runs,
+                runs: batters.runs ? batters.runs : allRuns,
                 overs_finished: bowlers.finished,
                 noBall: bowlers.noBalls,
                 whiteBall: bowlers.wides,
@@ -1104,7 +1119,7 @@ const setupWebSocket = (server) => {
                 battingTeamId: battingTeamId,
               };
 
-              //   // Find or create the document in CustomPlayerOvers
+              // Find or create the document in CustomPlayerOvers
               const playerOvers = await CustomPlayerOvers.findOne({
                 matchId: matchId,
                 homeTeamId: matches.homeTeamId,
@@ -1193,6 +1208,56 @@ const setupWebSocket = (server) => {
                     status: true,
                   })
                 );
+              }
+
+              if (teamId && matchId && playerId) {
+                let teamPlayers;
+                if (existingScorecard.scorecard.homeTeam.id == teamId) {
+                  teamPlayers = existingScorecard.scorecard.homeTeam.players;
+                } else if (existingScorecard.scorecard.awayTeam.id == teamId) {
+                  teamPlayers = existingScorecard.scorecard.awayTeam.players;
+                } else {
+                  ws.send(
+                    JSON.stringify({
+                      message: "Team not found.",
+                      actionType: data.action,
+                      body: null,
+                      status: false,
+                    })
+                  );
+                  return;
+                }
+
+                const lastIndex = teamPlayers
+                  .map((p) => p.id.toString())
+                  .lastIndexOf(playerId);
+
+                teamPlayers.splice(data, 1);
+
+                if (lastIndex === -1) {
+                  ws.send(
+                    JSON.stringify({
+                      message: "Player not found.",
+                      actionType: data.action,
+                      body: null,
+                      status: false,
+                    })
+                  );
+                  return;
+                }
+
+                teamPlayers.splice(lastIndex, 1);
+
+                await existingScorecard.save();
+
+                ws.send(
+                  JSON.stringify({
+                    message: "Action Updated Successfully..",
+                    actionType: data.action,
+                    status: true,
+                  })
+                );
+                return;
               }
             }
           } catch (error) {

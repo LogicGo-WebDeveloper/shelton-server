@@ -38,7 +38,6 @@ const createTournament = async (req, res, next) => {
     "moreTeams",
     "winningPrizeId",
     "matchOnId",
-    "description",
     "umpireId",
   ];
 
