@@ -798,10 +798,7 @@ const setupWebSocket = (server) => {
               isDeclared,
               isAllOut,
               outTypeId,
-              fielderId,
-              runsScored,
-              teamId,
-              playerId,
+              fielderId
             } = data;
             const match = await CustomMatch.findOne({ _id: matchId });
             //for update match scorecard
@@ -909,21 +906,20 @@ const setupWebSocket = (server) => {
             );
 
             if(batters.isOut){
-              await handlePlayerOut(
+              const result = await handlePlayerOut(
                 {
-                  matchId,
                   batters,
                   bowlers,
-                  teamRuns,
-                  ranges,
-                  isDeclared,
-                  isAllOut,
                   outTypeId,
                   fielderId,
-                  runsScored,
                 },
+                existingScorecard,
                 ws
               );
+              console.log("result", result);
+              if (result) {
+                await existingScorecard.save();
+              }
             } else {
               if (batterIndex !== -1) {
                 const player =
@@ -1144,7 +1140,7 @@ const setupWebSocket = (server) => {
                     $push: { "data.incidents": newIncident },
                   }
                 );
-              } else {
+              }  else {
                 // Document does not exist: create a new one
                 await CustomPlayerOvers.create({
                   matchId: matchId,
@@ -1153,113 +1149,67 @@ const setupWebSocket = (server) => {
                   bowlerId: bowlers.playerId,
                   data: { incidents: [newIncident] },
                 });
-                let isActive;
-                if (ranges) {
-                  const [startOver, endOver] = ranges
-                    .replace("to", "-")
-                    .split("-")
-                    .map(Number);
+              }
 
-                  const currentOver = matchDetails.noOfOvers;
-                  isActive = currentOver >= startOver && currentOver <= endOver;
-                  await CustomMatch.findByIdAndUpdate(
-                    matchId,
-                    {
-                      $set: {
-                        "powerPlays.ranges": ranges,
-                        "powerPlays.isActive": isActive,
-                      },
+              let isActive;
+              if (ranges) {
+                const [startOver, endOver] = ranges
+                  .replace("to", "-")
+                  .split("-")
+                  .map(Number);
+  
+                const currentOver = matchDetails.noOfOvers;
+                isActive = currentOver >= startOver && currentOver <= endOver;
+                await CustomMatch.findByIdAndUpdate(
+                  matchId,
+                  {
+                    $set: {
+                      "powerPlays.ranges": ranges,
+                      "powerPlays.isActive": isActive,
                     },
-                    { new: true }
-                  );
-                }
-
-                if (isDeclared || isAllOut) {
-                  await CustomMatch.findByIdAndUpdate(
-                    matchId,
-                    {
-                      $set: {
-                        "endInnings.isDeclared": isDeclared,
-                        "endInnings.isAllOut": isAllOut,
-                      },
+                  },
+                  { new: true }
+                );
+              }
+  
+              if (isDeclared || isAllOut) {
+                await CustomMatch.findByIdAndUpdate(
+                  matchId,
+                  {
+                    $set: {
+                      "endInnings.isDeclared": isDeclared,
+                      "endInnings.isAllOut": isAllOut,
                     },
-                    { new: true }
-                  );
-                }
-
-                ws.send(
-                  JSON.stringify({
-                    message: "Score updated successfully.",
-                    actionType: data.action,
-                    body: {
-                      matchScore: matchLiveScore,
-                      batters: playingBatters,
-                      powerPlays: {
-                        ranges: ranges ? ranges : null,
-                        isActive: isActive,
-                        message:
-                          isActive && ranges ? "Power play is active" : "",
-                      },
-                      endInnings: {
-                        isDeclared: isDeclared ? isDeclared : false,
-                        isAllOut: isAllOut ? isAllOut : false,
-                      },
-                    },
-                    status: true,
-                  })
+                  },
+                  { new: true }
                 );
               }
 
-              if (teamId && matchId && playerId) {
-                let teamPlayers;
-                if (existingScorecard.scorecard.homeTeam.id == teamId) {
-                  teamPlayers = existingScorecard.scorecard.homeTeam.players;
-                } else if (existingScorecard.scorecard.awayTeam.id == teamId) {
-                  teamPlayers = existingScorecard.scorecard.awayTeam.players;
-                } else {
-                  ws.send(
-                    JSON.stringify({
-                      message: "Team not found.",
-                      actionType: data.action,
-                      body: null,
-                      status: false,
-                    })
-                  );
-                  return;
-                }
-
-                const lastIndex = teamPlayers
-                  .map((p) => p.id.toString())
-                  .lastIndexOf(playerId);
-
-                teamPlayers.splice(data, 1);
-
-                if (lastIndex === -1) {
-                  ws.send(
-                    JSON.stringify({
-                      message: "Player not found.",
-                      actionType: data.action,
-                      body: null,
-                      status: false,
-                    })
-                  );
-                  return;
-                }
-
-                teamPlayers.splice(lastIndex, 1);
-
-                await existingScorecard.save();
-
-                ws.send(
-                  JSON.stringify({
-                    message: "Action Updated Successfully..",
-                    actionType: data.action,
-                    status: true,
-                  })
-                );
-                return;
-              }
+              ws.send(
+                JSON.stringify({
+                  message: "Score updated successfully.",
+                  actionType: data.action,
+                  body: {
+                    matchScore: matchLiveScore,
+                    batters: playingBatters,
+                    powerPlays: {
+                      ranges: ranges ? ranges : null,
+                      isActive: isActive,
+                      message:
+                        isActive && ranges ? "Power play is active" : "",
+                    },
+                    endInnings: {
+                      isDeclared: isDeclared ? isDeclared : false,
+                      isAllOut: isAllOut ? isAllOut : false,
+                    },
+                  },
+                  status: true,
+                })
+              );
             }
+
+
+
           } catch (error) {
             console.error("Failed to update score:", error.message);
             ws.send(
