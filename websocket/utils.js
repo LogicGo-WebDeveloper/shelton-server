@@ -287,16 +287,33 @@ export const handlePlayerOut = async (data, existingScorecard, ws) => {
     }
   }
 
+  const getDecimalPart = (num) => {
+    const parts = num.toString().split(".");
+    return parts.length > 1 ? parseInt(parts[1], 10) : 0;
+  };
+
   if (bowlerIndex !== -1) {
     const player = existingScorecard.scorecard[bowlingTeamKey].players[bowlerIndex];
+  
     if (outType !== "Retired Hurt" && outType !== "Timed Out") {
-      player.balls = (player.balls || 0) + (bowlers.balls ? 1 : 0);
+
+      const currentOvers = player.overs || 0;
+      const ballsBowled = getDecimalPart(currentOvers);
+  
+      if (bowlers.balls) {
+        const newBallsBowled = ballsBowled + 1;
+        if (newBallsBowled >= 6) {
+          player.overs = Math.floor(currentOvers) + 1;
+        } else {
+          player.overs = Math.floor(currentOvers) + newBallsBowled / 10;
+        }
+      }
     }
 
     if (["Bowled", "Caught", "Stumped", "Hit Wicket", "LBW"].includes(outType)) {
-      player.wickets = (player.wickets || 0) + 1;
+        player.wickets = (player.wickets || 0) + 1;
     }
-  }
+}
 
   return true;
 };

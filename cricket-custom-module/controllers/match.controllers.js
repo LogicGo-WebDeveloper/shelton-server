@@ -1039,7 +1039,7 @@ const getMatchScorecard = async (req, res) => {
 const updateStartingPlayerScorecard = async (req, res) => {
   try {
     const { matchId } = req.params;
-    const { bowlingTeamId, battingTeamId, bowlerId, strikerId, nonStrikerId } =
+    const { bowlingTeamId, battingTeamId, bowlerId, strikerId, nonStrikerId, status } =
       req.body;
     const userId = req.user._id;
 
@@ -1050,6 +1050,7 @@ const updateStartingPlayerScorecard = async (req, res) => {
       bowlerId,
       strikerId,
       nonStrikerId,
+      status
     });
 
     if (!validation.isValid) {
@@ -1079,6 +1080,16 @@ const updateStartingPlayerScorecard = async (req, res) => {
         status: false,
         message: "You are not authorized to update the scorecard of this match",
         statusCode: StatusCodes.FORBIDDEN,
+      });
+    }
+
+    // Ensure the status does not change from not_started to in_progress
+    if (status !== enums.matchStatusEnum.not_started && status !== enums.matchStatusEnum.in_progress) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Cannot change status from not_started to in_progress",
+        statusCode: StatusCodes.BAD_REQUEST,
       });
     }
 
