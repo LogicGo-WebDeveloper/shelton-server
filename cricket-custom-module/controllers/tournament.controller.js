@@ -143,9 +143,18 @@ const createTournament = async (req, res, next) => {
 };
 
 const listTournament = async (req, res) => {
-  const { page = 1, size = 10, search } = req.query;
+  const { page = 1, size = 10, search, ...extraQueryParams } = req.query;
 
   try {
+    // Check for unexpected query parameters
+    if (Object.keys(extraQueryParams).length > 0) {
+      return apiResponse({
+        res,
+        statusCode: StatusCodes.BAD_REQUEST,
+        message: "Data not found",
+        status: false,
+      });
+    }
     // Pagination parameters
     const limit = parseInt(size);
     const skip = (page - 1) * size;
