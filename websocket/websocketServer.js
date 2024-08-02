@@ -22,6 +22,7 @@ import CustomPlayers from "../cricket-custom-module/models/player.models.js";
 import CustomTeam from "../cricket-custom-module/models/team.models.js";
 import enums from "../config/enum.js";
 import CustomPlayerOvers from "../cricket-custom-module/models/playersOvers.models.js";
+import mongoose from "mongoose";
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });
@@ -933,7 +934,9 @@ const setupWebSocket = (server) => {
                   player.sixes = (player.sixes || 0) + (batters.sixes ? 1 : 0);
                 }
               }
-              const bowlerIndex = existingScorecard.scorecard[bowlingTeamKey].players.findIndex(
+              const bowlerIndex = existingScorecard.scorecard[
+                bowlingTeamKey
+              ].players.findIndex(
                 (player) => player.id.toString() === bowlers.playerId
               );
 
@@ -944,7 +947,9 @@ const setupWebSocket = (server) => {
 
               if (bowlerIndex !== -1) {
                 const player =
-                  existingScorecard.scorecard[bowlingTeamKey].players[bowlerIndex];
+                  existingScorecard.scorecard[bowlingTeamKey].players[
+                    bowlerIndex
+                  ];
                 const currentOvers = player.overs || 0;
                 const ballsBowled = getDecimalPart(currentOvers);
 
@@ -1181,6 +1186,32 @@ const setupWebSocket = (server) => {
                 );
               }
 
+              const playerOversData = await CustomPlayerOvers.findOne({
+                matchId: matchId,
+                homeTeamId: matches.homeTeamId,
+                awayTeamId: matches.awayTeamId,
+              })
+                .populate({
+                  path: "homeTeamId",
+                  model: "CustomTeam",
+                  select: "teamName",
+                })
+                .populate({
+                  path: "awayTeamId",
+                  model: "CustomTeam",
+                  select: "teamName",
+                })
+                .populate({
+                  path: "bowlerId",
+                  model: "CustomPlayers",
+                  select: "playerName role",
+                  populate: {
+                    path: "role", // This will populate the role field in CustomPlayers
+                    model: "CustomPlayerRole",
+                    select: "role", // Select fields from CustomPlayerRole
+                  },
+                });
+
               ws.send(
                 JSON.stringify({
                   message: "Score updated successfully.",
@@ -1188,7 +1219,7 @@ const setupWebSocket = (server) => {
                   body: {
                     matchScore: matchLiveScore,
                     batters: playingBatters,
-                    playerOvers: playerOvers,
+                    playerOversData: playerOversData,
                     powerPlays: {
                       ranges: ranges ? ranges : null,
                       isActive: isActive,
