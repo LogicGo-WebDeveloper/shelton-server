@@ -1050,7 +1050,7 @@ const updateStartingPlayerScorecard = async (req, res) => {
       bowlerId,
       strikerId,
       nonStrikerId,
-      status
+      // status
     });
 
     if (!validation.isValid) {
