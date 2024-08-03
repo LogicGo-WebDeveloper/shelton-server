@@ -1124,18 +1124,45 @@ const setupWebSocket = (server) => {
                 );
               }
 
-              if (bowlers.balls && bowlers.finished === true) {
-                currentOvers += 1;
+              if (bowlers && bowlers.finished === true) {
+                try {
+                  // Find the document and get the existing incidents array
+                  const existingMatchOvers = await CustomPlayerOvers.findOne({
+                    matchId: matchId,
+                  });
 
-                const result = await CustomPlayerOvers.updateOne(
-                  { matchId: matchId },
-                  {
-                    $set: {
-                      currentOvers: currentOvers,
-                      totalBalls: 1, // Reset totalBalls to 1 or set the desired value
-                    },
+                  if (
+                    existingMatchOvers &&
+                    Array.isArray(existingMatchOvers.data.incidents)
+                  ) {
+                    const incidents = existingMatchOvers.data.incidents;
+
+                    // Update the isOvers field inside the data.incidents array
+                    const updatedIncidents = incidents.map((incident) => {
+                      return {
+                        ...incident,
+                        isOvers: false, // Update the isOvers field to false
+                      };
+                    });
+
+                    // Update the document in the database
+                    const result = await CustomPlayerOvers.updateOne(
+                      { matchId: matchId },
+                      {
+                        $set: {
+                          currentOvers: currentOvers,
+                          totalBalls: 1, // Reset totalBalls to 1 or set the desired value
+                          "data.incidents": updatedIncidents, // Update the incidents array with the modified data
+                        },
+                      }
+                    );
+
+                    console.log("Changes saved successfully:", result);
+                  } else {
                   }
-                );
+                } catch (error) {
+                  console.error("Error updating document:", error);
+                }
               }
 
               let allRuns;
@@ -1165,12 +1192,13 @@ const setupWebSocket = (server) => {
                 runs: batters.runs ? batters.runs : allRuns,
                 overs_finished: bowlers.finished,
                 noBall: bowlers.noBalls,
-                whiteBall: bowlers.wides,
+                whideBall: bowlers.wides,
                 lbBall: bowlers.legBye,
                 byeBall: teamRuns.bye,
                 isOut: bowlers.out,
                 oversNumber: currentOvers,
                 battingTeamId: existingScorecard.scorecard[battingTeamKey].id,
+                isOvers: true,
               };
 
               // Find or create the document in CustomPlayerOvers
@@ -1247,6 +1275,7 @@ const setupWebSocket = (server) => {
                 matchId: matchId,
                 homeTeamId: matches.homeTeamId,
                 awayTeamId: matches.awayTeamId,
+                // isOvers: true,
               })
                 .populate({
                   path: "homeTeamId",
@@ -1269,6 +1298,21 @@ const setupWebSocket = (server) => {
                   },
                 });
 
+              let filteredIncidents;
+
+              console.log(playerOversData.data.incidents);
+
+              if (playerOversData && playerOversData.data.incidents) {
+                // Filter incidents where isOvers is true
+                filteredIncidents = playerOversData.data.incidents.filter(
+                  (incident) => incident.isOvers == true
+                );
+              } else {
+                console.log(
+                  "No incidents data found or isOvers property is not present."
+                );
+              }
+
               ws.send(
                 JSON.stringify({
                   message: "Score updated successfully.",
@@ -1276,7 +1320,7 @@ const setupWebSocket = (server) => {
                   body: {
                     matchScore: matchLiveScore,
                     batters: playingBatters,
-                    playerOversData: playerOversData,
+                    playerOversData: filteredIncidents,
                     powerPlays: {
                       ranges: ranges ? ranges : null,
                       isActive: isActive,
