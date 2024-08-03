@@ -197,15 +197,19 @@ const createMatch = async (req, res, next) => {
       const foundUmpireIds = validUmpires.map((umpire) =>
         umpire.umpireId.toString()
       );
-      const notFoundUmpireIds = umpires.filter((id) => !foundUmpireIds.includes(id));
+      const notFoundUmpireIds = umpires.filter(
+        (id) => !foundUmpireIds.includes(id)
+      );
 
-      if(notFoundUmpireIds.length > 0){
-          return apiResponse({
-            res,
-            status: false,
-            message: `The following umpire IDs were not found: ${notFoundUmpireIds.join( ", ")}`,
-            statusCode: StatusCodes.BAD_REQUEST,
-          });
+      if (notFoundUmpireIds.length > 0) {
+        return apiResponse({
+          res,
+          status: false,
+          message: `The following umpire IDs were not found: ${notFoundUmpireIds.join(
+            ", "
+          )}`,
+          statusCode: StatusCodes.BAD_REQUEST,
+        });
       }
     }
 
@@ -742,17 +746,7 @@ const updateMatchStatus = async (req, res, next) => {
     }
 
     // Validate status transitions
-    if (
-      existingMatch.status === existingMatch.status &&
-      status === enums.matchStatusEnum.not_started
-    ) {
-      return apiResponse({
-        res,
-        status: false,
-        message: "Cannot update status for a not started match",
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    } else if (existingMatch.status === enums.matchStatusEnum.finished) {
+    if (existingMatch.status === enums.matchStatusEnum.finished) {
       return apiResponse({
         res,
         status: false,
@@ -1039,8 +1033,14 @@ const getMatchScorecard = async (req, res) => {
 const updateStartingPlayerScorecard = async (req, res) => {
   try {
     const { matchId } = req.params;
-    const { bowlingTeamId, battingTeamId, bowlerId, strikerId, nonStrikerId, status } =
-      req.body;
+    const {
+      bowlingTeamId,
+      battingTeamId,
+      bowlerId,
+      strikerId,
+      nonStrikerId,
+      status,
+    } = req.body;
     const userId = req.user._id;
 
     const validation = validateObjectIds({
@@ -1050,7 +1050,7 @@ const updateStartingPlayerScorecard = async (req, res) => {
       bowlerId,
       strikerId,
       nonStrikerId,
-      status
+      status,
     });
 
     if (!validation.isValid) {
@@ -1084,7 +1084,10 @@ const updateStartingPlayerScorecard = async (req, res) => {
     }
 
     // Ensure the status does not change from not_started to in_progress
-    if (status !== enums.matchStatusEnum.not_started && status !== enums.matchStatusEnum.in_progress) {
+    if (
+      status !== enums.matchStatusEnum.not_started &&
+      status !== enums.matchStatusEnum.in_progress
+    ) {
       return apiResponse({
         res,
         status: false,
