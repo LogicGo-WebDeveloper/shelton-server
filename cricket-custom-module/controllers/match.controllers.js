@@ -197,15 +197,19 @@ const createMatch = async (req, res, next) => {
       const foundUmpireIds = validUmpires.map((umpire) =>
         umpire.umpireId.toString()
       );
-      const notFoundUmpireIds = umpires.filter((id) => !foundUmpireIds.includes(id));
+      const notFoundUmpireIds = umpires.filter(
+        (id) => !foundUmpireIds.includes(id)
+      );
 
-      if(notFoundUmpireIds.length > 0){
-          return apiResponse({
-            res,
-            status: false,
-            message: `The following umpire IDs were not found: ${notFoundUmpireIds.join( ", ")}`,
-            statusCode: StatusCodes.BAD_REQUEST,
-          });
+      if (notFoundUmpireIds.length > 0) {
+        return apiResponse({
+          res,
+          status: false,
+          message: `The following umpire IDs were not found: ${notFoundUmpireIds.join(
+            ", "
+          )}`,
+          statusCode: StatusCodes.BAD_REQUEST,
+        });
       }
     }
 
@@ -1039,8 +1043,14 @@ const getMatchScorecard = async (req, res) => {
 const updateStartingPlayerScorecard = async (req, res) => {
   try {
     const { matchId } = req.params;
-    const { bowlingTeamId, battingTeamId, bowlerId, strikerId, nonStrikerId, status } =
-      req.body;
+    const {
+      bowlingTeamId,
+      battingTeamId,
+      bowlerId,
+      strikerId,
+      nonStrikerId,
+      status,
+    } = req.body;
     const userId = req.user._id;
 
     const validation = validateObjectIds({
@@ -1050,7 +1060,7 @@ const updateStartingPlayerScorecard = async (req, res) => {
       bowlerId,
       strikerId,
       nonStrikerId,
-      status
+      // status
     });
 
     if (!validation.isValid) {
@@ -1074,7 +1084,8 @@ const updateStartingPlayerScorecard = async (req, res) => {
 
     // Check if the user is authorized
     const match = await CustomMatch.findById(matchId);
-    if (match.createdBy.toString() !== userId.toString()) {
+    // console.log(match);
+    if (match?.createdBy?.toString() != userId?.toString()) {
       return apiResponse({
         res,
         status: false,
@@ -1084,14 +1095,17 @@ const updateStartingPlayerScorecard = async (req, res) => {
     }
 
     // Ensure the status does not change from not_started to in_progress
-    if (status !== enums.matchStatusEnum.not_started && status !== enums.matchStatusEnum.in_progress) {
-      return apiResponse({
-        res,
-        status: false,
-        message: "Cannot change status from not_started to in_progress",
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
+    // if (
+    //   status !== enums.matchStatusEnum.not_started &&
+    //   status !== enums.matchStatusEnum.in_progress
+    // ) {
+    //   return apiResponse({
+    //     res,
+    //     status: false,
+    //     message: "Cannot change status from not_started to in_progress",
+    //     statusCode: StatusCodes.BAD_REQUEST,
+    //   });
+    // }
 
     // Validate if the teams and players exist
     const entitiesToValidate = [
