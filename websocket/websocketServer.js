@@ -1370,76 +1370,67 @@ const setupWebSocket = (server) => {
               return;
             }
 
-            if (existingMatchOvers.data && existingMatchOvers.data.incidents) {
-              const incidents = existingMatchOvers.data.incidents;
-
-              const indexToRemove = incidents.findIndex(
-                (incident) =>
-                  incident.bowlerId.toString() === playerId.toString()
-              );
-
-              delete incidents[indexToRemove];
-              incidents.splice(indexToRemove, 1);
-              // existingMatchOvers.currentOvers =
-              //   existingMatchOvers.currentOvers - 1;
-
-              // const data = [...incidents];
-              // const findIndex = data.findIndex(
-              //   (incident) => incident.bowlerId.toString() === playerId.toString
-              // );
-              // data.splice(findIndex, 1);
-              // existingMatchOvers.data.incidents = data;
-              await existingMatchOvers.save();
+            if (existingMatchOvers.data) {
+              if (Array.isArray(existingMatchOvers.data.incidents)) {
+                const incidents = existingMatchOvers.data.incidents;
+                incidents.pop();
+                existingMatchOvers.currentOvers =
+                  existingMatchOvers.currentOvers - 1;
+                await CustomPlayerOvers.updateOne(
+                  { _id: existingMatchOvers._id },
+                  { $set: { "data.incidents": incidents } }
+                );
+              }
             }
 
-            // if (teamId && matchId && playerId) {
-            //   let teamPlayers;
-            //   if (existingScorecard.scorecard.homeTeam.id == teamId) {
-            //     teamPlayers = existingScorecard.scorecard.homeTeam.players;
-            //   } else if (existingScorecard.scorecard.awayTeam.id == teamId) {
-            //     teamPlayers = existingScorecard.scorecard.awayTeam.players;
-            //   } else {
-            //     ws.send(
-            //       JSON.stringify({
-            //         message: "Team not found.",
-            //         actionType: data.action,
-            //         body: null,
-            //         status: false,
-            //       })
-            //     );
-            //     return;
-            //   }
+            if (teamId && matchId && playerId) {
+              let teamPlayers;
+              if (existingScorecard.scorecard.homeTeam.id == teamId) {
+                teamPlayers = existingScorecard.scorecard.homeTeam.players;
+              } else if (existingScorecard.scorecard.awayTeam.id == teamId) {
+                teamPlayers = existingScorecard.scorecard.awayTeam.players;
+              } else {
+                ws.send(
+                  JSON.stringify({
+                    message: "Team not found.",
+                    actionType: data.action,
+                    body: null,
+                    status: false,
+                  })
+                );
+                return;
+              }
 
-            //   const lastIndex = teamPlayers
-            //     .map((p) => p.id.toString())
-            //     .lastIndexOf(playerId);
+              const lastIndex = teamPlayers
+                .map((p) => p.id.toString())
+                .lastIndexOf(playerId);
 
-            //   teamPlayers.splice(data, 1);
+              teamPlayers.splice(data, 1);
 
-            //   if (lastIndex === -1) {
-            //     ws.send(
-            //       JSON.stringify({
-            //         message: "Player not found.",
-            //         actionType: data.action,
-            //         body: null,
-            //         status: false,
-            //       })
-            //     );
-            //     return;
-            //   }
+              if (lastIndex === -1) {
+                ws.send(
+                  JSON.stringify({
+                    message: "Player not found.",
+                    actionType: data.action,
+                    body: null,
+                    status: false,
+                  })
+                );
+                return;
+              }
 
-            //   teamPlayers.splice(lastIndex, 1);
+              teamPlayers.splice(lastIndex, 1);
 
-            //   await existingScorecard.save();
+              await existingScorecard.save();
 
-            //   ws.send(
-            //     JSON.stringify({
-            //       message: "Action updated successfully.",
-            //       actionType: data.action,
-            //       status: true,
-            //     })
-            //   );
-            // }
+              ws.send(
+                JSON.stringify({
+                  message: "Action updated successfully.",
+                  actionType: data.action,
+                  status: true,
+                })
+              );
+            }
           } catch (error) {
             console.error("Failed to update score:", error.message);
             ws.send(
