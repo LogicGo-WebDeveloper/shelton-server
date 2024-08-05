@@ -25,7 +25,7 @@ const createTeam = {
     teamName: Joi.string().required(),
     city: Joi.string().required(),
     teamImage: Joi.string().optional(),
-    tournamentId: Joi.string().required(),
+    tournamentId: Joi.string(),
   }),
 };
 
@@ -42,7 +42,7 @@ const createMatch = {
   body: Joi.object().keys({
     homeTeamId: Joi.string().required(),
     awayTeamId: Joi.string().required(),
-    tournamentId: Joi.string().required(),
+    tournamentId: Joi.string(),
     noOfOvers: Joi.number().required(),
     overPerBowler: Joi.number().required(),
     city: Joi.string().required(),
@@ -51,6 +51,7 @@ const createMatch = {
     homeTeamPlayingPlayer: Joi.array().items(Joi.string()).min(11).required(),
     awayTeamPlayingPlayer: Joi.array().items(Joi.string()).min(11).required(),
     umpires: Joi.array().items(Joi.string()).max(5).required(),
+    isQuickMatch: Joi.boolean().default(false),
     homeTeamScore: Joi.object().keys({
       runs: Joi.number().default(0),
       overs: Joi.number().default(0),
@@ -175,11 +176,11 @@ const updateCustomPlayerOvers = {
 const updateTossStatus = {
   body: Joi.object().keys({
     matchId: Joi.string().required(),
-    tournamentId: Joi.string().required(),
+    tournamentId: Joi.string(),
     tossWinnerTeamId: Joi.string().required(),
-    tossWinnerChoice: Joi.string()
-      .valid(enums.tossChoiceEnum.BATTING, enums.tossChoiceEnum.FIELDING)
-      .required(),
+    tossWinnerChoice: Joi.valid(
+      ...Object.values(enums.tossChoiceEnum)
+    ).required(),
   }),
 };
 
@@ -200,7 +201,9 @@ const validateUpdateStartingPlayer = {
     bowlerId: Joi.string().required(),
     strikerId: Joi.string().required(),
     nonStrikerId: Joi.string().required(),
-    status: Joi.string().valid(...Object.values(enums.matchStatusEnum)).required(),
+    status: Joi.string()
+      .valid(...Object.values(enums.matchStatusEnum))
+      .required(),
   }),
 };
 

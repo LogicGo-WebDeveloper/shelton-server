@@ -21,6 +21,7 @@ const customMatchSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "CustomTournament",
   },
+  isQuickMatch: { type: Boolean, default: false },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   homeTeamPlayingPlayer: [
     { type: mongoose.Schema.Types.ObjectId, ref: "CustomPlayers" },
@@ -42,7 +43,7 @@ const customMatchSchema = new mongoose.Schema({
   },
   tossWinnerChoice: {
     type: String,
-    enum: [...Object.values(enums.tossChoiceEnum), null],
+    enum: Object.values(enums.tossChoiceEnum),
     default: null,
   },
   homeTeamScore: {

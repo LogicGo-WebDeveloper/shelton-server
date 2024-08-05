@@ -22,7 +22,6 @@ import CustomPlayers from "../cricket-custom-module/models/player.models.js";
 import CustomTeam from "../cricket-custom-module/models/team.models.js";
 import enums from "../config/enum.js";
 import CustomPlayerOvers from "../cricket-custom-module/models/playersOvers.models.js";
-import mongoose from "mongoose";
 
 const setupWebSocket = (server) => {
   const wss = new WebSocketServer({ server });

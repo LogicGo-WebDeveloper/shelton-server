@@ -23,17 +23,19 @@ const createTeam = async (req, res, next) => {
       });
     }
 
-    const tournament = await CustomTournament.findById(tournamentId);
+    if (tournamentId) {
+      const tournament = await CustomTournament.findById(tournamentId);
+      if (!tournament) {
+        return apiResponse({
+          res,
+          status: true,
+          message: "Tournament not found",
+          statusCode: StatusCodes.NOT_FOUND,
+        });
+      }
+    }
     const isCity = await CustomCityList.findById(city);
 
-    if (!tournament) {
-      return apiResponse({
-        res,
-        status: true,
-        message: "Tournament not found",
-        statusCode: StatusCodes.NOT_FOUND,
-      });
-    }
     if (!isCity) {
       return apiResponse({
         res,
@@ -48,7 +50,7 @@ const createTeam = async (req, res, next) => {
       city,
       teamImage: url ? url : "",
       createdBy: userId,
-      tournamentId,
+      tournamentId: tournamentId ? tournamentId : "",
     });
 
     return apiResponse({
