@@ -1223,25 +1223,27 @@ const setupWebSocket = (server) => {
                   playerOvers.data.incidents = [];
                 }
 
-                await CustomPlayerOvers.updateOne(
-                  {
-                    _id: playerOvers._id,
-                  },
-                  {
-                    $push: { "data.incidents": newIncident },
-                  }
-                );
-
-                await CustomPlayerOvers.updateOne(
-                  {
-                    _id: playerOvers._id,
-                  },
-                  {
-                    $set: {
-                      bowlerId: bowlers.playerId,
+                if (bowlers.balls == true) {
+                  await CustomPlayerOvers.updateOne(
+                    {
+                      _id: playerOvers._id,
                     },
-                  }
-                );
+                    {
+                      $push: { "data.incidents": newIncident },
+                    }
+                  );
+
+                  await CustomPlayerOvers.updateOne(
+                    {
+                      _id: playerOvers._id,
+                    },
+                    {
+                      $set: {
+                        bowlerId: bowlers.playerId,
+                      },
+                    }
+                  );
+                }
               } else {
                 // Document does not exist: create a new one
                 const alloversData = await CustomPlayerOvers.create({
@@ -1314,10 +1316,9 @@ const setupWebSocket = (server) => {
                 });
 
               if (playerOversData && playerOversData.data.incidents) {
-                playerOversData.data.incidents =
-                  playerOversData.data.incidents.filter(
-                    (incident) => incident.isOvers === true
-                  );
+                playerOversData.data.incidents = playerOversData.data.incidents
+                  .filter((incident) => incident.isOvers === true)
+                  .reverse(); // Reverse the array to have the last record first
               }
 
               ws.send(
