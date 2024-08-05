@@ -83,17 +83,16 @@ const listTeams = async (req, res) => {
   const userId = req.user._id;
   const { tournamentId } = req.query;
 
-  const validation = validateObjectIds({ tournamentId });
-  if (!validation.isValid) {
-    return apiResponse({
-      res,
-      status: false,
-      message: validation.message,
-      statusCode: StatusCodes.BAD_REQUEST,
-    });
-  }
-
   if (tournamentId) {
+    const validation = validateObjectIds({ tournamentId });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
     const findTournament = await CustomTournament.findById(tournamentId);
     if (!findTournament) {
       return apiResponse({
