@@ -22,12 +22,37 @@ const getPlayerOvers = async (req, res, next) => {
       });
     }
 
+    const HomeTeamId = new mongoose.Types.ObjectId(homeTeamId);
+    const AwayTeamId = new mongoose.Types.ObjectId(awayTeamId);
+
     // Fetch overs data
     const overs = await CustomPlayerOvers.find({
       matchId: matchId,
-      homeTeamId: homeTeamId,
-    });
+      homeTeamId: HomeTeamId,
+      awayTeamId: AwayTeamId,
+    })
+      .populate({
+        path: "homeTeamId",
+        model: "CustomTeam",
+        select: "teamName teamImage",
+      })
+      .populate({
+        path: "awayTeamId",
+        model: "CustomTeam",
+        select: "teamName teamImage",
+      })
+      .populate({
+        path: "bowlerId",
+        model: "CustomPlayers",
+        select: "playerName role image",
+        populate: {
+          path: "role", // This will populate the role field in CustomPlayers
+          model: "CustomPlayerRole",
+          select: "role", // Select fields from CustomPlayerRole
+        },
+      });
 
+    // console
     // Ensure overs data is present
     if (!overs.length || !overs[0]) {
       return apiResponse({
@@ -37,9 +62,6 @@ const getPlayerOvers = async (req, res, next) => {
         status: false,
       });
     }
-
-    const HomeTeamId = new mongoose.Types.ObjectId(homeTeamId);
-    const AwayTeamId = new mongoose.Types.ObjectId(awayTeamId);
 
     // Ensure incidents data exists
     const incidents = overs[0]?.data?.incidents ?? [];
@@ -55,11 +77,34 @@ const getPlayerOvers = async (req, res, next) => {
       return incident?.battingTeamId?.equals(AwayTeamId) ?? false;
     });
 
+    const homeTeamDetails = {
+      // _id: overs[0].homeTeamId._id,
+      teamName: overs[0].homeTeamId.teamName,
+      teamImage: overs[0].homeTeamId.teamImage,
+    };
+
+    const BowlerDetails = {
+      // _id: overs[0].bowlerId._id,
+      playerName: overs[0].bowlerId.playerName,
+      role: overs[0].bowlerId.role,
+      image: overs[0].bowlerId.image,
+    };
+
+    const awayTeamDetails = {
+      // _id: overs[0].bowlerId._id,
+      teamName: overs[0].bowlerId.teamName,
+      teamImage: overs[0].bowlerId.teamImage,
+    };
+
     const filteredOvers = {
       homeTeam: {
+        BowlerDetails: BowlerDetails,
+        TeamDetails: homeTeamDetails,
         data: filterHomeTeam,
       },
       awayTeam: {
+        BowlerDetails: BowlerDetails,
+        TeamDetails: awayTeamDetails,
         data: filterAwayTeam,
       },
     };
