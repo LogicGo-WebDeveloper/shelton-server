@@ -1090,16 +1090,23 @@ const setupWebSocket = (server) => {
                 noOfOvers: matchDetails.noOfOvers,
               };
 
+              // console.log(batters.playerId);
+              const playesImageData = await CustomPlayers.findOne({
+                _id: batters.playerId,
+              });
+
               const playingBatters = scorecardDetails.scorecard[
                 battingTeamKey
               ].players
+
                 .filter((player) => player.status === "not_out")
-                .slice(0, 2)
                 .map((player) => ({
                   name: player.name,
                   runs: player.runs,
                   balls: player.balls,
                   id: player.id,
+                  image: playesImageData?.image,
+                  activeStriker: player.activeStriker,
                 }));
 
               const existingOvers = await CustomPlayerOvers.find({
@@ -1185,7 +1192,6 @@ const setupWebSocket = (server) => {
               let newIncident = {
                 playerScoreCardId: existingScorecard._id,
                 battingPlayerId: batters.playerId,
-                // battingTeamId: matches.awayTeamId,
                 bowlerId: bowlers.playerId,
                 balls: totalBalls,
                 runs: batters.runs ? batters.runs : allRuns,
@@ -1223,6 +1229,17 @@ const setupWebSocket = (server) => {
                   },
                   {
                     $push: { "data.incidents": newIncident },
+                  }
+                );
+
+                await CustomPlayerOvers.updateOne(
+                  {
+                    _id: playerOvers._id,
+                  },
+                  {
+                    $set: {
+                      bowlerId: bowlers.playerId,
+                    },
                   }
                 );
               } else {
@@ -1274,22 +1291,21 @@ const setupWebSocket = (server) => {
                 matchId: matchId,
                 homeTeamId: matches.homeTeamId,
                 awayTeamId: matches.awayTeamId,
-                // isOvers: true,
               })
                 .populate({
                   path: "homeTeamId",
                   model: "CustomTeam",
-                  select: "teamName",
+                  select: "teamName teamImage",
                 })
                 .populate({
                   path: "awayTeamId",
                   model: "CustomTeam",
-                  select: "teamName",
+                  select: "teamName teamImage",
                 })
                 .populate({
                   path: "bowlerId",
                   model: "CustomPlayers",
-                  select: "playerName role",
+                  select: "playerName role image",
                   populate: {
                     path: "role", // This will populate the role field in CustomPlayers
                     model: "CustomPlayerRole",
@@ -1297,19 +1313,11 @@ const setupWebSocket = (server) => {
                   },
                 });
 
-              let filteredIncidents;
-
-              console.log(playerOversData.data.incidents);
-
               if (playerOversData && playerOversData.data.incidents) {
-                // Filter incidents where isOvers is true
-                filteredIncidents = playerOversData.data.incidents.filter(
-                  (incident) => incident.isOvers == true
-                );
-              } else {
-                console.log(
-                  "No incidents data found or isOvers property is not present."
-                );
+                playerOversData.data.incidents =
+                  playerOversData.data.incidents.filter(
+                    (incident) => incident.isOvers === true
+                  );
               }
 
               ws.send(
@@ -1319,7 +1327,7 @@ const setupWebSocket = (server) => {
                   body: {
                     matchScore: matchLiveScore,
                     batters: playingBatters,
-                    playerOversData: filteredIncidents,
+                    playerOversData: playerOversData,
                     powerPlays: {
                       ranges: ranges ? ranges : null,
                       isActive: isActive,

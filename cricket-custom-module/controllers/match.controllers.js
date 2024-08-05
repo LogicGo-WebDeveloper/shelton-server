@@ -838,9 +838,11 @@ const updateTossStatus = async (req, res) => {
       });
     }
 
-    // Check tournament existence if tournamentId is provided
     if (tournamentId) {
-      const tournament = await CustomMatch.findOne({ tournamentId });
+      const tournament = await CustomMatch.findOne({
+        tournamentId: tournamentId,
+      });
+
       if (!tournament) {
         return apiResponse({
           res,
@@ -895,21 +897,14 @@ const updateTossStatus = async (req, res) => {
 
     const tossResult = `${winningTeam.teamName} won the toss and elected to ${tossWinnerChoice}`;
 
-    // Construct the update object
-    const updateData = {
-      tossWinnerTeamId,
-      tossWinnerChoice,
-      tossResult,
-    };
-
-    if (tournamentId) {
-      updateData.tournamentId = tournamentId;
-    }
-
     // Find and update the match
     const updatedMatch = await CustomMatch.findOneAndUpdate(
-      { _id: matchId },
-      updateData,
+      { _id: matchId, tournamentId: tournamentId },
+      {
+        tossWinnerTeamId: tossWinnerTeamId,
+        tossWinnerChoice: tossWinnerChoice,
+        tossResult: tossResult,
+      },
       { new: true }
     );
 
@@ -1059,7 +1054,7 @@ const updateStartingPlayerScorecard = async (req, res) => {
       bowlerId,
       strikerId,
       nonStrikerId,
-      // status,
+      status,
     } = req.body;
     const userId = req.user._id;
 
@@ -1101,6 +1096,19 @@ const updateStartingPlayerScorecard = async (req, res) => {
         status: false,
         message: "You are not authorized to update the scorecard of this match",
         statusCode: StatusCodes.FORBIDDEN,
+      });
+    }
+
+    // Ensure the status does not change from not_started to in_progress
+    if (
+      status === enums.matchStatusEnum.not_started ||
+      status === enums.matchStatusEnum.in_progress
+    ) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Cannot change status from not_started to in_progress",
+        statusCode: StatusCodes.BAD_REQUEST,
       });
     }
 
