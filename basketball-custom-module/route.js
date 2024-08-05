@@ -1,0 +1,57 @@
+import express from "express";
+import basketballTournamentController from "./controllers/basketball-tournament.controller.js";
+import basketballTeamController from "./controllers/basketball-team.controller.js";
+import { verifyToken } from "../middleware/verifyToken.js";
+import multer from "multer";
+import validate from "../middleware/validate.js";
+import validation from "./validation/validation.js";
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+const route = express.Router();
+
+// ============================== For Tournament List ===========================================
+route.post(
+  "/tournament/add",
+  verifyToken,
+  upload.fields([
+    { name: "tournamentImages", maxCount: 1 },
+    { name: "tournamentBackgroundImage", maxCount: 1 },
+  ]),
+  basketballTournamentController.createBasketballTournament
+);
+
+route.get("/tournament/list", basketballTournamentController.basketballTournamentList);
+
+route.post(
+  "/tournament/update/:id",
+  verifyToken,
+  upload.fields([
+    { name: "tournamentImages", maxCount: 1 },
+    { name: "tournamentBackgroundImage", maxCount: 1 },
+  ]),
+  basketballTournamentController.updateBasketballTournament
+);
+
+// ============================== For Team List ===========================================
+route.post(
+  "/team/add",
+  upload.single("teamImage"),
+  verifyToken,
+  validate(validation.createBasketballTeam),
+  basketballTeamController.createBasketballTeam
+);
+
+route.get("/team/list", verifyToken, basketballTeamController.basketballTeamList);
+
+route.post(
+  "/team/update/:id",
+  upload.single("teamImage"),
+  verifyToken,
+  validate(validation.updateBasketballTeam),
+  basketballTeamController.updateBasketballTeam
+);
+
+route.delete("/team/delete/:id", verifyToken, basketballTeamController.deleteBasketballTeam);
+
+export default route;

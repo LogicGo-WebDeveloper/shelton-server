@@ -25,7 +25,7 @@ const createTeam = {
     teamName: Joi.string().required(),
     city: Joi.string().required(),
     teamImage: Joi.string().optional(),
-    tournamentId: Joi.string(),
+    tournamentId: Joi.string().optional(),
   }),
 };
 
