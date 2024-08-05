@@ -84,14 +84,16 @@ const listTeams = async (req, res) => {
     });
   }
 
-  const findTournament = await CustomTournament.findById(tournamentId);
-  if (!findTournament) {
-    return apiResponse({
-      res,
-      status: true,
-      message: "Tournament not found",
-      statusCode: StatusCodes.NOT_FOUND,
-    });
+  if (tournamentId) {
+    const findTournament = await CustomTournament.findById(tournamentId);
+    if (!findTournament) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Tournament not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
   }
 
   try {
