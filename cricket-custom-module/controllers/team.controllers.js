@@ -13,7 +13,7 @@ const createTeam = async (req, res, next) => {
     const userId = req.user._id;
     let url = await uploadSingleFile(req, folderName);
 
-    const validation = validateObjectIds({ tournamentId, city });
+    const validation = validateObjectIds({ city });
     if (!validation.isValid) {
       return apiResponse({
         res,
@@ -24,6 +24,15 @@ const createTeam = async (req, res, next) => {
     }
 
     if (tournamentId) {
+      const validation = validateObjectIds({ tournamentId });
+      if (!validation.isValid) {
+        return apiResponse({
+          res,
+          status: false,
+          message: validation.message,
+          statusCode: StatusCodes.BAD_REQUEST,
+        });
+      }
       const tournament = await CustomTournament.findById(tournamentId);
       if (!tournament) {
         return apiResponse({
@@ -50,7 +59,7 @@ const createTeam = async (req, res, next) => {
       city,
       teamImage: url ? url : "",
       createdBy: userId,
-      tournamentId: tournamentId ? tournamentId : "",
+      tournamentId: tournamentId ? tournamentId : null,
     });
 
     return apiResponse({
