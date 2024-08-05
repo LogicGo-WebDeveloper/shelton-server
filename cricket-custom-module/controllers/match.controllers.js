@@ -1074,7 +1074,8 @@ const updateStartingPlayerScorecard = async (req, res) => {
 
     // Check if the user is authorized
     const match = await CustomMatch.findById(matchId);
-    if (match.createdBy.toString() !== userId.toString()) {
+    // console.log(match);
+    if (match?.createdBy?.toString() != userId?.toString()) {
       return apiResponse({
         res,
         status: false,
@@ -1085,8 +1086,8 @@ const updateStartingPlayerScorecard = async (req, res) => {
 
     // Ensure the status does not change from not_started to in_progress
     if (
-      status !== enums.matchStatusEnum.not_started &&
-      status !== enums.matchStatusEnum.in_progress
+      status === enums.matchStatusEnum.not_started ||
+      status === enums.matchStatusEnum.in_progress
     ) {
       return apiResponse({
         res,
