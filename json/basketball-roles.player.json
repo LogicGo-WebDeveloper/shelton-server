@@ -1,0 +1,14 @@
+[
+    {
+        "role": "Center",
+        "image": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/center"
+    },
+    {
+        "role": "Forward",
+        "image": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/forward"
+    },
+    {
+        "role": "Guard",
+        "image": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/guards"
+    }
+]

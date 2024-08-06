@@ -1035,18 +1035,12 @@ const setupWebSocket = (server) => {
               const bowlingTeamPlayers =
                 existingScorecard.scorecard[bowlingTeamKey].players;
 
-              // const totalRunsssss = teamPlayers.reduce((acc, batters) => {
-              //   if (teamRuns.bye || teamRuns.legBye) {
-              //     return acc + (teamRuns.runs || 0);
-              //   } else {
-              //     return acc + (batters.runs || 0);
-              //   }
-              // }, 0)
-
               let totalRuns = match[`${battingTeamKey}Score`]["runs"];
               if (teamRuns.bye || teamRuns.legBye) {
                 totalRuns = totalRuns + (teamRuns.runs || 0);
               } else if (bowlers.wides) {
+                totalRuns = totalRuns + (teamRuns.runs || 0);
+              } else if (bowlers.noBalls) {
                 totalRuns = totalRuns + (teamRuns.runs || 0);
               } else {
                 totalRuns = totalRuns + (batters.runs || 0);

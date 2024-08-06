@@ -20,6 +20,7 @@ import {
   InsertSportList,
   InsertTournamentCategory,
   InsertTournamentWinningPrize,
+  InsertBasketballPlayerRole,
 } from "./middleware/common.js";
 
 const app = express();
@@ -56,6 +57,7 @@ InsertBannerList();
 InsertPlayerRole();
 playerOutReasons();
 InsertMatchStatus();
+InsertBasketballPlayerRole();
 
 app.use("/api/auth", route.authRoute);
 app.use("/api/v1/sport", route.sportRoute);

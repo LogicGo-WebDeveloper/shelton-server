@@ -6,6 +6,7 @@ import { verifyToken } from "../middleware/verifyToken.js";
 import multer from "multer";
 import validate from "../middleware/validate.js";
 import validation from "./validation/validation.js";
+import basketballCommonControllers from "./controllers/basketball-common.controllers.js";
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -75,5 +76,10 @@ route.post(
 );
 
 route.delete("/player/delete/:id", verifyToken, basketballPlayerController.deleteBasketballPlayer);
+
+
+
+// ============================== For common api routes =========================================
+route.get("/player/roles", basketballCommonControllers.getBasketballPlayerRoles);
 
 export default route;
