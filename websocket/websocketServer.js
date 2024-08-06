@@ -1223,6 +1223,8 @@ const setupWebSocket = (server) => {
                 awayTeamId: matches.awayTeamId,
               });
 
+              console.log(playerOvers);
+
               if (playerOvers) {
                 // Ensure data and incidents are initialized
                 if (!playerOvers.data) {
@@ -1242,18 +1244,18 @@ const setupWebSocket = (server) => {
                       $push: { "data.incidents": newIncident },
                     }
                   );
-
-                  await CustomPlayerOvers.updateOne(
-                    {
-                      _id: playerOvers._id,
-                    },
-                    {
-                      $set: {
-                        bowlerId: bowlers.playerId,
-                      },
-                    }
-                  );
                 }
+
+                await CustomPlayerOvers.updateOne(
+                  {
+                    _id: playerOvers._id,
+                  },
+                  {
+                    $set: {
+                      bowlerId: bowlers.playerId,
+                    },
+                  }
+                );
 
                 if (
                   (bowlers.balls == false && bowlers.wides) ||
