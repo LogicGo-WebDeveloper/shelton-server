@@ -1,6 +1,7 @@
 import express from "express";
 import basketballTournamentController from "./controllers/basketball-tournament.controller.js";
 import basketballTeamController from "./controllers/basketball-team.controller.js";
+import basketballPlayerController from "./controllers/basketball-player.controllers.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import multer from "multer";
 import validate from "../middleware/validate.js";
@@ -53,5 +54,26 @@ route.post(
 );
 
 route.delete("/team/delete/:id", verifyToken, basketballTeamController.deleteBasketballTeam);
+
+// ============================== For Player List ===========================================
+route.post(
+  "/player/add",
+  verifyToken,
+  upload.single("image"),
+  validate(validation.createBasketballPlayer),
+  basketballPlayerController.createBasketballPlayer
+);
+
+route.get("/player/list", verifyToken, basketballPlayerController.BasketballPlayersList);
+
+route.post(
+  "/player/update/:id",
+  verifyToken,
+  upload.single("image"),
+  validate(validation.updateBasketballPlayer),
+  basketballPlayerController.updateBasketballPlayer
+);
+
+route.delete("/player/delete/:id", verifyToken, basketballPlayerController.deleteBasketballPlayer);
 
 export default route;

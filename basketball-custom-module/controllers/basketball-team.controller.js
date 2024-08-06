@@ -84,17 +84,16 @@ const basketballTeamList = async (req, res) => {
   const userId = req.user._id;
   const { tournamentId } = req.query;
 
-  const validation = validateObjectIds({ tournamentId });
-  if (!validation.isValid) {
-    return apiResponse({
-      res,
-      status: false,
-      message: validation.message,
-      statusCode: StatusCodes.BAD_REQUEST,
-    });
-  }
-
   if (tournamentId) {
+    const validation = validateObjectIds({ tournamentId });
+    if (!validation.isValid) {
+        return apiResponse({
+            res,
+            status: false,
+            message: validation.message,
+            statusCode: StatusCodes.BAD_REQUEST,
+        });
+    }
     const findTournament = await BasketballCustomTournament.findById(tournamentId);
     if (!findTournament) {
       return apiResponse({
@@ -107,14 +106,17 @@ const basketballTeamList = async (req, res) => {
   }
 
   try {
-    const teams = await CustomBasketballTeam.find({
-      tournamentId,
-      createdBy: userId,
-    }).populate({
+    const query = { createdBy: userId };
+    if (tournamentId) {
+      query.tournamentId = tournamentId;
+    }
+
+    const teams = await CustomBasketballTeam.find(query).populate({
       path: "city",
       model: "CustomCityList",
       select: "city",
     });
+
     return apiResponse({
       res,
       status: true,

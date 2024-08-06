@@ -34,8 +34,30 @@ const updateBasketballTeam = {
   }),
 };
 
+const createBasketballPlayer = {
+  body: Joi.object().keys({
+    playerName: Joi.string().required(),
+    jerseyNumber: Joi.number().required(),
+    role: Joi.string().required(),
+    image: Joi.string().optional(),
+    teamId: Joi.string().required(),
+  }),
+};
+
+const updateBasketballPlayer = {
+  body: Joi.object().keys({
+    playerName: Joi.string(),
+    jerseyNumber: Joi.number(),
+    role: Joi.string(),
+    image: Joi.any().optional(),
+    teamId: Joi.string(),
+  }),
+};
+
 export default {
   createBasketballTournament,
   createBasketballTeam,
   updateBasketballTeam,
+  createBasketballPlayer,
+  updateBasketballPlayer,
 };
