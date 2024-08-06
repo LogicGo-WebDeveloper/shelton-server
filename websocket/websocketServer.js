@@ -1204,7 +1204,7 @@ const setupWebSocket = (server) => {
                 wideBall: bowlers.wides,
                 lbBall: teamRuns.legBye,
                 byeBall: teamRuns.bye,
-                isOut: bowlers.out,
+                isOut: bowlers.wickets,
                 oversNumber: currentOvers,
                 battingTeamId: existingScorecard.scorecard[battingTeamKey].id,
                 isOvers: true,
