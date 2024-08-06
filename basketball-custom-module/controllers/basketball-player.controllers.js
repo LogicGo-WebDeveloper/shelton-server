@@ -4,7 +4,7 @@ import CustomBasketballPlayers from "../models/basketball-player.models.js";
 import CustomBasketballTeam from "../models/basketball-team.models.js";
 import { updateFile, uploadSingleFile } from "../../features/aws/service.js";
 import { validateObjectIds } from "../../cricket-custom-module/utils/utils.js";
-import { CustomPlayerRole } from "../../cricket-custom-module/models/common.models.js";
+import { CustomBasketballPlayerRole } from "../models/basketball-common.models.js";
 
 const createBasketballPlayer = async (req, res, next) => {
   const { playerName, jerseyNumber, role, teamId } = req.body;
@@ -23,7 +23,7 @@ const createBasketballPlayer = async (req, res, next) => {
   }
 
   const team = await CustomBasketballTeam.findById(teamId);
-  const playerRole = await CustomPlayerRole.findById(role);
+  const playerRole = await CustomBasketballPlayerRole.findById(role);
   if (!team) {
     return apiResponse({
       res,
@@ -99,9 +99,10 @@ const BasketballPlayersList = async (req, res) => {
       createdBy: userId,
     }).populate({
       path: "role",
-      model: "CustomPlayerRole",
+      model: "CustomBasketballPlayerRole",
       select: "role",
-    });
+    })
+    
     return apiResponse({
       res,
       status: true,
@@ -122,6 +123,7 @@ const BasketballPlayersList = async (req, res) => {
 const updateBasketballPlayer = async (req, res, next) => {
   const { id: playerId } = req.params;
   const { playerName, jerseyNumber, role, teamId } = req.body;
+  const userId = req.user._id;
 
   if (role) {
     const validation = validateObjectIds({ role });
@@ -133,7 +135,7 @@ const updateBasketballPlayer = async (req, res, next) => {
         statusCode: StatusCodes.BAD_REQUEST,
       });
     }
-    const playerRole = await CustomPlayerRole.findById(role);
+    const playerRole = await CustomBasketballPlayerRole.findById(role);
     if (!playerRole) {
       return apiResponse({
         res,
@@ -183,6 +185,16 @@ const updateBasketballPlayer = async (req, res, next) => {
         status: false,
         message: "Player not found",
         statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Check if the user updating the player is the same as the one who created it
+    if (findDoc.createdBy.toString() !== userId.toString()) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "You are not authorized to update this player",
+        statusCode: StatusCodes.FORBIDDEN,
       });
     }
 
@@ -241,7 +253,6 @@ const deleteBasketballPlayer = async (req, res) => {
 
   try {
     const player = await CustomBasketballPlayers.findById(playerId);
-
     if (!player) {
       return apiResponse({
         res,
