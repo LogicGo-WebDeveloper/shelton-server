@@ -996,7 +996,8 @@ const setupWebSocket = (server) => {
                       Math.floor(currentOvers) + newBallsBowled / 10;
                   }
                 }
-                player.maidens = (player.maidens || 0) + (bowlers.maidens ? 1 : 0);
+                player.maidens =
+                  (player.maidens || 0) + (bowlers.maidens ? 1 : 0);
                 player.runs = (player.runs || 0) + bowlers.runs;
                 player.wickets =
                   (player.wickets || 0) + (bowlers.wickets ? 1 : 0);
@@ -1030,25 +1031,25 @@ const setupWebSocket = (server) => {
               teamKey,
               bowlingTeamKey
             ) => {
-              const teamPlayers = existingScorecard.scorecard[teamKey].players;
+              // const teamPlayers = existingScorecard.scorecard[teamKey].players;
               const bowlingTeamPlayers =
                 existingScorecard.scorecard[bowlingTeamKey].players;
 
-                const totalRunsssss = teamPlayers.reduce((acc, batters) => {
-                  if (teamRuns.bye || teamRuns.legBye) {
-                    return acc + (teamRuns.runs || 0);
-                  } else {
-                    return acc + (batters.runs || 0);
-                  }
-                }, 0)
+              // const totalRunsssss = teamPlayers.reduce((acc, batters) => {
+              //   if (teamRuns.bye || teamRuns.legBye) {
+              //     return acc + (teamRuns.runs || 0);
+              //   } else {
+              //     return acc + (batters.runs || 0);
+              //   }
+              // }, 0)
 
-              let totalRuns = match[`${battingTeamKey}Score`]["runs"]
-              if(teamRuns.bye || teamRuns.legBye){
-                totalRuns = totalRuns + (teamRuns.runs || 0)
-              } else if(bowlers.wides){
-                totalRuns = totalRuns + (teamRuns.runs || 0)
+              let totalRuns = match[`${battingTeamKey}Score`]["runs"];
+              if (teamRuns.bye || teamRuns.legBye) {
+                totalRuns = totalRuns + (teamRuns.runs || 0);
+              } else if (bowlers.wides) {
+                totalRuns = totalRuns + (teamRuns.runs || 0);
               } else {
-                totalRuns = totalRuns + (batters.runs || 0)
+                totalRuns = totalRuns + (batters.runs || 0);
               }
 
               const totalOvers = calculateTotalOvers(bowlingTeamPlayers);
@@ -1166,7 +1167,7 @@ const setupWebSocket = (server) => {
                       {
                         $set: {
                           currentOvers: currentOvers,
-                          totalBalls: 1, // Reset totalBalls to 1 or set the desired value
+                          totalBalls: 0, // Reset totalBalls to 1 or set the desired value
                           "data.incidents": updatedIncidents, // Update the incidents array with the modified data
                         },
                       }
@@ -1203,10 +1204,10 @@ const setupWebSocket = (server) => {
                 battingPlayerId: batters.playerId,
                 bowlerId: bowlers.playerId,
                 balls: totalBalls,
-                runs: batters.runs ? batters.runs : allRuns,
+                runs: bowlers.runs,
                 overs_finished: bowlers.finished,
                 noBall: bowlers.noBalls,
-                whideBall: bowlers.wides,
+                wideBall: bowlers.wides,
                 lbBall: bowlers.legBye,
                 byeBall: teamRuns.bye,
                 isOut: bowlers.out,
@@ -1232,7 +1233,7 @@ const setupWebSocket = (server) => {
                   playerOvers.data.incidents = [];
                 }
 
-                if (bowlers.balls == true) {
+                if (bowlers.balls == true && bowlers.finished == false) {
                   await CustomPlayerOvers.updateOne(
                     {
                       _id: playerOvers._id,
@@ -1250,6 +1251,20 @@ const setupWebSocket = (server) => {
                       $set: {
                         bowlerId: bowlers.playerId,
                       },
+                    }
+                  );
+                }
+
+                if (
+                  (bowlers.balls == false && bowlers.wides) ||
+                  bowlers.noBalls == true
+                ) {
+                  await CustomPlayerOvers.updateOne(
+                    {
+                      _id: playerOvers._id,
+                    },
+                    {
+                      $push: { "data.incidents": newIncident },
                     }
                   );
                 }
