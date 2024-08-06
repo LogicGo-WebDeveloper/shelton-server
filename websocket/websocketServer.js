@@ -1134,7 +1134,7 @@ const setupWebSocket = (server) => {
                 );
               }
 
-              if (bowlers && bowlers.finished === true) {
+              if (bowlers.balls == false && bowlers.finished === true) {
                 try {
                   // Find the document and get the existing incidents array
                   const existingMatchOvers = await CustomPlayerOvers.findOne({
