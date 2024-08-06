@@ -1202,7 +1202,7 @@ const setupWebSocket = (server) => {
                 overs_finished: bowlers.finished,
                 noBall: bowlers.noBalls,
                 wideBall: bowlers.wides,
-                lbBall: bowlers.legBye,
+                lbBall: teamRuns.legBye,
                 byeBall: teamRuns.bye,
                 isOut: bowlers.out,
                 oversNumber: currentOvers,
@@ -1216,8 +1216,6 @@ const setupWebSocket = (server) => {
                 homeTeamId: matches.homeTeamId,
                 awayTeamId: matches.awayTeamId,
               });
-
-              console.log(playerOvers);
 
               if (playerOvers) {
                 // Ensure data and incidents are initialized
