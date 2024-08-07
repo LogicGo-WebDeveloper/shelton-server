@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import CustomMatchScorecard from "../models/matchScorecard.models.js";
 
 export const getHostUrl = (req, middlePath) => {
-    return req.protocol + "://" + req.get("host") + "/images/" +`${middlePath}/`;
+  return req.protocol + "://" + req.get("host") + "/images/" + `${middlePath}/`;
 };
 
 export const validateObjectIds = (ids) => {
@@ -41,7 +41,8 @@ export const updateMatchScorecardDetails = async (request) => {
 
     Object.keys(request.updateScore).forEach((key) => {
       if (scorecard.scorecard[team].players[playerIndex]) {
-        scorecard.scorecard[team].players[playerIndex][key] = request.updateScore[key];
+        scorecard.scorecard[team].players[playerIndex][key] =
+          request.updateScore[key];
       } else {
         console.error(`Player at index ${playerIndex} is undefined`);
       }
@@ -53,7 +54,6 @@ export const updateMatchScorecardDetails = async (request) => {
   }
 };
 
-
 export const validateEntitiesExistence = async (entities) => {
   const results = await Promise.all(
     entities.map(async ({ model, id, name }) => {
@@ -63,4 +63,3 @@ export const validateEntitiesExistence = async (entities) => {
   );
   return results.filter((result) => result !== null);
 };
-  
