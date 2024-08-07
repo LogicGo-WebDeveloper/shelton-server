@@ -1562,11 +1562,6 @@ const setupWebSocket = (server) => {
                   { $set: updateData }
                 );
 
-                (match.powerPlays.ranges = null),
-                  (match.powerPlays.isActive = false),
-                  (match.endInnings.isDeclared = false);
-                match.endInnings.isAllOut = false;
-
                 await match.save();
                 await existingScorecard.save();
 
@@ -1577,52 +1572,79 @@ const setupWebSocket = (server) => {
                 );
 
                 await existingMatchOvers.save();
+
+                const playerImageData = await CustomPlayers.findOne({
+                  _id: batterId,
+                });
+
+                const playingBatters = existingScorecard.scorecard[
+                  battingTeamKey
+                ].players
+
+                  .filter((player) => player.status === "not_out")
+                  .map((player) => ({
+                    name: player.name,
+                    runs: player.runs,
+                    balls: player.balls,
+                    id: player.id,
+                    image: playerImageData?.image ? playerImageData?.image : "",
+                    activeStriker: player.activeStriker,
+                  }));
+
+                const playerOversData = await CustomPlayerOvers.findOne({
+                  matchId: matchId,
+                  homeTeamId: match.homeTeamId,
+                  awayTeamId: match.awayTeamId,
+                })
+                  .populate({
+                    path: "homeTeamId",
+                    model: "CustomTeam",
+                    select: "teamName teamImage",
+                  })
+                  .populate({
+                    path: "awayTeamId",
+                    model: "CustomTeam",
+                    select: "teamName teamImage",
+                  })
+                  .populate({
+                    path: "bowlerId",
+                    model: "CustomPlayers",
+                    select: "playerName role image",
+                    populate: {
+                      path: "role",
+                      model: "CustomPlayerRole",
+                      select: "role",
+                    },
+                  });
+
+                ws.send(
+                  JSON.stringify({
+                    message: "Action updated successfully.",
+                    actionType: data.action,
+                    body: {
+                      matchScore: {
+                        homeTeamScore: match.homeTeamScore,
+                        awayTeamScore: match.awayTeamScore,
+                        noOfOvers: match.noOfOvers,
+                      },
+                      batters: playingBatters,
+                      playerOversData,
+                      powerPlay: {
+                        ranges: match.powerPlays.ranges,
+                        isActive: match.powerPlays.isActive,
+                        message: "Action updated successfully.",
+                      },
+                      endInnings: {
+                        isDeclared: match.endInnings.isDeclared,
+                        isAllOut: match.endInnings.isAllOut,
+                        message: "Action updated successfully.",
+                      },
+                    },
+                    status: true,
+                  })
+                );
               }
             }
-
-            const playerOversData = await CustomPlayerOvers.findOne({
-              matchId: matchId,
-              homeTeamId: match.homeTeamId,
-              awayTeamId: match.awayTeamId,
-            })
-              .populate({
-                path: "matchId",
-                model: "CustomMatch",
-                select:
-                  "homeTeamScore awayTeamScore powerPlays endInnings noOfOvers",
-              })
-              .populate({
-                path: "homeTeamId",
-                model: "CustomTeam",
-                select: "teamName teamImage",
-              })
-              .populate({
-                path: "awayTeamId",
-                model: "CustomTeam",
-                select: "teamName teamImage",
-              })
-              .populate({
-                path: "bowlerId",
-                model: "CustomPlayers",
-                select: "playerName role image",
-                populate: {
-                  path: "role",
-                  model: "CustomPlayerRole",
-                  select: "role",
-                },
-              });
-
-            ws.send(
-              JSON.stringify({
-                message: "Action updated successfully.",
-                actionType: data.action,
-                body: {
-                  matchId: matchId,
-                  playerOversData,
-                },
-                status: true,
-              })
-            );
           } catch (error) {
             console.error("Failed to update score:", error.message);
             ws.send(
