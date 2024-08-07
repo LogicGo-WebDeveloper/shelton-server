@@ -20,7 +20,7 @@ const createBasketballTeam = {
   body: Joi.object().keys({
     teamName: Joi.string().required(),
     city: Joi.string().required(),
-    teamImage: Joi.string().optional(),
+    teamImage: Joi.string().allow(null, "").optional(),
     tournamentId: Joi.string(),
   }),
 };

@@ -86,7 +86,7 @@ route.post(
   basketballMatchControllers.createBasketballMatch
 );
 
-route.get("/match/list", verifyToken, basketballMatchControllers.listBasketballMatches);
+route.get("/match/list", basketballMatchControllers.listBasketballMatches);
 
 route.post(
   "/match/update/:id",
@@ -97,6 +97,7 @@ route.post(
 
 route.delete("/match/delete/:id", verifyToken, basketballMatchControllers.deleteBasketballMatch);
 
+route.get("/match/detail/:id", basketballMatchControllers.basketballDetailMatch);
 
 // ============================== For common api routes =========================================
 route.get("/player/roles", basketballCommonControllers.getBasketballPlayerRoles);
