@@ -9,9 +9,9 @@ import playerRoute from "./features/player/route.js";
 import matchesRoute from "./features/matches/route.js";
 import customBasketballRoute from "./basketball-custom-module/route.js";
 import favouriteRoute from "./features/favourite/route.js";
+import customCricketRoute from "./cricket-custom-module/route.js"
 
 /**Custom routes */
-import customCricketRoute from "./cricket-custom-module/route.js";
 import customFootballRoute from "./football-custom-module/route/football.route.js";
 
 export default {
