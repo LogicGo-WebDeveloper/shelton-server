@@ -1134,7 +1134,7 @@ const setupWebSocket = (server) => {
                 );
               }
 
-              if (bowlers && bowlers.finished === true) {
+              if (bowlers.balls == false && bowlers.finished === true) {
                 try {
                   // Find the document and get the existing incidents array
                   const existingMatchOvers = await CustomPlayerOvers.findOne({
@@ -1202,7 +1202,7 @@ const setupWebSocket = (server) => {
                 overs_finished: bowlers.finished,
                 noBall: bowlers.noBalls,
                 wideBall: bowlers.wides,
-                lbBall: bowlers.legBye,
+                lbBall: teamRuns.legBye,
                 byeBall: teamRuns.bye,
                 isOut: bowlers.out,
                 oversNumber: currentOvers,
@@ -1236,18 +1236,18 @@ const setupWebSocket = (server) => {
                       $push: { "data.incidents": newIncident },
                     }
                   );
-
-                  await CustomPlayerOvers.updateOne(
-                    {
-                      _id: playerOvers._id,
-                    },
-                    {
-                      $set: {
-                        bowlerId: bowlers.playerId,
-                      },
-                    }
-                  );
                 }
+
+                await CustomPlayerOvers.updateOne(
+                  {
+                    _id: playerOvers._id,
+                  },
+                  {
+                    $set: {
+                      bowlerId: bowlers.playerId,
+                    },
+                  }
+                );
 
                 if (
                   (bowlers.balls == false && bowlers.wides) ||
