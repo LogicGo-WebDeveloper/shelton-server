@@ -1269,7 +1269,7 @@ const setupWebSocket = (server) => {
                   homeTeamId: matches.homeTeamId,
                   awayTeamId: matches.awayTeamId,
                   bowlerId: bowlers.playerId,
-                  data: { incidents: [newIncident] },
+                  data: { incidents: [] },
                 });
               }
 
