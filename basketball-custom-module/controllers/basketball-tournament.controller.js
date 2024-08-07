@@ -249,6 +249,7 @@ const basketballTournamentList = async (req, res) => {
 };
 
 const updateBasketballTournament = async (req, res) => {
+  console.log("updateBasketballTournament");
   const { id } = req.params;
   const {
     sportId,

@@ -4,7 +4,7 @@ import CustomBasketballMatch from "../models/basketball-match.models.js";
 import CustomBasketballTeam from "../models/basketball-team.models.js";
 import CustomBasketballPlayers from "../models/basketball-player.models.js";
 import mongoose from "mongoose";
-import enums from "../../config/enum.js";
+import helper from "../../helper/common.js";
 import { validateObjectIds, validateEntitiesExistence } from "../../cricket-custom-module/utils/utils.js";
 import CustomBasketballTournament from "../models/basketball-tournament.models.js";
 
@@ -375,10 +375,48 @@ const deleteBasketballMatch = async (req, res) => {
 
 const listBasketballMatches = async (req, res) => {
   try {
-    const matches = await CustomBasketballMatch.find().populate([
-      { path: "homeTeamId", model: "CustomBasketballTeam", select: "teamName teamImage" },
-      { path: "awayTeamId", model: "CustomBasketballTeam", select: "teamName teamImage" },
-    ]);
+    const { page = 1, limit = 10, tournamentId, isQuickMatch } = req.query;
+    const authHeader = req.headers?.authorization;
+    const token = authHeader ? authHeader.split(" ")[1] : null;
+    let userId = null;
+
+    if (token) {
+      try {
+        const decodedToken = await helper.verifyToken(token);
+        userId = decodedToken?.userId;
+      } catch (error) {
+        return apiResponse({
+          res,
+          statusCode: StatusCodes.UNAUTHORIZED,
+          status: false,
+          message: "Unauthorized access",
+        });
+      }
+    }
+
+    let condition = {};
+
+    if (userId) {
+      condition.createdBy = userId;
+    }
+
+    if (tournamentId && isQuickMatch !== "true") {
+      condition.tournamentId = tournamentId;
+    }
+
+    if (isQuickMatch === "true" && !tournamentId) {
+      condition.tournamentId = { $in: [null] };
+    }
+
+    const matches = await CustomBasketballMatch.find(condition)
+      .populate([
+        { path: "homeTeamId", model: "CustomBasketballTeam", select: "teamName teamImage" },
+        { path: "awayTeamId", model: "CustomBasketballTeam", select: "teamName teamImage" },
+      ])
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    const totalMatches = await CustomBasketballMatch.countDocuments(condition);
 
     const transformedMatches = matches.map(match => {
       const matchObject = match.toObject();
@@ -387,15 +425,81 @@ const listBasketballMatches = async (req, res) => {
         homeTeam: matchObject.homeTeamId,
         awayTeam: matchObject.awayTeamId,
       };
-    }).map(({ homeTeamId, awayTeamId, ...rest }) => rest); 
+    }).map(({ homeTeamId, awayTeamId, ...rest }) => rest);
 
     return apiResponse({
       res,
       status: true,
       message: "Matches fetched successfully",
       statusCode: StatusCodes.OK,
-      data: transformedMatches,
+      data: {
+        matches: transformedMatches,
+        totalPages: Math.ceil(totalMatches / limit),
+        currentPage: parseInt(page),
+      },
     });
+  } catch (err) {
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const basketballDetailMatch = async (req, res) => {
+  try {
+    const { id: matchId } = req.params;
+    
+    const validation = validateObjectIds({ matchId });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    const match = await CustomBasketballMatch.findById(matchId).populate([
+      { path: "homeTeamId", model: "CustomBasketballTeam", select: "teamName teamImage" },
+      { path: "awayTeamId", model: "CustomBasketballTeam", select: "teamName teamImage" },
+    ]);
+    if (!match) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    const matchDetails = {
+      homeTeam: {
+        teamName: match.homeTeamId.teamName,
+        teamImage: match.homeTeamId.teamImage,
+        _id: match.homeTeamId._id,
+      },
+      awayTeam: {
+        teamName: match.awayTeamId.teamName,
+        teamImage: match.awayTeamId.teamImage,
+        _id: match.awayTeamId._id,
+      },
+      homeTeamScore: match.homeTeamScore,
+      awayTeamScore: match.awayTeamScore,
+      status: match.status,
+      location: match.location,
+    };
+
+    return apiResponse({
+      res,
+      status: true,
+      message: "Match fetched successfully",
+      statusCode: StatusCodes.OK,
+      data: matchDetails,
+    });
+
   } catch (err) {
     return apiResponse({
       res,
@@ -411,4 +515,5 @@ export default {
   updateBasketballMatch,
   deleteBasketballMatch,
   listBasketballMatches,
+  basketballDetailMatch
 };
