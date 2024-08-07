@@ -67,6 +67,7 @@ app.use("/api/v1/tournament", route.tournamentRoute);
 app.use("/api/v1/player", route.playerRoute);
 app.use("/api/v1/event", route.matchesRoute);
 app.use("/api/v1/custom", route.customCricketRoute);
+app.use("/api/v1/custom/football", route.customFootballRoute);
 app.use("/api/v1/favourite", route.favouriteRoute);
 
 app.use(errorHandler);

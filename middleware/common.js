@@ -238,7 +238,10 @@ export const playerOutReasons = async () => {
 export const InsertMatchStatus = async () => {
   const statusNamesInJson = statusList.map((status) => status.status);
   for (const status of statusList) {
-    const exists = await CustomMatchStatus.findOne({ status: status.status });
+    const exists = await CustomMatchStatus.findOne({
+      status: status.status,
+      icon: status.icon,
+    });
     if (!exists) {
       const newStatus = new CustomMatchStatus(status);
       await newStatus.save();

@@ -1,20 +1,26 @@
 [
     {
-        "status": "Drinks"
+        "status": "Drinks",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/drinks"
     },
     {
-        "status": "Timed Out"
+        "status": "Timed Out",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/match_timed_out"
     },
     {
-        "status": "Lunch"
+        "status": "Lunch",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/lunch"
     },
     {
-        "status": "Stumps"
+        "status": "Stumps",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/stump"
     },
     {
-        "status": "Rain"
+        "status": "Rain",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/rain"
     },
     {
-        "status": "Others"
+        "status": "Others",
+        "icon": "https://guardianshot.blr1.cdn.digitaloceanspaces.com/olympium/icons/others"
     }
 ]

@@ -961,7 +961,7 @@ const setupWebSocket = (server) => {
                   existingScorecard.scorecard[battingTeamKey].players[
                     batterIndex
                   ];
-                if (!teamRuns.bye && !teamRuns.legBye) {
+                if (!teamRuns.bye && !teamRuns.legBye && !bowlers.wides) {
                   player.runs = (player.runs || 0) + batters.runs;
                   player.balls = (player.balls || 0) + (batters.balls ? 1 : 0);
                   player.fours = (player.fours || 0) + (batters.fours ? 1 : 0);
@@ -1031,16 +1031,20 @@ const setupWebSocket = (server) => {
               teamKey,
               bowlingTeamKey
             ) => {
-              const teamPlayers = existingScorecard.scorecard[teamKey].players;
+              // const teamPlayers = existingScorecard.scorecard[teamKey].players;
               const bowlingTeamPlayers =
                 existingScorecard.scorecard[bowlingTeamKey].players;
-              const totalRuns = teamPlayers.reduce((acc, batters) => {
-                if (teamRuns.bye || teamRuns.legBye) {
-                  return acc + (teamRuns.runs || 0);
-                } else {
-                  return acc + (batters.runs || 0);
-                }
-              }, 0);
+
+              let totalRuns = match[`${battingTeamKey}Score`]["runs"];
+              if (teamRuns.bye || teamRuns.legBye) {
+                totalRuns = totalRuns + (teamRuns.runs || 0);
+              } else if (bowlers.wides) {
+                totalRuns = totalRuns + (teamRuns.runs || 0);
+              } else if (bowlers.noBalls) {
+                totalRuns = totalRuns + (teamRuns.runs || 0);
+              } else {
+                totalRuns = totalRuns + (batters.runs || 0);
+              }
 
               const totalOvers = calculateTotalOvers(bowlingTeamPlayers);
               const totalWickets = bowlingTeamPlayers.reduce(
@@ -1157,7 +1161,7 @@ const setupWebSocket = (server) => {
                       {
                         $set: {
                           currentOvers: currentOvers,
-                          totalBalls: 1, // Reset totalBalls to 1 or set the desired value
+                          totalBalls: 0, // Reset totalBalls to 1 or set the desired value
                           "data.incidents": updatedIncidents, // Update the incidents array with the modified data
                         },
                       }
@@ -1194,10 +1198,10 @@ const setupWebSocket = (server) => {
                 battingPlayerId: batters.playerId,
                 bowlerId: bowlers.playerId,
                 balls: totalBalls,
-                runs: batters.runs ? batters.runs : allRuns,
+                runs: bowlers.runs,
                 overs_finished: bowlers.finished,
                 noBall: bowlers.noBalls,
-                whideBall: bowlers.wides,
+                wideBall: bowlers.wides,
                 lbBall: bowlers.legBye,
                 byeBall: teamRuns.bye,
                 isOut: bowlers.out,
@@ -1223,7 +1227,7 @@ const setupWebSocket = (server) => {
                   playerOvers.data.incidents = [];
                 }
 
-                if (bowlers.balls == true) {
+                if (bowlers.balls == true && bowlers.finished == false) {
                   await CustomPlayerOvers.updateOne(
                     {
                       _id: playerOvers._id,
@@ -1241,6 +1245,20 @@ const setupWebSocket = (server) => {
                       $set: {
                         bowlerId: bowlers.playerId,
                       },
+                    }
+                  );
+                }
+
+                if (
+                  (bowlers.balls == false && bowlers.wides) ||
+                  bowlers.noBalls == true
+                ) {
+                  await CustomPlayerOvers.updateOne(
+                    {
+                      _id: playerOvers._id,
+                    },
+                    {
+                      $push: { "data.incidents": newIncident },
                     }
                   );
                 }
@@ -1357,7 +1375,7 @@ const setupWebSocket = (server) => {
           break;
         case "undo":
           try {
-            const { teamId, playerId, matchId } = data;
+            const { batterId, matchId, bowlerId } = data;
 
             const match = await CustomMatch.findOne({ _id: matchId });
             if (!match) {
@@ -1373,8 +1391,8 @@ const setupWebSocket = (server) => {
             }
 
             const requiredFields = [
-              validateField("teamId", teamId, "string"),
-              validateField("playerId", playerId, "string"),
+              validateField("bowlerId", bowlerId, "string"),
+              validateField("batterId", batterId, "string"),
               validateField("matchId", matchId, "string"),
             ].filter((error) => error !== null);
 
@@ -1425,64 +1443,160 @@ const setupWebSocket = (server) => {
             if (existingMatchOvers.data) {
               if (Array.isArray(existingMatchOvers.data.incidents)) {
                 const incidents = existingMatchOvers.data.incidents;
+
+                const lastIncidentRuns = incidents[incidents.length - 1].runs;
+
+                const battingTeamKey =
+                  existingScorecard.scorecard.homeTeam.players.some(
+                    (player) => player.id.toString() === batterId
+                  )
+                    ? "homeTeam"
+                    : "awayTeam";
+                const bowlingTeamKey =
+                  battingTeamKey === "homeTeam" ? "awayTeam" : "homeTeam";
+
+                const batterIndex = existingScorecard.scorecard[
+                  battingTeamKey
+                ].players.findIndex(
+                  (player) => player.id.toString() === batterId
+                );
+
+                if (batterIndex !== -1) {
+                  const player =
+                    existingScorecard.scorecard[battingTeamKey].players[
+                      batterIndex
+                    ];
+
+                  player.runs = player.runs - lastIncidentRuns;
+                  player.balls = player.balls > 0 ? player.balls - 1 : 0;
+                  player.fours = player.fours > 0 ? player.fours - 1 : 0;
+                  player.sixes = player.sixes > 0 ? player.sixes - 1 : 0;
+                  player.outType = player.outType ? null : null;
+                  player.wickets = player.wickets > 0 ? player.wickets - 1 : 0;
+
+                  player.wicketByFielder = player.wicketByFielder ? null : null;
+                  player.status =
+                    player.status === enums.matchScorecardStatusEnum.not_out
+                      ? enums.matchScorecardStatusEnum.yet_to_bat
+                      : enums.matchScorecardStatusEnum.not_out;
+                }
+
+                const bowlerIndex = existingScorecard.scorecard[
+                  bowlingTeamKey
+                ].players.findIndex(
+                  (player) => player.id.toString() === bowlerId
+                );
+
+                if (bowlerIndex !== -1) {
+                  const player =
+                    existingScorecard.scorecard[bowlingTeamKey].players[
+                      bowlerIndex
+                    ];
+
+                  (player.overs =
+                    player.overs > 0
+                      ? Number((player.overs - 0.1).toFixed(1))
+                      : 0),
+                    (player.maidens =
+                      player.maidens > 0 ? player.maidens - 1 : 0);
+                  player.runs = player.runs - lastIncidentRuns;
+                  player.wickets = player.wickets > 0 ? player.wickets - 1 : 0;
+                  player.noBalls = player.noBalls > 0 ? player.noBalls - 1 : 0;
+                  player.wides = player.wides > 0 ? player.wides - 1 : 0;
+                  player.balls = player.balls > 0 ? player.balls - 1 : 0;
+                  player.wicketByFielder = player.wicketByFielder ? null : null;
+                  player.outType = player.outType ? null : null;
+                  player.status =
+                    player.status === enums.matchScorecardStatusEnum.not_out
+                      ? enums.matchScorecardStatusEnum.yet_to_bat
+                      : enums.matchScorecardStatusEnum.not_out;
+                }
+
+                const bowlingTeamStats = existingScorecard.scorecard[
+                  bowlingTeamKey
+                ].players.reduce(
+                  (acc, player) => {
+                    acc.wickets += player.wickets || 0;
+                    acc.overs += player.overs || 0;
+                    return acc;
+                  },
+                  { wickets: 0, overs: 0 }
+                );
+
+                const battingTeamPlayers =
+                  existingScorecard.scorecard[battingTeamKey].players;
+                const battingTeamScore = battingTeamPlayers.reduce(
+                  (acc, player) => {
+                    acc.runs += player.runs;
+                    return acc;
+                  },
+                  {
+                    runs: 0,
+                    overs: bowlingTeamStats.overs,
+                    wickets: bowlingTeamStats.wickets,
+                  }
+                );
+
+                const updateData = {
+                  [`${battingTeamKey}Score.runs`]: battingTeamScore.runs,
+                  [`${battingTeamKey}Score.overs`]: battingTeamScore.overs,
+                  [`${battingTeamKey}Score.wickets`]: battingTeamScore.wickets,
+                };
+
+                await CustomMatch.updateOne(
+                  { _id: matchId },
+                  { $set: updateData }
+                );
+
+                await match.save();
+                await existingScorecard.save();
+
                 incidents.pop();
-                existingMatchOvers.currentOvers =
-                  existingMatchOvers.currentOvers - 1;
                 await CustomPlayerOvers.updateOne(
                   { _id: existingMatchOvers._id },
                   { $set: { "data.incidents": incidents } }
                 );
+
+                await existingMatchOvers.save();
               }
             }
 
-            if (teamId && matchId && playerId) {
-              let teamPlayers;
-              if (existingScorecard.scorecard.homeTeam.id == teamId) {
-                teamPlayers = existingScorecard.scorecard.homeTeam.players;
-              } else if (existingScorecard.scorecard.awayTeam.id == teamId) {
-                teamPlayers = existingScorecard.scorecard.awayTeam.players;
-              } else {
-                ws.send(
-                  JSON.stringify({
-                    message: "Team not found.",
-                    actionType: data.action,
-                    body: null,
-                    status: false,
-                  })
-                );
-                return;
-              }
-
-              const lastIndex = teamPlayers
-                .map((p) => p.id.toString())
-                .lastIndexOf(playerId);
-
-              teamPlayers.splice(data, 1);
-
-              if (lastIndex === -1) {
-                ws.send(
-                  JSON.stringify({
-                    message: "Player not found.",
-                    actionType: data.action,
-                    body: null,
-                    status: false,
-                  })
-                );
-                return;
-              }
-
-              teamPlayers.splice(lastIndex, 1);
-
-              await existingScorecard.save();
-
-              ws.send(
-                JSON.stringify({
-                  message: "Action updated successfully.",
-                  actionType: data.action,
-                  status: true,
-                })
-              );
-            }
+            const playerOversData = await CustomPlayerOvers.findOne({
+              matchId: matchId,
+              homeTeamId: match.homeTeamId,
+              awayTeamId: match.awayTeamId,
+            })
+              .populate({
+                path: "homeTeamId",
+                model: "CustomTeam",
+                select: "teamName teamImage",
+              })
+              .populate({
+                path: "awayTeamId",
+                model: "CustomTeam",
+                select: "teamName teamImage",
+              })
+              .populate({
+                path: "bowlerId",
+                model: "CustomPlayers",
+                select: "playerName role image",
+                populate: {
+                  path: "role",
+                  model: "CustomPlayerRole",
+                  select: "role",
+                },
+              });
+            ws.send(
+              JSON.stringify({
+                message: "Action updated successfully.",
+                actionType: data.action,
+                body: {
+                  matchId: matchId,
+                  playerOversData,
+                },
+                status: true,
+              })
+            );
           } catch (error) {
             console.error("Failed to update score:", error.message);
             ws.send(

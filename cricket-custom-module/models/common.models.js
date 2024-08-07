@@ -40,6 +40,7 @@ const playerRoleSchema = new mongoose.Schema({
 // Match status
 const matchStatusSchema = new mongoose.Schema({
   status: String,
+  icon: String,
 });
 
 // Match official schema
