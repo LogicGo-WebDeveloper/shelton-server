@@ -21,7 +21,7 @@ const createBasketballMatch = async (req, res) => {
       dateTime,
       homeTeamPlayers,
       awayTeamPlayers,
-
+      status,
     } = req.body;
     const userId = req.user._id;
 
@@ -131,7 +131,7 @@ const createBasketballMatch = async (req, res) => {
       dateTime,
       homeTeamPlayers,
       awayTeamPlayers,
-      status: enums.matchStatusEnum.not_started,
+      status,
       createdBy: userId,
     });
 
@@ -155,182 +155,175 @@ const createBasketballMatch = async (req, res) => {
 };
 
 const updateBasketballMatch = async (req, res) => {
-    try {   
-      const { id: matchId } = req.params;
-      
-      const {
-        homeTeamId,
-        awayTeamId,
-        period,
-        eachLasting,
-        location,
-        gameContractor,
-        dateTime,
-        homeTeamPlayers,
-        awayTeamPlayers,
-      } = req.body;
-      const userId = req.user._id;
-  
-      // Find match
-      const match = await CustomBasketballMatch.findById({_id: matchId});
-      if (!match) {
-        return apiResponse({
-          res,
-          status: true,
-          message: "Match not found",
-          statusCode: StatusCodes.NOT_FOUND,
-        });
-      }
-  
-      if (match.createdBy.toString() !== userId.toString()) {
-        return apiResponse({
-          res,
-          status: false,
-          message: "You are not authorized to update this match",
-          statusCode: StatusCodes.FORBIDDEN,
-        });
-      }
-  
-      // Validate Object IDs
-      const validation = validateObjectIds({
-        matchId,
-        homeTeamId,
-        awayTeamId,
+  try {
+    const { id: matchId } = req.params;
+    const {
+      homeTeamId,
+      awayTeamId,
+      period,
+      eachLasting,
+      location,
+      gameContractor,
+      dateTime,
+      homeTeamPlayers,
+      awayTeamPlayers,
+      status
+    } = req.body;
+    const userId = req.user._id;
+
+    // Validate Object IDs
+    const validation = validateObjectIds({
+      matchId,
+      ...(homeTeamId && { homeTeamId }),
+      ...(awayTeamId && { awayTeamId }),
+    });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
       });
-      if (!validation.isValid) {
-        return apiResponse({
-          res,
-          status: false,
-          message: validation.message,
-          statusCode: StatusCodes.BAD_REQUEST,
-        });
-      }
-  
-      // Validate period
-      if (period < 1 || period > 4) {
-        return apiResponse({
-          res,
-          status: false,
-          message: "Period must be between 1 and 4",
-          statusCode: StatusCodes.BAD_REQUEST,
-        });
-      }
-  
-      // Validate each lasting
-      if (![10, 12].includes(eachLasting)) {
-        return apiResponse({
-          res,
-          status: false,
-          message: "Each lasting must be either 10 or 12 minutes",
-          statusCode: StatusCodes.BAD_REQUEST,
-        });
-      }
-  
-      // Validate minimum 5 players and maximum 15 players for each team
-      if (
-        !Array.isArray(homeTeamPlayers) ||
-        homeTeamPlayers.length < 5 ||
-        homeTeamPlayers.length > 15 ||
-        !Array.isArray(awayTeamPlayers) ||
-        awayTeamPlayers.length < 5 ||
-        awayTeamPlayers.length > 15
-      ) {
-        return apiResponse({
-          res,
-          status: false,
-          message: "Each team must have between 5 and 15 players",
-          statusCode: StatusCodes.BAD_REQUEST,
-        });
-      }
-  
-      // Validate maximum 5 players with isPlaying true for each team
-      const homePlayingPlayers = homeTeamPlayers.filter(
-        (player) => player.isPlaying
-      );
-      const awayPlayingPlayers = awayTeamPlayers.filter(
-        (player) => player.isPlaying
-      );
-      if (homePlayingPlayers.length > 5 || awayPlayingPlayers.length > 5) {
-        return apiResponse({
-          res,
-          status: false,
-          message: "Each team can have a maximum of 5 playing players",
-          statusCode: StatusCodes.BAD_REQUEST,
-        });
-      }
-  
-      // Validate teams and players existence
-      const entitiesToValidate = [
-        { model: CustomBasketballTeam, id: homeTeamId, name: "Home Team" },
-        { model: CustomBasketballTeam, id: awayTeamId, name: "Away Team" },
-        ...homeTeamPlayers.map((player) => ({
-          model: CustomBasketballPlayers,
-          id: player.playerId,
-          name: "Home Team Player",
-        })),
-        ...awayTeamPlayers.map((player) => ({
-          model: CustomBasketballPlayers,
-          id: player.playerId,
-          name: "Away Team Player",
-        })),
-      ];
-      const validationErrors = await validateEntitiesExistence(entitiesToValidate);
-      if (validationErrors.length > 0) {
-        return apiResponse({
-          res,
-          status: true,
-          message: validationErrors.join(", "),
-          statusCode: StatusCodes.NOT_FOUND,
-        });
-      }
-  
-      // Check for duplicate players
-      const allPlayers = [...homeTeamPlayers, ...awayTeamPlayers];
-      const playerIds = allPlayers.map(player => player.playerId);
-      const uniquePlayerIds = new Set(playerIds);
-      if (uniquePlayerIds.size !== playerIds.length) {
-        return apiResponse({
-          res,
-          status: false,
-          message: "Duplicate players found in the teams",
-          statusCode: StatusCodes.BAD_REQUEST,
-        });
-      }
-  
-      // Update only provided fields
-      if (homeTeamId) match.homeTeamId = homeTeamId;
-      if (awayTeamId) match.awayTeamId = awayTeamId;
-      if (period) match.period = period;
-      if (eachLasting) match.eachLasting = eachLasting;
-      if (location) match.location = location;
-      if (gameContractor) match.gameContractor = gameContractor;
-      if (dateTime) match.dateTime = dateTime;
-      if (homeTeamPlayers) match.homeTeamPlayers = homeTeamPlayers;
-      if (awayTeamPlayers) match.awayTeamPlayers = awayTeamPlayers;
-  
-      await match.save();
-  
+    }
+
+    // Find match
+    const match = await CustomBasketballMatch.findById({ _id: matchId });
+    if (!match) {
       return apiResponse({
         res,
         status: true,
-        message: "Match updated successfully",
-        statusCode: StatusCodes.OK,
-        data: match,
-      });
-    } catch (err) {
-        console.log(err);
-      return apiResponse({
-        res,
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        status: false,
-        message: "Internal server error",
+        message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
       });
     }
+
+    if (match.createdBy.toString() !== userId.toString()) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "You are not authorized to update this match",
+        statusCode: StatusCodes.FORBIDDEN,
+      });
+    }
+
+    // Validate period
+    if (period !== undefined && (period < 1 || period > 4)) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Period must be between 1 and 4",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Validate each lasting
+    if (eachLasting !== undefined && ![10, 12].includes(eachLasting)) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Each lasting must be either 10 or 12 minutes",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Validate minimum 5 players and maximum 15 players for each team
+    if (
+      (homeTeamPlayers && (!Array.isArray(homeTeamPlayers) || homeTeamPlayers.length < 5 || homeTeamPlayers.length > 15)) ||
+      (awayTeamPlayers && (!Array.isArray(awayTeamPlayers) || awayTeamPlayers.length < 5 || awayTeamPlayers.length > 15))
+    ) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Each team must have between 5 and 15 players",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Validate maximum 5 players with isPlaying true for each team
+    const homePlayingPlayers = homeTeamPlayers ? homeTeamPlayers.filter((player) => player.isPlaying) : match.homeTeamPlayers.filter((player) => player.isPlaying);
+    const awayPlayingPlayers = awayTeamPlayers ? awayTeamPlayers.filter((player) => player.isPlaying) : match.awayTeamPlayers.filter((player) => player.isPlaying);
+    if (homePlayingPlayers.length > 5 || awayPlayingPlayers.length > 5) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Each team can have a maximum of 5 playing players",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Validate teams and players existence
+    const entitiesToValidate = [
+      { model: CustomBasketballTeam, id: homeTeamId || match.homeTeamId, name: "Home Team" },
+      { model: CustomBasketballTeam, id: awayTeamId || match.awayTeamId, name: "Away Team" },
+      ...(homeTeamPlayers || match.homeTeamPlayers).map((player) => ({
+        model: CustomBasketballPlayers,
+        id: player.playerId,
+        name: "Home Team Player",
+      })),
+      ...(awayTeamPlayers || match.awayTeamPlayers).map((player) => ({
+        model: CustomBasketballPlayers,
+        id: player.playerId,
+        name: "Away Team Player",
+      })),
+    ];
+    const validationErrors = await validateEntitiesExistence(entitiesToValidate);
+    if (validationErrors.length > 0) {
+      return apiResponse({
+        res,
+        status: true,
+        message: validationErrors.join(", "),
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Check for duplicate players
+    const allPlayers = [...(homeTeamPlayers || match.homeTeamPlayers), ...(awayTeamPlayers || match.awayTeamPlayers)];
+    const playerIds = allPlayers.map((player) => player.playerId);
+    const uniquePlayerIds = new Set(playerIds);
+    if (uniquePlayerIds.size !== playerIds.length) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Duplicate players found in the teams",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Update only provided fields
+    if (homeTeamId) match.homeTeamId = homeTeamId;
+    if (awayTeamId) match.awayTeamId = awayTeamId;
+    if (period) match.period = period;
+    if (eachLasting) match.eachLasting = eachLasting;
+    if (location) match.location = location;
+    if (gameContractor) match.gameContractor = gameContractor;
+    if (dateTime) match.dateTime = dateTime;
+    if (homeTeamPlayers) match.homeTeamPlayers = homeTeamPlayers;
+    if (awayTeamPlayers) match.awayTeamPlayers = awayTeamPlayers;
+    if (status) match.status = status;
+
+    await match.save();
+
+    return apiResponse({
+      res,
+      status: true,
+      message: "Match updated successfully",
+      statusCode: StatusCodes.OK,
+      data: match,
+    });
+  } catch (err) {
+    console.log(err);
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
 };
 
 const deleteBasketballMatch = async (req, res) => {
   try {
-    const { matchId } = req.params;
+    const { id: matchId } = req.params;
     const userId = req.user._id;
 
     // Validate Object ID
@@ -383,16 +376,25 @@ const deleteBasketballMatch = async (req, res) => {
 const listBasketballMatches = async (req, res) => {
   try {
     const matches = await CustomBasketballMatch.find().populate([
-      { path: "homeTeamId", model: "CustomBasketballTeam", select: "teamName" },
-      { path: "awayTeamId", model: "CustomBasketballTeam", select: "teamName" },
+      { path: "homeTeamId", model: "CustomBasketballTeam", select: "teamName teamImage" },
+      { path: "awayTeamId", model: "CustomBasketballTeam", select: "teamName teamImage" },
     ]);
+
+    const transformedMatches = matches.map(match => {
+      const matchObject = match.toObject();
+      return {
+        ...matchObject,
+        homeTeam: matchObject.homeTeamId,
+        awayTeam: matchObject.awayTeamId,
+      };
+    }).map(({ homeTeamId, awayTeamId, ...rest }) => rest); 
 
     return apiResponse({
       res,
       status: true,
       message: "Matches fetched successfully",
       statusCode: StatusCodes.OK,
-      data: matches,
+      data: transformedMatches,
     });
   } catch (err) {
     return apiResponse({

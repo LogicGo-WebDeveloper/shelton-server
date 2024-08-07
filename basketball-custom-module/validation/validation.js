@@ -64,6 +64,7 @@ const createBasketballMatch = {
     location: Joi.string().required(),
     gameContractor: Joi.string().required(),
     dateTime: Joi.date().required(),
+    status: Joi.string().valid("not_started", "in_progress").required(),
     homeTeamPlayers: Joi.array()
       .items(
         Joi.object({
@@ -89,26 +90,27 @@ const createBasketballMatch = {
 
 const updateBasketballMatch = {
   body: Joi.object().keys({
-    homeTeamId: Joi.string(),
-    awayTeamId: Joi.string(),
+    homeTeamId: Joi.string().optional(),
+    awayTeamId: Joi.string().optional(),
     tournamentId: Joi.string().optional().allow(null, ""),
-    period: Joi.number().min(1).max(4),
-    eachLasting: Joi.number().valid(10, 12),
-    location: Joi.string(),
-    gameContractor: Joi.string(),
-    dateTime: Joi.date(),
+    period: Joi.number().min(1).max(4).optional(),
+    eachLasting: Joi.number().valid(10, 12).optional(),
+    location: Joi.string().optional(),
+    gameContractor: Joi.string().optional(),
+    dateTime: Joi.date().optional(),
+    status: Joi.string().valid("not_started", "in_progress").optional(),
     homeTeamPlayers: Joi.array().items(
       Joi.object({
         playerId: Joi.string().required(),
         isPlaying: Joi.boolean().required(),
       })
-    ),
+    ).optional(),
     awayTeamPlayers: Joi.array().items(
       Joi.object({
         playerId: Joi.string().required(),
         isPlaying: Joi.boolean().required(),
       })
-    ),
+    ).optional(),
   }),
 };
 
