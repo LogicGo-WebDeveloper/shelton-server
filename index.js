@@ -20,6 +20,7 @@ import {
   InsertSportList,
   InsertTournamentCategory,
   InsertTournamentWinningPrize,
+  InsertBasketballPlayerRole,
 } from "./middleware/common.js";
 
 const app = express();
@@ -56,6 +57,7 @@ InsertBannerList();
 InsertPlayerRole();
 playerOutReasons();
 InsertMatchStatus();
+InsertBasketballPlayerRole();
 
 app.use("/api/auth", route.authRoute);
 app.use("/api/v1/sport", route.sportRoute);
@@ -68,6 +70,7 @@ app.use("/api/v1/player", route.playerRoute);
 app.use("/api/v1/event", route.matchesRoute);
 app.use("/api/v1/custom", route.customCricketRoute);
 app.use("/api/v1/custom/football", route.customFootballRoute);
+app.use("/api/v1/basketball/custom", route.customBasketballRoute);
 app.use("/api/v1/favourite", route.favouriteRoute);
 
 app.use(errorHandler);

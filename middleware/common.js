@@ -15,6 +15,7 @@ import {
 } from "../cricket-custom-module/models/common.models.js";
 import CustomSportList from "../cricket-custom-module/models/sport.models.js";
 import BannerSportList from "../features/sport/models/BannerList.js";
+import { CustomBasketballPlayerRole } from "../basketball-custom-module/models/basketball-common.models.js";
 
 // Function to read JSON file
 const readJsonFile = async (filePath) => {
@@ -50,6 +51,7 @@ const ballTypeList = await readJsonFile(
 
 const BannerList = await readJsonFile(path.resolve("json/banner-list.json"));
 const roleList = await readJsonFile(path.resolve("json/roles.player.json"));
+const basketballRoleList = await readJsonFile(path.resolve("json/basketball-roles.player.json"));
 const reasonList = await readJsonFile(
   path.resolve("json/player-out-reasons.json")
 );
@@ -219,6 +221,22 @@ export const InsertPlayerRole = async () => {
   }
   // Delete roles not in JSON
   await CustomPlayerRole.deleteMany({ role: { $nin: roleNamesInJson } });
+};
+
+export const InsertBasketballPlayerRole = async () => {
+  const roleNamesInJson = basketballRoleList.map((role) => role.role);
+  for (const role of basketballRoleList) {
+    const exists = await CustomBasketballPlayerRole.findOne({
+      role: role.role,
+      image: role.image,
+    });
+    if (!exists) {
+      const newRole = new CustomBasketballPlayerRole(role);
+      await newRole.save();
+    }
+  }
+  // Delete roles not in JSON
+  await CustomBasketballPlayerRole.deleteMany({ role: { $nin: roleNamesInJson } });
 };
 
 export const playerOutReasons = async () => {

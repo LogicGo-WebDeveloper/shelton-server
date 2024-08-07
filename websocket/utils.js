@@ -276,7 +276,7 @@ export const handlePlayerOut = async (data, existingScorecard, ws) => {
 
     if (outType === "Run Out") {
       player.runs = (player.runs || 0) + batters.runs;
-    } else if (outType !== "Retired Hurt" && outType !== "Timed Out") {
+    } else if (outType !== "Retired Hurt" && outType !== "Timed Out" && !bowlers.wides) {
       player.runs = (player.runs || 0) + batters.runs;
       player.fours = (player.fours || 0) + (batters.fours ? 1 : 0);
       player.sixes = (player.sixes || 0) + (batters.sixes ? 1 : 0);
