@@ -1,5 +1,19 @@
 import mongoose from "mongoose";
 
+const scoreSchema = new mongoose.Schema({
+  current: { type: Number, default: 0 },
+  period1: { type: Number, default: 0 },
+  period2: { type: Number, default: 0 },
+  period3: { type: Number, default: 0 },
+  period4: { type: Number, default: 0 },
+  normaltime: { type: Number, default: 0 },
+}, { _id: false });
+
+const playerSchema = new mongoose.Schema({
+  playerId: { type: mongoose.Schema.Types.ObjectId, ref: "CustomBasketballPlayers", required: true },
+  isPlaying: { type: Boolean, required: true },
+}, { _id: false });
+
 const customBasketballMatchSchema = new mongoose.Schema(
   {
     homeTeamId: { type: mongoose.Schema.Types.ObjectId, ref: "CustomBasketballTeam", required: true },
@@ -10,19 +24,11 @@ const customBasketballMatchSchema = new mongoose.Schema(
     location: { type: String, required: true },
     gameContractor: { type: String, required: true },
     dateTime: { type: Date, required: true },
-    homeTeamPlayers: [
-      {
-        playerId: { type: mongoose.Schema.Types.ObjectId, ref: "CustomBasketballPlayers", required: true },
-        isPlaying: { type: Boolean, required: true },
-      },
-    ],
-    awayTeamPlayers: [
-      {
-        playerId: { type: mongoose.Schema.Types.ObjectId, ref: "CustomBasketballPlayers", required: true },
-        isPlaying: { type: Boolean, required: true },
-      },
-    ],
-    status: { type: String, enum: ["not_started", "in_progress", "finished"], default: "not_started" },
+    homeTeamPlayers: [playerSchema],
+    awayTeamPlayers: [playerSchema],
+    homeTeamScore: { type: scoreSchema, default: () => ({}) },
+    awayTeamScore: { type: scoreSchema, default: () => ({}) },
+    status: { type: String, enum: ["not_started", "in_progress", "finished"], required: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }

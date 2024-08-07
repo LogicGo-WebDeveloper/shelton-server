@@ -1426,7 +1426,7 @@ const updateMatchResult = async (req, res, next) => {
     const userId = req.user._id;
 
     // Validate input
-    const validation = validateObjectIds({ matchId, winnerTeamId });
+    const validation = validateObjectIds({ matchId, ...(status !== enums.matchStatusEnum.abandoned && { winnerTeamId }) });
     if (!validation.isValid) {
       return apiResponse({
         res,
@@ -1472,21 +1472,23 @@ const updateMatchResult = async (req, res, next) => {
 
     // Determine the winner and calculate the margin
     let matchResultNote = "";
-    if (winnerTeamId.toString() === match.homeTeamId.toString()) {
-      if (match.awayTeamScore.wickets === 10) {
-        const margin = match.homeTeamScore.runs - match.awayTeamScore.runs;
-        matchResultNote = `${homeTeam.teamName} won by ${margin} runs`;
-      } else {
-        const margin = 10 - match.homeTeamScore.wickets;
-        matchResultNote = `${homeTeam.teamName} won by ${margin} wickets`;
-      }
-    } else if (winnerTeamId.toString() === match.awayTeamId.toString()) {
-      if (match.homeTeamScore.wickets === 10) {
-        const margin = match.awayTeamScore.runs - match.homeTeamScore.runs;
-        matchResultNote = `${awayTeam.teamName} won by ${margin} runs`;
-      } else {
-        const margin = 10 - match.awayTeamScore.wickets;
-        matchResultNote = `${awayTeam.teamName} won by ${margin} wickets`;
+    if (status !== enums.matchStatusEnum.abandoned) {
+      if (winnerTeamId.toString() === match.homeTeamId.toString()) {
+        if (match.awayTeamScore.wickets === 10) {
+          const margin = match.homeTeamScore.runs - match.awayTeamScore.runs;
+          matchResultNote = `${homeTeam.teamName} won by ${margin} runs`;
+        } else {
+          const margin = 10 - match.homeTeamScore.wickets;
+          matchResultNote = `${homeTeam.teamName} won by ${margin} wickets`;
+        }
+      } else if (winnerTeamId.toString() === match.awayTeamId.toString()) {
+        if (match.homeTeamScore.wickets === 10) {
+          const margin = match.awayTeamScore.runs - match.homeTeamScore.runs;
+          matchResultNote = `${awayTeam.teamName} won by ${margin} runs`;
+        } else {
+          const margin = 10 - match.awayTeamScore.wickets;
+          matchResultNote = `${awayTeam.teamName} won by ${margin} wickets`;
+        }
       }
     }
 

@@ -218,7 +218,11 @@ const validateMatchStatusUpdate = {
 const validateMatchResultUpdate = {
   body: Joi.object().keys({
     matchId: Joi.string().required(),
-    winnerTeamId: Joi.string().required(),
+    winnerTeamId: Joi.string().when('status', {
+      is: enums.matchStatusEnum.abandoned,
+      then: Joi.string().allow("", null).optional(),
+      otherwise: Joi.string().required(),
+    }),
     status: Joi.string()
       .valid(...Object.values(enums.matchStatusEnum))
       .required(),
