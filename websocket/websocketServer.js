@@ -1562,6 +1562,11 @@ const setupWebSocket = (server) => {
                   { $set: updateData }
                 );
 
+                (match.powerPlays.ranges = null),
+                  (match.powerPlays.isActive = false),
+                  (match.endInnings.isDeclared = false);
+                match.endInnings.isAllOut = false;
+
                 await match.save();
                 await existingScorecard.save();
 
@@ -1580,6 +1585,11 @@ const setupWebSocket = (server) => {
               homeTeamId: match.homeTeamId,
               awayTeamId: match.awayTeamId,
             })
+              .populate({
+                path: "matchId",
+                model: "CustomMatch",
+                select: "homeTeamScore awayTeamScore powerPlays endInnings",
+              })
               .populate({
                 path: "homeTeamId",
                 model: "CustomTeam",
@@ -1600,6 +1610,7 @@ const setupWebSocket = (server) => {
                   select: "role",
                 },
               });
+
             ws.send(
               JSON.stringify({
                 message: "Action updated successfully.",
