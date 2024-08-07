@@ -1204,7 +1204,7 @@ const setupWebSocket = (server) => {
                 wideBall: bowlers.wides,
                 lbBall: teamRuns.legBye,
                 byeBall: teamRuns.bye,
-                isOut: bowlers.out,
+                isOut: bowlers.wickets,
                 oversNumber: currentOvers,
                 battingTeamId: existingScorecard.scorecard[battingTeamKey].id,
                 isOvers: true,
@@ -1222,7 +1222,7 @@ const setupWebSocket = (server) => {
                 if (!playerOvers.data) {
                   playerOvers.data = {};
                 }
-                // console.log(playerOvers.data.incidents);
+
                 if (!Array.isArray(playerOvers.data.incidents)) {
                   playerOvers.data.incidents = [];
                 }

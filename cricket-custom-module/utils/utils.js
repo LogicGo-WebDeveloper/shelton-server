@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import CustomMatchScorecard from "../models/matchScorecard.models.js";
+import CustomMatch from "../models/match.models.js";
 
 export const getHostUrl = (req, middlePath) => {
   return req.protocol + "://" + req.get("host") + "/images/" + `${middlePath}/`;
@@ -15,6 +16,7 @@ export const validateObjectIds = (ids) => {
 };
 
 export const updateMatchScorecardDetails = async (request) => {
+  // console.log(request.playerId);
   try {
     const scorecard = await CustomMatchScorecard.findOne({
       matchId: request.matchId,
@@ -30,6 +32,22 @@ export const updateMatchScorecardDetails = async (request) => {
         ? "homeTeam"
         : "awayTeam";
 
+    // const matches = await CustomMatch.updateOne({ matchId: request.matchId });
+
+    // const result = await CustomMatch.updateOne(
+    //   { matchId: request.matchId }, // Query to find the document
+    //   {
+    //     $set: {
+    //       "striker.name": strikerData.name,
+    //       "striker.runs": strikerData.runs,
+    //       "striker.ballsFaced": strikerData.ballsFaced,
+    //       "nonStriker.name": nonStrikerData.name,
+    //       "nonStriker.runs": nonStrikerData.runs,
+    //       "nonStriker.ballsFaced": nonStrikerData.ballsFaced,
+    //     },
+    //   } // Fields to update
+    // );
+
     const playerIndex = scorecard.scorecard[team].players.findIndex(
       (player) => player.id.toString() === request.playerId
     );
@@ -38,6 +56,8 @@ export const updateMatchScorecardDetails = async (request) => {
       console.error(`Player not found for playerId: ${request.playerId}`);
       return;
     }
+
+    // console.log(111);
 
     Object.keys(request.updateScore).forEach((key) => {
       if (scorecard.scorecard[team].players[playerIndex]) {
