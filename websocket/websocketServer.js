@@ -1588,7 +1588,8 @@ const setupWebSocket = (server) => {
               .populate({
                 path: "matchId",
                 model: "CustomMatch",
-                select: "homeTeamScore awayTeamScore powerPlays endInnings",
+                select:
+                  "homeTeamScore awayTeamScore powerPlays endInnings noOfOvers",
               })
               .populate({
                 path: "homeTeamId",
