@@ -54,10 +54,70 @@ const updateBasketballPlayer = {
   }),
 };
 
+const createBasketballMatch = {
+  body: Joi.object().keys({
+    homeTeamId: Joi.string().required(),
+    awayTeamId: Joi.string().required(),
+    tournamentId: Joi.string().optional().allow(null, ""),
+    period: Joi.number().min(1).max(4).required(),
+    eachLasting: Joi.number().valid(10, 12).required(),
+    location: Joi.string().required(),
+    gameContractor: Joi.string().required(),
+    dateTime: Joi.date().required(),
+    homeTeamPlayers: Joi.array()
+      .items(
+        Joi.object({
+          playerId: Joi.string().required(),
+          isPlaying: Joi.boolean().required(),
+        })
+      )
+      .min(5)
+      .max(15)
+      .required(),
+    awayTeamPlayers: Joi.array()
+      .items(
+        Joi.object({
+          playerId: Joi.string().required(),
+          isPlaying: Joi.boolean().required(),
+        })
+      )
+      .min(5)
+      .max(15)
+      .required(),
+  }),
+};
+
+const updateBasketballMatch = {
+  body: Joi.object().keys({
+    homeTeamId: Joi.string(),
+    awayTeamId: Joi.string(),
+    tournamentId: Joi.string().optional().allow(null, ""),
+    period: Joi.number().min(1).max(4),
+    eachLasting: Joi.number().valid(10, 12),
+    location: Joi.string(),
+    gameContractor: Joi.string(),
+    dateTime: Joi.date(),
+    homeTeamPlayers: Joi.array().items(
+      Joi.object({
+        playerId: Joi.string().required(),
+        isPlaying: Joi.boolean().required(),
+      })
+    ),
+    awayTeamPlayers: Joi.array().items(
+      Joi.object({
+        playerId: Joi.string().required(),
+        isPlaying: Joi.boolean().required(),
+      })
+    ),
+  }),
+};
+
 export default {
   createBasketballTournament,
   createBasketballTeam,
   updateBasketballTeam,
   createBasketballPlayer,
   updateBasketballPlayer,
+  createBasketballMatch,
+  updateBasketballMatch,
 };

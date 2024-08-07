@@ -7,6 +7,7 @@ import multer from "multer";
 import validate from "../middleware/validate.js";
 import validation from "./validation/validation.js";
 import basketballCommonControllers from "./controllers/basketball-common.controllers.js";
+import basketballMatchControllers from "./controllers/basketball-match.controllers.js";
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -77,9 +78,28 @@ route.post(
 
 route.delete("/player/delete/:id", verifyToken, basketballPlayerController.deleteBasketballPlayer);
 
+// ============================== For Match List ===========================================
+route.post(
+  "/match/add",
+  verifyToken,
+  validate(validation.createBasketballMatch),
+  basketballMatchControllers.createBasketballMatch
+);
+
+route.get("/match/list", verifyToken, basketballMatchControllers.listBasketballMatches);
+
+route.post(
+  "/match/update/:id",
+  verifyToken,
+  validate(validation.updateBasketballMatch),
+  basketballMatchControllers.updateBasketballMatch
+);
+
+route.delete("/match/delete/:id", verifyToken, basketballMatchControllers.deleteBasketballMatch);
 
 
 // ============================== For common api routes =========================================
 route.get("/player/roles", basketballCommonControllers.getBasketballPlayerRoles);
+
 
 export default route;
