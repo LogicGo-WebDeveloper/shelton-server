@@ -358,6 +358,8 @@ const listMatches = async (req, res) => {
       overPerBowler: match.overPerBowler,
       ground: match.ground,
       dateTime: match.dateTime,
+      homeTeamScore: match.homeTeamScore,
+      awayTeamScore: match.awayTeamScore,
       homeTeam: match.homeTeamId
         ? {
             id: match.homeTeamId._id,
