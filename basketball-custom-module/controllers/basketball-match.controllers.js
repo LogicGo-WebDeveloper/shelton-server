@@ -534,6 +534,10 @@ const createBasketballBoxScore = async (match) => {
           points: 0,
           rebounds: 0,
           assists: 0,
+          fouls: 0,
+          turnovers: 0,
+          freeThrowsAttempted: 0,
+          freeThrowsMade: 0,
         };
       }));
     };
@@ -587,10 +591,98 @@ const getRoleNameById = async (roleId) => {
   return role ? role.role : '';
 };
 
+const getBasketballMatchStatistics = async (req, res) => {
+  try {
+    const { matchId } = req.params;
+
+    // Validate Object ID
+    const validation = validateObjectIds({ matchId });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Fetch match data
+    const matchBoxScore = await CustomBasketballBoxScore.findOne({ matchId });
+    if (!matchBoxScore) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    // Calculate statistics for home team
+    const homeTeamStats = matchBoxScore.boxScore.homeTeam.players.reduce(
+      (acc, player) => {
+        acc.points += player.points;
+        acc.rebounds += player.rebounds;
+        acc.assists += player.assists;
+        acc.fouls += player.fouls;
+        acc.freeThrowsAttempted += player.freeThrowsAttempted;
+        acc.freeThrowsMade += player.freeThrowsMade;
+        return acc;
+      },
+      { points: 0, rebounds: 0, assists: 0, fouls: 0, freeThrowsAttempted: 0, freeThrowsMade: 0 }
+    );
+
+    // Calculate statistics for away team
+    const awayTeamStats = matchBoxScore.boxScore.awayTeam.players.reduce(
+      (acc, player) => {
+        acc.points += player.points;
+        acc.rebounds += player.rebounds;
+        acc.assists += player.assists;
+        acc.fouls += player.fouls;
+        acc.freeThrowsAttempted += player.freeThrowsAttempted;
+        acc.freeThrowsMade += player.freeThrowsMade;
+        return acc;
+      },
+      { points: 0, rebounds: 0, assists: 0, fouls: 0, freeThrowsAttempted: 0, freeThrowsMade: 0 }
+    );
+
+    const formattedMatchStatistics = {
+      homeTeam: {
+        teamName: matchBoxScore.boxScore.homeTeam.teamName,
+        image: matchBoxScore.boxScore.homeTeam.image,
+        teamId: matchBoxScore.boxScore.homeTeam.teamId,
+        stats: homeTeamStats,
+      },
+      awayTeam: {
+        teamName: matchBoxScore.boxScore.awayTeam.teamName,
+        image: matchBoxScore.boxScore.awayTeam.image,
+        teamId: matchBoxScore.boxScore.awayTeam.teamId,
+        stats: awayTeamStats,
+      },
+    }
+
+    // Return the statistics
+    return apiResponse({
+      res,
+      status: true,
+      message: "Match statistics fetched successfully",
+      statusCode: StatusCodes.OK,
+      data: formattedMatchStatistics,
+    });
+  } catch (err) {
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 export default {
   createBasketballMatch,
   updateBasketballMatch,
   deleteBasketballMatch,
   listBasketballMatches,
-  basketballDetailMatch
+  basketballDetailMatch,
+  getBasketballMatchStatistics
 };

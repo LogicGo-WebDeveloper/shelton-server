@@ -76,6 +76,9 @@ route.post(
   basketballPlayerController.updateBasketballPlayer
 );
 
+route.post('/player/substitute', verifyToken, validate(validation.substitutePlayerValidation), basketballPlayerController.substituteBasketballPlayer);
+
+
 route.delete("/player/delete/:id", verifyToken, basketballPlayerController.deleteBasketballPlayer);
 
 // ============================== For Match List ===========================================
@@ -97,10 +100,13 @@ route.post(
 
 route.delete("/match/delete/:id", verifyToken, basketballMatchControllers.deleteBasketballMatch);
 
-route.get("/match/detail/:id", basketballMatchControllers.basketballDetailMatch);
+route.get("/match/statistics/:matchId", basketballMatchControllers.getBasketballMatchStatistics);
+
+// route.get("/match/detail/:id", basketballMatchControllers.basketballDetailMatch);
 
 // ============================== For common api routes =========================================
 route.get("/player/roles", basketballCommonControllers.getBasketballPlayerRoles);
+
 
 
 export default route;
