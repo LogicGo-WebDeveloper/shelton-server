@@ -7,6 +7,8 @@ import mongoose from "mongoose";
 import helper from "../../helper/common.js";
 import { validateObjectIds, validateEntitiesExistence } from "../../cricket-custom-module/utils/utils.js";
 import CustomBasketballTournament from "../models/basketball-tournament.models.js";
+import { CustomBasketballBoxScore } from "../models/basketball-boxscore.models.js";
+import { CustomBasketballPlayerRole } from "../models/basketball-common.models.js";
 
 const createBasketballMatch = async (req, res) => {
   try {
@@ -136,6 +138,8 @@ const createBasketballMatch = async (req, res) => {
     });
 
     await match.save();
+
+    await createBasketballBoxScore(match);
 
     return apiResponse({
       res,
@@ -311,7 +315,6 @@ const updateBasketballMatch = async (req, res) => {
       data: match,
     });
   } catch (err) {
-    console.log(err);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -508,6 +511,80 @@ const basketballDetailMatch = async (req, res) => {
       message: "Internal server error",
     });
   }
+};
+
+const createBasketballBoxScore = async (match) => {
+  try {
+    const homeTeam = await CustomBasketballTeam.findById(match.homeTeamId).select('teamName teamImage');
+    const awayTeam = await CustomBasketballTeam.findById(match.awayTeamId).select('teamName teamImage');
+    const homePlayers = await CustomBasketballPlayers.find({ _id: { $in: match.homeTeamPlayers.map(p => p.playerId) } }).select('playerName image role jerseyNumber');
+    const awayPlayers = await CustomBasketballPlayers.find({ _id: { $in: match.awayTeamPlayers.map(p => p.playerId) } }).select('playerName image role jerseyNumber');
+  
+    const formatPlayerStats = async (players, teamPlayers) => {
+      return Promise.all(players.map(async player => {
+        const teamPlayer = teamPlayers.find(p => p.playerId.toString() === player._id.toString());
+        const role = await getRoleNameById(player.role);
+        return {
+          playerId: player._id,
+          name: player.playerName,
+          image: player.image || "",
+          role: role, 
+          jerseyNumber: player.jerseyNumber, 
+          isPlaying: teamPlayer.isPlaying,
+          points: 0,
+          rebounds: 0,
+          assists: 0,
+        };
+      }));
+    };
+
+    const homeTeamBoxScore = {
+      teamId: homeTeam._id,
+      teamName: homeTeam.teamName,
+      image: homeTeam.teamImage || defaultImageUrl,
+      players: await formatPlayerStats(homePlayers, match.homeTeamPlayers),
+    };
+
+    const awayTeamBoxScore = {
+      teamId: awayTeam._id,
+      teamName: awayTeam.teamName,
+      image: awayTeam.teamImage || defaultImageUrl,
+      players: await formatPlayerStats(awayPlayers, match.awayTeamPlayers),
+    };
+
+    let tournamentName = null;
+    if (match.tournamentId) {
+      const tournament = await CustomBasketballTournament.findById(match.tournamentId).select('name');
+      tournamentName = tournament ? tournament.name : null;
+    }
+
+    const boxScore = new CustomBasketballBoxScore({
+      matchId: match._id,
+      tournamentId: match.tournamentId || null,
+      tournamentName: tournamentName || null,
+      boxScore: {
+        homeTeam: homeTeamBoxScore,
+        awayTeam: awayTeamBoxScore,
+      }
+    });
+
+    await boxScore.save();
+
+  } catch (error) {
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// Helper function to get role name by ID
+const getRoleNameById = async (roleId) => {
+  const role = await CustomBasketballPlayerRole.findById(roleId).select('role');
+  console.log("role", role);
+  return role ? role.role : '';
 };
 
 export default {

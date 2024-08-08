@@ -985,7 +985,7 @@ const createScorecards = async (match, tournamentId) => {
 };
 
 const getMatchScorecard = async (req, res) => {
-  try {
+  try { 
     const { matchId } = req.params;
 
     const scorecard = await CustomMatchScorecard.findOne({ matchId })
@@ -1036,6 +1036,43 @@ const getMatchScorecard = async (req, res) => {
       message: "Scorecard retrieved successfully",
       statusCode: StatusCodes.OK,
     });
+
+
+    // // Fetch home and away team images
+    // const homeTeam = await CustomTeam.findById(
+    //   scorecard?.scorecard?.homeTeam?.id
+    // ).select("teamImage");
+    // const awayTeam = await CustomTeam.findById(
+    //   scorecard?.scorecard?.awayTeam?.id
+    // ).select("teamImage");
+
+    // // Convert Mongoose documents to plain JavaScript objects
+    // const scorecardObj = scorecard ? scorecard.toObject() : {};
+    // const homeTeamObj = homeTeam ? homeTeam.toObject() : null;
+    // const awayTeamObj = awayTeam ? awayTeam.toObject() : null;
+
+    // return apiResponse({
+    //   res,
+    //   status: true,
+    //   data: {
+    //     tournamentId: scorecardObj?.tournamentId?._id || null,
+    //     tournamentName: scorecardObj?.tournamentId?.name || null,
+    //     matchId: scorecardObj?.matchId?._id || null,
+    //     matchDateTime: scorecardObj?.matchId?.dateTime || null,
+    //     scorecard: {
+    //       homeTeam: {
+    //         ...scorecardObj?.scorecard?.homeTeam,
+    //         image: homeTeamObj ? homeTeamObj.teamImage : null,
+    //       },
+    //       awayTeam: {
+    //         ...scorecardObj?.scorecard?.awayTeam,
+    //         image: awayTeamObj ? awayTeamObj.teamImage : null,
+    //       },
+    //     },
+    //   },
+    //   message: "Scorecard retrieved successfully",
+    //   statusCode: StatusCodes.OK,
+    // });
   } catch (err) {
     console.error(err);
     return apiResponse({
