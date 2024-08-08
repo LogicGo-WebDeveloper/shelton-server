@@ -1459,14 +1459,28 @@ const getPlayerList = async (req, res) => {
     });
 
     const matchStatus = await CustomMatch.findById(id);
+    const matchData = await CustomMatch.findById(id)
+      .populate({ path: "homeTeamId", select: "_id teamName teamImage" })
+      .populate({ path: "awayTeamId", select: "_id teamName teamImage" })
+      .select("homeTeamId awayTeamId");
 
     return apiResponse({
       res,
       status: true,
       data: {
         matchId: match._id,
-        homeTeamPlayingPlayer: homePlayersMap,
-        awayTeamPlayingPlayer: awayPlayersMap,
+        homeTeam: {
+          teamId: matchData.homeTeamId._id,
+          teamName: matchData.homeTeamId.teamName,
+          teamImage: matchData.homeTeamId.teamImage,
+          homeTeamPlayer: homePlayersMap,
+        },
+        awayTeam: {
+          teamId: matchData.awayTeamId._id,
+          teamName: matchData.awayTeamId.teamName,
+          teamImage: matchData.awayTeamId.teamImage,
+          awayTeamPlayer: awayPlayersMap,
+        },
         status: matchStatus.status,
       },
       message: "Squads fetched successfully",
