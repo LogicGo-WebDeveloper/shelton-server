@@ -1404,10 +1404,10 @@ const getPlayerList = async (req, res) => {
     }
 
     const homePlayers = (match.scorecard.homeTeam.players || []).filter(
-      (player) => player.status === "yet_to_bat"
+      (player) => player.status !== "unknown"
     );
     const awayPlayers = (match.scorecard.awayTeam.players || []).filter(
-      (player) => player.status === "yet_to_bat"
+      (player) => player.status !== "unknown"
     );
 
     const homePlayerIds = homePlayers.map((player) => player.id);
@@ -1468,7 +1468,7 @@ const getPlayerList = async (req, res) => {
       res,
       status: true,
       data: {
-        matchId: match._id,
+        matchId: matchStatus._id,
         homeTeam: {
           teamId: matchData.homeTeamId._id,
           teamName: matchData.homeTeamId.teamName,
