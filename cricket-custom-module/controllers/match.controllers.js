@@ -11,6 +11,7 @@ import {
   CustomCityList,
   CustomMatchOfficial,
   CustomMatchStatus,
+  CustomPlayerRole,
 } from "../models/common.models.js";
 import CustomTeam from "../models/team.models.js";
 import helper from "../../helper/common.js";
@@ -985,7 +986,7 @@ const createScorecards = async (match, tournamentId) => {
 };
 
 const getMatchScorecard = async (req, res) => {
-  try { 
+  try {
     const { matchId } = req.params;
 
     const scorecard = await CustomMatchScorecard.findOne({ matchId })
@@ -1036,7 +1037,6 @@ const getMatchScorecard = async (req, res) => {
       message: "Scorecard retrieved successfully",
       statusCode: StatusCodes.OK,
     });
-
 
     // // Fetch home and away team images
     // const homeTeam = await CustomTeam.findById(
@@ -1388,6 +1388,99 @@ const getMatchSquads = async (req, res) => {
   }
 };
 
+const getPlayerList = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const match = await CustomMatchScorecard.findOne({ matchId: id }).exec();
+
+    if (!match) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    const homePlayers = (match.scorecard.homeTeam.players || []).filter(
+      (player) => player.status === "yet_to_bat"
+    );
+    const awayPlayers = (match.scorecard.awayTeam.players || []).filter(
+      (player) => player.status === "yet_to_bat"
+    );
+
+    const homePlayerIds = homePlayers.map((player) => player.id);
+    const awayPlayerIds = awayPlayers.map((player) => player.id);
+
+    const homePlayerRoles = [
+      ...new Set(homePlayers.map((player) => player.role)),
+    ];
+    const awayPlayerRoles = [
+      ...new Set(awayPlayers.map((player) => player.role)),
+    ];
+
+    const homePlayersDetails = await CustomPlayers.find({
+      _id: { $in: homePlayerIds },
+    }).exec();
+
+    const roleDetails = await CustomPlayerRole.find({
+      roleName: { $in: [...new Set([...homePlayerRoles, ...awayPlayerRoles])] },
+    }).exec();
+
+    const roleMap = new Map(roleDetails.map((role) => [role.roleName, role]));
+
+    const homePlayersMap = homePlayersDetails.map((detail) => {
+      const player = homePlayers.find((player) => player.id.equals(detail._id));
+      return {
+        _id: detail._id,
+        playerName: detail.playerName,
+        role: roleMap.get(player.role)?.role,
+        jerseyNumber: detail.jerseyNumber,
+        image: detail.image,
+        status: player.status,
+      };
+    });
+
+    const awayPlayersDetails = await CustomPlayers.find({
+      _id: { $in: awayPlayerIds },
+    }).exec();
+
+    const awayPlayersMap = awayPlayersDetails.map((detail) => {
+      const player = awayPlayers.find((player) => player.id.equals(detail._id));
+      return {
+        _id: detail._id,
+        playerName: detail.playerName,
+        role: roleMap.get(player.role)?.role,
+        jerseyNumber: detail.jerseyNumber,
+        image: detail.image,
+        status: player.status,
+      };
+    });
+
+    return apiResponse({
+      res,
+      status: true,
+      data: {
+        matchId: match._id,
+        homeTeamPlayingPlayer: homePlayersMap,
+        awayTeamPlayingPlayer: awayPlayersMap,
+        status: match.status,
+      },
+      message: "Squads fetched successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (error) {
+    console.error("Error fetching match summary:", error);
+    return apiResponse({
+      res,
+      status: false,
+      message: "Internal server error",
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
+
 const setMatchStatus = async (req, res, next) => {
   try {
     const { matchId, statusId, description } = req.body;
@@ -1463,7 +1556,10 @@ const updateMatchResult = async (req, res, next) => {
     const userId = req.user._id;
 
     // Validate input
-    const validation = validateObjectIds({ matchId, ...(status !== enums.matchStatusEnum.abandoned && { winnerTeamId }) });
+    const validation = validateObjectIds({
+      matchId,
+      ...(status !== enums.matchStatusEnum.abandoned && { winnerTeamId }),
+    });
     if (!validation.isValid) {
       return apiResponse({
         res,
@@ -1592,4 +1688,5 @@ export default {
   getMatchSquads,
   setMatchStatus,
   updateMatchResult,
+  getPlayerList,
 };
