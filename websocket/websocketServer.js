@@ -1526,43 +1526,6 @@ const setupWebSocket = (server) => {
                       : enums.matchScorecardStatusEnum.not_out;
                 }
 
-                const bowlingTeamStats = existingScorecard.scorecard[
-                  bowlingTeamKey
-                ].players.reduce(
-                  (acc, player) => {
-                    acc.wickets += player.wickets || 0;
-                    acc.overs += player.overs || 0;
-                    return acc;
-                  },
-                  { wickets: 0, overs: 0 }
-                );
-
-                const battingTeamPlayers =
-                  existingScorecard.scorecard[battingTeamKey].players;
-                const battingTeamScore = battingTeamPlayers.reduce(
-                  (acc, player) => {
-                    acc.runs += player.runs;
-                    return acc;
-                  },
-                  {
-                    runs: 0,
-                    overs: bowlingTeamStats.overs,
-                    wickets: bowlingTeamStats.wickets,
-                  }
-                );
-
-                const updateData = {
-                  [`${battingTeamKey}Score.runs`]: battingTeamScore.runs,
-                  [`${battingTeamKey}Score.overs`]: battingTeamScore.overs,
-                  [`${battingTeamKey}Score.wickets`]: battingTeamScore.wickets,
-                };
-
-                await CustomMatch.updateOne(
-                  { _id: matchId },
-                  { $set: updateData }
-                );
-
-                await match.save();
                 await existingScorecard.save();
 
                 incidents.pop();
@@ -1580,8 +1543,11 @@ const setupWebSocket = (server) => {
                 const playingBatters = existingScorecard.scorecard[
                   battingTeamKey
                 ].players
-
-                  .filter((player) => player.status === "not_out")
+                  .filter(
+                    (player) =>
+                      player.activeStriker === true ||
+                      player.status === "not_out"
+                  )
                   .map((player) => ({
                     name: player.name,
                     runs: player.runs,
@@ -1617,26 +1583,67 @@ const setupWebSocket = (server) => {
                     },
                   });
 
+                const bowlingTeamStats = existingScorecard.scorecard[
+                  bowlingTeamKey
+                ].players.reduce(
+                  (acc, player) => {
+                    acc.wickets += player.wickets || 0;
+                    acc.overs += player.overs || 0;
+                    return acc;
+                  },
+                  { wickets: 0, overs: 0 }
+                );
+
+                const battingTeamPlayers =
+                  existingScorecard.scorecard[battingTeamKey].players;
+                const battingTeamScore = battingTeamPlayers.reduce(
+                  (acc, player) => {
+                    acc.runs += player.runs || 0;
+                    return acc;
+                  },
+                  {
+                    runs: 0,
+                    overs: bowlingTeamStats.overs,
+                    wickets: bowlingTeamStats.wickets,
+                  }
+                );
+
+                // Create update data object for the database
+                const updateData = {
+                  [`${battingTeamKey}Score.runs`]: battingTeamScore.runs,
+                  [`${battingTeamKey}Score.overs`]: battingTeamScore.overs,
+                  [`${battingTeamKey}Score.wickets`]: battingTeamScore.wickets,
+                };
+
+                await CustomMatch.updateOne(
+                  { _id: matchId },
+                  { $set: updateData }
+                );
+
+                const updatedMatch = await CustomMatch.findById(matchId);
+
+                await updatedMatch.save();
+
                 ws.send(
                   JSON.stringify({
                     message: "Action updated successfully.",
                     actionType: data.action,
                     body: {
                       matchScore: {
-                        homeTeamScore: match.homeTeamScore,
-                        awayTeamScore: match.awayTeamScore,
-                        noOfOvers: match.noOfOvers,
+                        homeTeamScore: updatedMatch.homeTeamScore,
+                        awayTeamScore: updatedMatch.awayTeamScore,
+                        noOfOvers: updatedMatch.noOfOvers,
                       },
                       batters: playingBatters,
                       playerOversData,
                       powerPlay: {
-                        ranges: match.powerPlays.ranges,
-                        isActive: match.powerPlays.isActive,
+                        ranges: updatedMatch.powerPlays.ranges,
+                        isActive: updatedMatch.powerPlays.isActive,
                         message: "Action updated successfully.",
                       },
                       endInnings: {
-                        isDeclared: match.endInnings.isDeclared,
-                        isAllOut: match.endInnings.isAllOut,
+                        isDeclared: updatedMatch.endInnings.isDeclared,
+                        isAllOut: updatedMatch.endInnings.isAllOut,
                         message: "Action updated successfully.",
                       },
                     },
