@@ -1458,6 +1458,8 @@ const getPlayerList = async (req, res) => {
       };
     });
 
+    const matchStatus = await CustomMatch.findById(id);
+
     return apiResponse({
       res,
       status: true,
@@ -1465,7 +1467,7 @@ const getPlayerList = async (req, res) => {
         matchId: match._id,
         homeTeamPlayingPlayer: homePlayersMap,
         awayTeamPlayingPlayer: awayPlayersMap,
-        status: match.status,
+        status: matchStatus.status,
       },
       message: "Squads fetched successfully",
       statusCode: StatusCodes.OK,
