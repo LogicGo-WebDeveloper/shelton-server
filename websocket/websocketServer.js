@@ -1106,7 +1106,10 @@ const setupWebSocket = (server) => {
                 battingTeamKey
               ].players
 
-                .filter((player) => player.status === "not_out")
+                .filter(
+                  (player) =>
+                    player.activeStriker === true || player.status === "not_out"
+                )
                 .map((player) => ({
                   name: player.name,
                   runs: player.runs,
@@ -1537,6 +1540,8 @@ const setupWebSocket = (server) => {
                   { $set: { "data.incidents": incidents } }
                 );
 
+                existingMatchOvers.totalBalls =
+                  existingMatchOvers.totalBalls - 1;
                 await existingMatchOvers.save();
 
                 const playerImageData = await CustomPlayers.findOne({
