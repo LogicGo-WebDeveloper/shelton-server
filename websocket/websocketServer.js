@@ -804,7 +804,6 @@ const setupWebSocket = (server) => {
               fielderId,
             } = data;
             const match = await CustomMatch.findOne({ _id: matchId });
-            // console.log(match);
             //for update match scorecard
             if (!match) {
               ws.send(
@@ -1086,16 +1085,10 @@ const setupWebSocket = (server) => {
 
             // for using summary api
             if (matchScore.status) {
-              const matchDetails = await CustomMatch.findById(matchId);
+              // const matchDetails = await CustomMatch.findById(matchId);
               const scorecardDetails = await CustomMatchScorecard.findOne({
                 matchId,
               });
-
-              const matchLiveScore = {
-                homeTeam: matchDetails.homeTeamScore,
-                awayTeam: matchDetails.awayTeamScore,
-                noOfOvers: matchDetails.noOfOvers,
-              };
 
               // console.log(batters.playerId);
               const playesImageData = await CustomPlayers.findOne({
@@ -1289,7 +1282,9 @@ const setupWebSocket = (server) => {
                   homeTeamId: matches.homeTeamId,
                   awayTeamId: matches.awayTeamId,
                   bowlerId: bowlers.playerId,
-                  data: { incidents: [] },
+                  data: {
+                    incidents: bowlers.balls == true ? [newIncident] : [],
+                  },
                 });
               }
 
@@ -1300,7 +1295,7 @@ const setupWebSocket = (server) => {
                   .split("-")
                   .map(Number);
 
-                const currentOver = matchDetails.noOfOvers;
+                const currentOver = match.noOfOvers;
                 isActive = currentOver >= startOver && currentOver <= endOver;
                 await CustomMatch.findByIdAndUpdate(
                   matchId,
@@ -1358,6 +1353,12 @@ const setupWebSocket = (server) => {
                   .filter((incident) => incident.isOvers === true)
                   .reverse(); // Reverse the array to have the last record first
               }
+
+              const matchLiveScore = {
+                homeTeam: match.homeTeamScore,
+                awayTeam: match.awayTeamScore,
+                noOfOvers: match.noOfOvers,
+              };
 
               ws.send(
                 JSON.stringify({
@@ -2061,7 +2062,7 @@ const setupWebSocket = (server) => {
                 model: "CustomBasketballPlayers",
                 select: "playerName image role jerseyNumber",
               });
-        
+
             if (!boxScore) {
               ws.send(
                 JSON.stringify({
@@ -2073,7 +2074,7 @@ const setupWebSocket = (server) => {
               );
               return;
             }
-        
+
             const transformTeam = (team) => ({
               teamId: team.teamId._id,
               teamName: team.teamName,
@@ -2090,13 +2091,13 @@ const setupWebSocket = (server) => {
                 assists: player.assists,
               })),
             });
-        
+
             const transformedBoxScore = {
               matchId: boxScore.matchId,
               homeTeam: transformTeam(boxScore.boxScore.homeTeam),
               awayTeam: transformTeam(boxScore.boxScore.awayTeam),
             };
-        
+
             ws.send(
               JSON.stringify({
                 message: "Box score fetched successfully",
@@ -2116,8 +2117,8 @@ const setupWebSocket = (server) => {
               })
             );
           }
-        break;
-        case "basketballDetailMatch": 
+          break;
+        case "basketballDetailMatch":
           try {
             const { matchId } = data;
             // Validate input
@@ -2146,9 +2147,19 @@ const setupWebSocket = (server) => {
             }
 
             // Fetch match details
-            const match = await CustomBasketballMatch.findById(matchId).populate([
-              { path: "homeTeamId", model: "CustomBasketballTeam", select: "teamName teamImage" },
-              { path: "awayTeamId", model: "CustomBasketballTeam", select: "teamName teamImage" },
+            const match = await CustomBasketballMatch.findById(
+              matchId
+            ).populate([
+              {
+                path: "homeTeamId",
+                model: "CustomBasketballTeam",
+                select: "teamName teamImage",
+              },
+              {
+                path: "awayTeamId",
+                model: "CustomBasketballTeam",
+                select: "teamName teamImage",
+              },
             ]);
 
             if (!match) {
@@ -2209,7 +2220,7 @@ const setupWebSocket = (server) => {
             if (!matchId || !playerId || !controllerAction) {
               ws.send(
                 JSON.stringify({
-                  message: 'Match ID, Player ID, and action are required',
+                  message: "Match ID, Player ID, and action are required",
                   status: false,
                 })
               );
@@ -2218,30 +2229,30 @@ const setupWebSocket = (server) => {
 
             const boxScore = await CustomBasketballBoxScore.findOne({ matchId })
               .populate({
-                path: 'boxScore.homeTeam.teamId',
-                model: 'CustomBasketballTeam',
-                select: 'teamName teamImage',
+                path: "boxScore.homeTeam.teamId",
+                model: "CustomBasketballTeam",
+                select: "teamName teamImage",
               })
               .populate({
-                path: 'boxScore.awayTeam.teamId',
-                model: 'CustomBasketballTeam',
-                select: 'teamName teamImage',
+                path: "boxScore.awayTeam.teamId",
+                model: "CustomBasketballTeam",
+                select: "teamName teamImage",
               })
               .populate({
-                path: 'boxScore.homeTeam.players.playerId',
-                model: 'CustomBasketballPlayers',
-                select: 'playerName image role jerseyNumber',
+                path: "boxScore.homeTeam.players.playerId",
+                model: "CustomBasketballPlayers",
+                select: "playerName image role jerseyNumber",
               })
               .populate({
-                path: 'boxScore.awayTeam.players.playerId',
-                model: 'CustomBasketballPlayers',
-                select: 'playerName image role jerseyNumber',
+                path: "boxScore.awayTeam.players.playerId",
+                model: "CustomBasketballPlayers",
+                select: "playerName image role jerseyNumber",
               });
 
             if (!boxScore) {
               ws.send(
                 JSON.stringify({
-                  message: 'Box score not found',
+                  message: "Box score not found",
                   status: false,
                 })
               );
@@ -2249,34 +2260,37 @@ const setupWebSocket = (server) => {
             }
 
             const updatePlayerStats = (team) => {
-              const player = team.players.find((p) => p.playerId._id.toString() === playerId);
+              const player = team.players.find(
+                (p) => p.playerId._id.toString() === playerId
+              );
               if (player) {
                 switch (controllerAction) {
-                  case 'FTA':
-                    player.freeThrowsAttempted = (player.freeThrowsAttempted || 0) + 1;
+                  case "FTA":
+                    player.freeThrowsAttempted =
+                      (player.freeThrowsAttempted || 0) + 1;
                     break;
-                  case 'FTM':
+                  case "FTM":
                     player.freeThrowsMade = (player.freeThrowsMade || 0) + 1;
                     break;
-                  case 'AST':
+                  case "AST":
                     player.assists = (player.assists || 0) + 1;
                     break;
-                  case 'TO':
+                  case "TO":
                     player.turnovers = (player.turnovers || 0) + 1;
                     break;
-                  case 'FOUL':
+                  case "FOUL":
                     player.fouls = (player.fouls || 0) + 1;
                     break;
-                  case 'DRB':
+                  case "DRB":
                     player.rebounds = (player.rebounds || 0) + 1;
                     break;
-                  case 'ORB':
+                  case "ORB":
                     player.rebounds = (player.rebounds || 0) + 1;
                     break;
-                  case '2PT':
+                  case "2PT":
                     player.points = (player.points || 0) + 2;
                     break;
-                  case '3PT':
+                  case "3PT":
                     player.points = (player.points || 0) + 3;
                   default:
                     break;
@@ -2318,21 +2332,21 @@ const setupWebSocket = (server) => {
 
             ws.send(
               JSON.stringify({
-                message: 'Action processed successfully',
+                message: "Action processed successfully",
                 status: true,
                 body: transformedBoxScore,
               })
             );
           } catch (error) {
-            console.error('Error processing action:', error);
+            console.error("Error processing action:", error);
             ws.send(
               JSON.stringify({
-                message: 'Internal server error',
+                message: "Internal server error",
                 status: false,
               })
             );
           }
-        break;
+          break;
       }
     });
   });

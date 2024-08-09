@@ -1202,6 +1202,7 @@ const updateStartingPlayerScorecard = async (req, res) => {
           activeStriker: false,
           activeBowler: false,
           status: "not_out",
+          ṇ,
         },
       },
     ];
