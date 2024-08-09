@@ -280,6 +280,164 @@ const createMatch = async (req, res, next) => {
   }
 };
 
+// const listMatches = async (req, res) => {
+//   const authHeader = req.headers?.authorization;
+//   const token = authHeader ? authHeader.split(" ")[1] : null;
+//   let userId;
+
+//   if (token) {
+//     try {
+//       const decodedToken = await helper.verifyToken(token);
+//       userId = decodedToken?.userId;
+//     } catch (error) {
+//       return apiResponse({
+//         res,
+//         statusCode: StatusCodes.UNAUTHORIZED,
+//         status: false,
+//         message: "Unauthorized access",
+//       });
+//     }
+//   }
+
+//   const { page = 1, size = 10, tournamentId, isQuickMatch } = req.query;
+
+//   try {
+//     let condition = {};
+
+//     if (userId) {
+//       condition.createdBy = userId;
+//     }
+
+//     if (tournamentId) {
+//       condition.tournamentId = tournamentId;
+//     }
+
+//     if (isQuickMatch !== undefined) {
+//       condition.isQuickMatch = isQuickMatch === "true";
+//     }
+
+//     const limit = parseInt(size);
+//     const skip = (parseInt(page) - 1) * limit;
+
+//     // Fetch matches with the applied condition
+//     const matches = await CustomMatch.find(condition)
+//       .skip(skip)
+//       .limit(limit)
+//       .populate({
+//         path: "homeTeamId",
+//         model: "CustomTeam",
+//         select: "teamName teamImage",
+//       })
+//       .populate({
+//         path: "awayTeamId",
+//         model: "CustomTeam",
+//         select: "teamName teamImage",
+//       })
+//       .populate({
+//         path: "city",
+//         model: "CustomCityList",
+//         select: "city",
+//       })
+//       .populate({
+//         path: "tournamentId",
+//         model: "CustomTournament",
+//         select: "name tournamentImage",
+//       })
+//       .populate({
+//         path: "umpires",
+//         model: "CustomMatchOfficial",
+//         select: "name",
+//       })
+//       .lean();
+
+//     const totalItems = await CustomMatch.countDocuments(condition);
+
+//     const formattedMatches = matches.map((match) => ({
+//       _id: match._id,
+//       activeBowler, // set activeBowler
+//       activeStriker, // set activeStriker
+//       activeNonStriker, // set activeNonStriker
+//       isQuickMatch: match.isQuickMatch,
+//       noOfOvers: match.noOfOvers,
+//       overPerBowler: match.overPerBowler,
+//       ground: match.ground,
+//       dateTime: match.dateTime,
+//       homeTeamScore: match.homeTeamScore,
+//       awayTeamScore: match.awayTeamScore,
+//       homeTeam: match.homeTeamId
+//         ? {
+//             id: match.homeTeamId._id,
+//             name: match.homeTeamId.teamName,
+//             image: match.homeTeamId.teamImage,
+//           }
+//         : null,
+//       awayTeam: match.awayTeamId
+//         ? {
+//             id: match.awayTeamId._id,
+//             name: match.awayTeamId.teamName,
+//             image: match.awayTeamId.teamImage,
+//           }
+//         : null,
+//       city: match.city
+//         ? {
+//             id: match.city._id,
+//             name: match.city.city,
+//           }
+//         : null,
+//       tournament: match.tournamentId
+//         ? {
+//             id: match.tournamentId._id,
+//             name: match.tournamentId.name,
+//             image: match.tournamentId.tournamentImage,
+//           }
+//         : null,
+//       createdBy: match.createdBy,
+//       status: match.status,
+//       matchStatus: match.matchStatus ? match.matchStatus : null,
+//       matchResultNote: match.matchResultNote ? match.matchResultNote : null,
+//       umpires: match.umpires.map((umpire) => ({
+//         id: umpire._id,
+//         name: umpire.name,
+//       })),
+//       tossResult: match.tossResult,
+//       tossWinnerTeamId: match.tossWinnerTeamId,
+//       tossWinnerChoice: match.tossWinnerChoice,
+//     }));
+
+//     // Define the order of statuses
+//     const statusOrder = Object.values(config.matchStatusEnum);
+
+//     // Sort the matches based on status order
+//     formattedMatches.sort((a, b) => {
+//       return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
+//     });
+
+//     // Pagination data
+//     const getPagingData = (totalItems, matches, page, limit) => {
+//       const currentPage = page ? +page : 1;
+//       const totalPages = Math.ceil(totalItems / limit);
+//       return { totalItems, matches, totalPages, currentPage };
+//     };
+
+//     const response = getPagingData(totalItems, formattedMatches, page, limit);
+
+//     return apiResponse({
+//       res,
+//       status: true,
+//       data: response,
+//       message: "Matches fetched successfully!",
+//       statusCode: StatusCodes.OK,
+//     });
+//   } catch (err) {
+//     return apiResponse({
+//       res,
+//       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+//       status: false,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
 const listMatches = async (req, res) => {
   const authHeader = req.headers?.authorization;
   const token = authHeader ? authHeader.split(" ")[1] : null;
@@ -352,54 +510,152 @@ const listMatches = async (req, res) => {
 
     const totalItems = await CustomMatch.countDocuments(condition);
 
-    const formattedMatches = matches.map((match) => ({
-      _id: match._id,
-      isQuickMatch: match.isQuickMatch,
-      noOfOvers: match.noOfOvers,
-      overPerBowler: match.overPerBowler,
-      ground: match.ground,
-      dateTime: match.dateTime,
-      homeTeamScore: match.homeTeamScore,
-      awayTeamScore: match.awayTeamScore,
-      homeTeam: match.homeTeamId
-        ? {
-            id: match.homeTeamId._id,
-            name: match.homeTeamId.teamName,
-            image: match.homeTeamId.teamImage,
-          }
-        : null,
-      awayTeam: match.awayTeamId
-        ? {
-            id: match.awayTeamId._id,
-            name: match.awayTeamId.teamName,
-            image: match.awayTeamId.teamImage,
-          }
-        : null,
-      city: match.city
-        ? {
-            id: match.city._id,
-            name: match.city.city,
-          }
-        : null,
-      tournament: match.tournamentId
-        ? {
-            id: match.tournamentId._id,
-            name: match.tournamentId.name,
-            image: match.tournamentId.tournamentImage,
-          }
-        : null,
-      createdBy: match.createdBy,
-      status: match.status,
-      matchStatus: match.matchStatus ? match.matchStatus : null,
-      matchResultNote: match.matchResultNote ? match.matchResultNote : null,
-      umpires: match.umpires.map((umpire) => ({
-        id: umpire._id,
-        name: umpire.name,
-      })),
-      tossResult: match.tossResult,
-      tossWinnerTeamId: match.tossWinnerTeamId,
-      tossWinnerChoice: match.tossWinnerChoice,
-    }));
+    // Fetch scorecards and populate player details
+    const scorecards = await CustomMatchScorecard.find({
+      matchId: { $in: matches.map((match) => match._id) },
+    })
+      .populate({
+        path: "scorecard.homeTeam.players.id",
+        model: "CustomPlayers",
+        select: "playerName image role jerseyNumber teamId",
+        populate: {
+          path: "role",
+          model: "CustomPlayerRole",
+          select: "role",
+        },
+      })
+      .populate({
+        path: "scorecard.awayTeam.players.id",
+        model: "CustomPlayers",
+        select: "playerName image role jerseyNumber teamId",
+        populate: {
+          path: "role",
+          model: "CustomPlayerRole",
+          select: "role",
+        },
+      })
+      .lean();
+
+    const formattedMatches = matches.map((match) => {
+      const scorecard = scorecards.find(
+        (scorecard) => scorecard.matchId.toString() === match._id.toString()
+      );
+
+      const getPlayerDetails = (players, condition) => {
+        return players.find((player) => condition(player));
+      };
+
+      const activeBowler = scorecard
+        ? getPlayerDetails(
+            [
+              ...scorecard.scorecard.homeTeam.players,
+              ...scorecard.scorecard.awayTeam.players,
+            ],
+            (player) => player.activeBowler
+          )
+        : null;
+
+      const activeStriker = scorecard
+        ? getPlayerDetails(
+            [
+              ...scorecard.scorecard.homeTeam.players,
+              ...scorecard.scorecard.awayTeam.players,
+            ],
+            (player) => player.activeStriker
+          )
+        : null;
+
+      const activeNonStriker = scorecard
+        ? getPlayerDetails(
+            [
+              ...scorecard.scorecard.homeTeam.players,
+              ...scorecard.scorecard.awayTeam.players,
+            ],
+            (player) =>
+              !player.activeStriker &&
+              player.status === enums.matchScorecardStatusEnum.not_out
+          )
+        : null;
+
+      return {
+        _id: match._id,
+        activeBowler: activeBowler
+          ? {
+              _id: activeBowler.id._id,
+              playerName: activeBowler.id.playerName,
+              image: activeBowler.id.image,
+              role: activeBowler.id.role,
+              jerseyNumber: activeBowler.id.jerseyNumber,
+              teamId: activeBowler.id.teamId,
+            }
+          : null,
+        activeStriker: activeStriker
+          ? {
+              _id: activeStriker.id._id,
+              playerName: activeStriker.id.playerName,
+              image: activeStriker.id.image,
+              role: activeStriker.id.role,
+              jerseyNumber: activeStriker.id.jerseyNumber,
+              teamId: activeStriker.id.teamId,
+            }
+          : null,
+        activeNonStriker: activeNonStriker
+          ? {
+              _id: activeNonStriker.id._id,
+              playerName: activeNonStriker.id.playerName,
+              image: activeNonStriker.id.image,
+              role: activeNonStriker.id.role,
+              jerseyNumber: activeNonStriker.id.jerseyNumber,
+              teamId: activeNonStriker.id.teamId,
+            }
+          : null,
+        isQuickMatch: match.isQuickMatch,
+        noOfOvers: match.noOfOvers,
+        overPerBowler: match.overPerBowler,
+        ground: match.ground,
+        dateTime: match.dateTime,
+        homeTeamScore: match.homeTeamScore,
+        awayTeamScore: match.awayTeamScore,
+        homeTeam: match.homeTeamId
+          ? {
+              id: match.homeTeamId._id,
+              name: match.homeTeamId.teamName,
+              image: match.homeTeamId.teamImage,
+            }
+          : null,
+        awayTeam: match.awayTeamId
+          ? {
+              id: match.awayTeamId._id,
+              name: match.awayTeamId.teamName,
+              image: match.awayTeamId.teamImage,
+            }
+          : null,
+        city: match.city
+          ? {
+              id: match.city._id,
+              name: match.city.city,
+            }
+          : null,
+        tournament: match.tournamentId
+          ? {
+              id: match.tournamentId._id,
+              name: match.tournamentId.name,
+              image: match.tournamentId.tournamentImage,
+            }
+          : null,
+        createdBy: match.createdBy,
+        status: match.status,
+        matchStatus: match.matchStatus ? match.matchStatus : null,
+        matchResultNote: match.matchResultNote ? match.matchResultNote : null,
+        umpires: match.umpires.map((umpire) => ({
+          id: umpire._id,
+          name: umpire.name,
+        })),
+        tossResult: match.tossResult,
+        tossWinnerTeamId: match.tossWinnerTeamId,
+        tossWinnerChoice: match.tossWinnerChoice,
+      };
+    });
 
     // Define the order of statuses
     const statusOrder = Object.values(config.matchStatusEnum);
@@ -426,6 +682,7 @@ const listMatches = async (req, res) => {
       statusCode: StatusCodes.OK,
     });
   } catch (err) {
+    console.log(err);
     return apiResponse({
       res,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,

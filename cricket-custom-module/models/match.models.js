@@ -66,6 +66,21 @@ const customMatchSchema = new mongoose.Schema({
     isDeclared: { type: Boolean, default: false },
     isAllOut: { type: Boolean, default: false },
   },
+  activeBowler: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CustomPlayers",
+    default: null,
+  },
+  activeStriker: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CustomPlayers",
+    default: null,
+  },
+  activeNonStriker: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CustomPlayers",
+    default: null,
+  },
 });
 
 const CustomMatch = mongoose.model("CustomMatch", customMatchSchema);
