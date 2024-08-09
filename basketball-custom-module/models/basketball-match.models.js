@@ -7,6 +7,7 @@ const scoreSchema = new mongoose.Schema({
   period3: { type: Number, default: 0 },
   period4: { type: Number, default: 0 },
   normaltime: { type: Number, default: 0 },
+  lastPointFieldGoal: { type: Boolean, default: false },
 }, { _id: false });
 
 const playerSchema = new mongoose.Schema({
@@ -28,7 +29,8 @@ const customBasketballMatchSchema = new mongoose.Schema(
     awayTeamPlayers: [playerSchema],
     homeTeamScore: { type: scoreSchema, default: () => ({}) },
     awayTeamScore: { type: scoreSchema, default: () => ({}) },
-    status: { type: String, enum: ["not_started", "in_progress", "finished"], required: true },
+    status: { type: String, enum: ["not_started", "in_progress", "finished", "abandoned", "draw"], required: true },
+    matchResultNote: { type: String, default: null },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }

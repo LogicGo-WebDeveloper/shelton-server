@@ -1474,7 +1474,8 @@ const setupWebSocket = (server) => {
                       batterIndex
                     ];
 
-                  player.runs = player.runs - lastIncidentRuns;
+                  player.runs =
+                    player.runs > 0 ? player.runs - lastIncidentRuns : 0;
                   player.balls = player.balls > 0 ? player.balls - 1 : 0;
                   player.fours = player.fours > 0 ? player.fours - 1 : 0;
                   player.sixes = player.sixes > 0 ? player.sixes - 1 : 0;
@@ -1506,7 +1507,8 @@ const setupWebSocket = (server) => {
                       : 0),
                     (player.maidens =
                       player.maidens > 0 ? player.maidens - 1 : 0);
-                  player.runs = player.runs - lastIncidentRuns;
+                  player.runs =
+                    player.runs > 0 ? player.runs - lastIncidentRuns : 0;
                   player.wickets = player.wickets > 0 ? player.wickets - 1 : 0;
                   player.noBalls = player.noBalls > 0 ? player.noBalls - 1 : 0;
                   player.wides = player.wides > 0 ? player.wides - 1 : 0;

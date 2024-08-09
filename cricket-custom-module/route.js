@@ -69,7 +69,7 @@ route.post(
   teamController.createTeam
 );
 
-route.get("/team/list", verifyToken, teamController.listTeams);
+route.get("/team/list/:id?", verifyToken, teamController.listTeams);
 
 route.post(
   "/team/update/:id",
@@ -139,6 +139,8 @@ route.post(
   validate(validation.validateMatchResultUpdate),
   matchController.updateMatchResult
 );
+
+route.get("/match/summary/:matchId", matchController.getMatchSummary);
 
 // ============================== For Player List ===========================================
 route.post(

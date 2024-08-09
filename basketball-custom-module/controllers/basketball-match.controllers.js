@@ -9,6 +9,7 @@ import { validateObjectIds, validateEntitiesExistence } from "../../cricket-cust
 import CustomBasketballTournament from "../models/basketball-tournament.models.js";
 import { CustomBasketballBoxScore } from "../models/basketball-boxscore.models.js";
 import { CustomBasketballPlayerRole } from "../models/basketball-common.models.js";
+import enums from "../../config/enum.js";
 
 const createBasketballMatch = async (req, res) => {
   try {
@@ -678,11 +679,138 @@ const getBasketballMatchStatistics = async (req, res) => {
   }
 };
 
+const updateBasketballMatchResult = async (req, res) => {
+  try {
+    const { matchId, winnerTeamId, status, reason } = req.body;
+    const userId = req.user._id;
+
+    // Validate input
+    const validation = validateObjectIds({
+      matchId,
+      ...(status !== enums.matchStatusEnum.abandoned && { winnerTeamId }),
+    });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Find the match
+    const match = await CustomBasketballMatch.findById(matchId);
+    if (!match) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+     // Find the match
+     const team = await CustomBasketballTeam.findById(winnerTeamId);
+     if (!team) {
+       return apiResponse({
+         res,
+         status: true,
+         message: "Team not found",
+         statusCode: StatusCodes.NOT_FOUND,
+       });
+     }
+
+    // Check if the user is the creator of the match
+    if (match.createdBy.toString() !== userId.toString()) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "You are not authorized to update the result of this match",
+        statusCode: StatusCodes.FORBIDDEN,
+      });
+    }
+
+    // Fetch team names
+    const homeTeam = await CustomBasketballTeam.findById(match.homeTeamId);
+    const awayTeam = await CustomBasketballTeam.findById(match.awayTeamId);
+
+    if (!homeTeam || !awayTeam) {
+      return apiResponse({
+        res,
+        status: true,
+        message: "One or both teams not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    let matchResultNote = '';
+    if (status === enums.matchStatusEnum.finished) {
+      if (match.homeTeamScore.current > match.awayTeamScore.current) {
+        const margin = match.homeTeamScore.current - match.awayTeamScore.current;
+        matchResultNote = `${homeTeam.teamName} won by ${margin} points`;
+      } else if (match.awayTeamScore.current > match.homeTeamScore.current) {
+        const margin = match.awayTeamScore.current - match.homeTeamScore.current;
+        matchResultNote = `${awayTeam.teamName} won by ${margin} points`;
+      } else {
+        matchResultNote = 'Match is a draw. Home team and away team scored the same points.';
+      }
+    }
+
+    // Update match result
+    if (status === enums.matchStatusEnum.finished) {
+      match.status = enums.matchStatusEnum.finished;
+      match.matchResultNote = matchResultNote;
+    } else {
+      if (!reason) {
+        return apiResponse({
+          res,
+          status: false,
+          message: "Reason is required for statuses other than 'finished'",
+          statusCode: StatusCodes.BAD_REQUEST,
+        });
+      }
+      if (
+        [
+          enums.matchStatusEnum.in_progress,
+          enums.matchStatusEnum.not_started,
+          enums.matchStatusEnum.finished,
+        ].includes(status)
+      ) {
+        return apiResponse({
+          res,
+          status: false,
+          message: "Cannot set status to 'in_progress' or 'not_started'",
+          statusCode: StatusCodes.BAD_REQUEST,
+        });
+      }
+      match.status = status;
+      match.matchResultNote = reason;
+    }
+
+    await match.save();
+
+    return apiResponse({
+      res,
+      status: true,
+      message: "Match result updated successfully",
+      statusCode: StatusCodes.OK,
+    });
+  } catch (err) {
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 export default {
   createBasketballMatch,
   updateBasketballMatch,
   deleteBasketballMatch,
   listBasketballMatches,
   basketballDetailMatch,
-  getBasketballMatchStatistics
+  getBasketballMatchStatistics,
+  updateBasketballMatchResult
 };
