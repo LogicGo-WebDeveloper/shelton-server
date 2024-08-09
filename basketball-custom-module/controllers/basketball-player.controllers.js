@@ -5,6 +5,8 @@ import CustomBasketballTeam from "../models/basketball-team.models.js";
 import { updateFile, uploadSingleFile } from "../../features/aws/service.js";
 import { validateObjectIds } from "../../cricket-custom-module/utils/utils.js";
 import { CustomBasketballPlayerRole } from "../models/basketball-common.models.js";
+import CustomBasketballMatch from "../models/basketball-match.models.js";
+import { CustomBasketballBoxScore } from "../models/basketball-boxscore.models.js";
 
 const createBasketballPlayer = async (req, res, next) => {
   const { playerName, jerseyNumber, role, teamId } = req.body;
@@ -289,9 +291,128 @@ const deleteBasketballPlayer = async (req, res) => {
   }
 };
 
+const substituteBasketballPlayer = async (req, res) => {
+  try {
+    const { matchId, substituteOutPlayerId, substituteInPlayerId } = req.body;
+
+    // Validate Object IDs
+    const validation = validateObjectIds({ matchId, substituteOutPlayerId, substituteInPlayerId });
+    if (!validation.isValid) {
+      return apiResponse({
+        res,
+        status: false,
+        message: validation.message,
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Find the match
+    const match = await CustomBasketballMatch.findById(matchId);
+    if (!match) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Match not found",
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    const boxScore = await CustomBasketballBoxScore.findOne({ matchId });
+    const homePlayers = boxScore.boxScore.homeTeam?.players || [];
+    const awayPlayers = boxScore.boxScore.awayTeam?.players || [];
+
+    // Check if substituteOutPlayerId is currently playing
+    const playerOut = homePlayers.concat(awayPlayers).find(player => player.playerId.toString() === substituteOutPlayerId && player.isPlaying);
+    if (!playerOut) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Player to be substituted out is not currently playing",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Check if substituteInPlayerId is a substitute player
+    const playerIn = homePlayers.concat(awayPlayers).find(player => player.playerId.toString() === substituteInPlayerId && !player.isPlaying);
+    if (!playerIn) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Player to be substituted in is not a substitute player",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Determine the team of the player going out
+    let substituteOutPlayerTeamId;
+    let substituteInPlayerTeamId;
+
+    if (homePlayers.some(player => player.playerId.toString() === playerOut.playerId.toString())) {
+      substituteOutPlayerTeamId = boxScore.boxScore.homeTeam.teamId;
+    } else if (awayPlayers.some(player => player.playerId.toString() === playerOut.playerId.toString())) {
+      substituteOutPlayerTeamId = boxScore.boxScore.awayTeam.teamId;
+    }
+
+    if (homePlayers.some(player => player.playerId.toString() === playerIn.playerId.toString())) {
+      substituteInPlayerTeamId = boxScore.boxScore.homeTeam.teamId;
+    } else if (awayPlayers.some(player => player.playerId.toString() === playerIn.playerId.toString())) {
+      substituteInPlayerTeamId = boxScore.boxScore.awayTeam.teamId;
+    }
+
+    // Ensure both players have teamId
+    if (substituteOutPlayerTeamId.toString() !== substituteInPlayerTeamId.toString()) {
+      return apiResponse({
+        res,
+        status: false,
+        message: "Both players must belong to the same team",
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    // Update the isPlaying status in CustomBasketballBoxScore
+    await CustomBasketballBoxScore.updateOne(
+      { matchId, "boxScore.homeTeam.players.playerId": substituteOutPlayerId },
+      { $set: { "boxScore.homeTeam.players.$.isPlaying": false } }
+    );
+
+    await CustomBasketballBoxScore.updateOne(
+      { matchId, "boxScore.awayTeam.players.playerId": substituteOutPlayerId },
+      { $set: { "boxScore.awayTeam.players.$.isPlaying": false } }
+    );
+
+    await CustomBasketballBoxScore.updateOne(
+      { matchId, "boxScore.homeTeam.players.playerId": substituteInPlayerId },
+      { $set: { "boxScore.homeTeam.players.$.isPlaying": true } }
+    );
+
+    await CustomBasketballBoxScore.updateOne(
+      { matchId, "boxScore.awayTeam.players.playerId": substituteInPlayerId },
+      { $set: { "boxScore.awayTeam.players.$.isPlaying": true } }
+    );
+
+    return apiResponse({
+      res,
+      status: true,
+      message: "Player substituted successfully",
+      statusCode: StatusCodes.OK,
+      data: null,
+    });
+  } catch (err) {
+    console.error(err);
+    return apiResponse({
+      res,
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+
 export default {
   createBasketballPlayer,
   BasketballPlayersList,
   updateBasketballPlayer,
   deleteBasketballPlayer,
+  substituteBasketballPlayer
 };

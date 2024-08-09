@@ -114,6 +114,15 @@ const updateBasketballMatch = {
   }),
 };
 
+const substitutePlayerValidation = {
+  body: Joi.object().keys({
+    matchId: Joi.string().required(),
+    substituteOutPlayerId: Joi.string().required(),
+    substituteInPlayerId: Joi.string().required(),
+  }),
+};
+
+
 export default {
   createBasketballTournament,
   createBasketballTeam,
@@ -122,4 +131,5 @@ export default {
   updateBasketballPlayer,
   createBasketballMatch,
   updateBasketballMatch,
+  substitutePlayerValidation,
 };

@@ -4,6 +4,7 @@ import { validateObjectIds } from "../utils/utils.js";
 import CustomPlayerOvers from "../models/playersOvers.models.js";
 import mongoose from "mongoose";
 import { filteredOversData } from "../../websocket/utils.js";
+import CustomPlayers from "../models/player.models.js";
 
 const getPlayerOvers = async (req, res, next) => {
   try {
@@ -46,13 +47,12 @@ const getPlayerOvers = async (req, res, next) => {
         model: "CustomPlayers",
         select: "playerName role image",
         populate: {
-          path: "role", // This will populate the role field in CustomPlayers
+          path: "role",
           model: "CustomPlayerRole",
-          select: "role", // Select fields from CustomPlayerRole
+          select: "role",
         },
       });
 
-    // console
     // Ensure overs data is present
     if (!overs.length || !overs[0]) {
       return apiResponse({
@@ -64,36 +64,67 @@ const getPlayerOvers = async (req, res, next) => {
     }
 
     // Ensure incidents data exists
-    const incidents = overs[0]?.data?.incidents ?? [];
+    const incidents = Array.isArray(overs[0]?.data?.incidents)
+      ? overs[0].data.incidents
+      : [];
 
-    // Debugging statements to ensure data is as expected
+    // Fetch player names and update incidents
+    const updatedData = await Promise.all(
+      incidents.map(async (incident) => {
+        if (incident.battingPlayerId) {
+          // Find the corresponding player details
+          const battingPlayer = await CustomPlayers.findById(
+            incident.battingPlayerId
+          );
+          const bowlingPlayer = await CustomPlayers.findById(incident.bowlerId);
+          return {
+            ...incident, // directly use incident if it's a plain object
+            battingPlayer: {
+              PlayerId: battingPlayer ? battingPlayer._id : null,
+              playerName: battingPlayer ? battingPlayer.playerName : null,
+              image: battingPlayer ? battingPlayer.image : null,
+              jerseyNumber: battingPlayer ? battingPlayer.jerseyNumber : null,
+            },
+            bowlingPlayer: {
+              PlayerId: bowlingPlayer ? bowlingPlayer._id : null,
+              playerName: bowlingPlayer ? bowlingPlayer.playerName : null,
+              image: bowlingPlayer ? bowlingPlayer.image : null,
+              jerseyNumber: bowlingPlayer ? bowlingPlayer.jerseyNumber : null,
+            },
+          };
+        } else {
+          return {
+            ...incident, // directly use incident if it's a plain object
+            playerName: null,
+          };
+        }
+      })
+    );
 
     // Filter incidents based on team IDs
-    const filterHomeTeam = incidents.filter((incident) => {
-      return incident?.battingTeamId?.equals(HomeTeamId) ?? false;
-    });
+    const filterHomeTeam = updatedData.filter(
+      (incident) => incident?.battingTeamId?.equals(HomeTeamId) ?? false
+    );
 
-    const filterAwayTeam = incidents.filter((incident) => {
-      return incident?.battingTeamId?.equals(AwayTeamId) ?? false;
-    });
+    const filterAwayTeam = updatedData.filter(
+      (incident) => incident?.battingTeamId?.equals(AwayTeamId) ?? false
+    );
 
     const homeTeamDetails = {
-      // _id: overs[0].homeTeamId._id,
       teamName: overs[0].homeTeamId.teamName,
       teamImage: overs[0].homeTeamId.teamImage,
     };
 
+    const awayTeamDetails = {
+      teamName: overs[0].awayTeamId.teamName,
+      teamImage: overs[0].awayTeamId.teamImage,
+    };
+
+    // Assuming BowlerDetails are the same for both teams; adjust if needed
     const BowlerDetails = {
-      // _id: overs[0].bowlerId._id,
       playerName: overs[0].bowlerId.playerName,
       role: overs[0].bowlerId.role,
       image: overs[0].bowlerId.image,
-    };
-
-    const awayTeamDetails = {
-      // _id: overs[0].bowlerId._id,
-      teamName: overs[0].bowlerId.teamName,
-      teamImage: overs[0].bowlerId.teamImage,
     };
 
     const filteredOvers = {
