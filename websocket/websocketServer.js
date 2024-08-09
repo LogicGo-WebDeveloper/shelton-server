@@ -1261,20 +1261,6 @@ const setupWebSocket = (server) => {
                     }
                   );
                 }
-
-                if (
-                  (bowlers.balls == false && bowlers.wides) ||
-                  bowlers.noBalls == true
-                ) {
-                  await CustomPlayerOvers.updateOne(
-                    {
-                      _id: playerOvers._id,
-                    },
-                    {
-                      $push: { "data.incidents": newIncident },
-                    }
-                  );
-                }
               } else {
                 // Document does not exist: create a new one
                 const alloversData = await CustomPlayerOvers.create({
