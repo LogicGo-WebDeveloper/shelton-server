@@ -1,5 +1,5 @@
 import Joi from "joi";
-
+import enums from "../../config/enum.js";
 const createBasketballTournament = {
   body: Joi.object().keys({
     sportId: Joi.string().required(),
@@ -122,6 +122,21 @@ const substitutePlayerValidation = {
   }),
 };
 
+const validateBasketballMatchResultUpdate = {
+  body: Joi.object().keys({
+    matchId: Joi.string().required(),
+    winnerTeamId: Joi.string().when('status', {
+      is: enums.matchStatusEnum.abandoned,
+      then: Joi.string().allow("", null).optional(),
+      otherwise: Joi.string().required(),
+    }),
+    status: Joi.string()
+      .valid(...Object.values(enums.matchStatusEnum))
+      .required(),
+    reason: Joi.string().allow("", null).optional(),
+  }),
+};
+
 
 export default {
   createBasketballTournament,
@@ -132,4 +147,5 @@ export default {
   createBasketballMatch,
   updateBasketballMatch,
   substitutePlayerValidation,
+  validateBasketballMatchResultUpdate
 };

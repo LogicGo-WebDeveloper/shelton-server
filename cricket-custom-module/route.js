@@ -140,6 +140,8 @@ route.post(
   matchController.updateMatchResult
 );
 
+route.get("/match/summary/:matchId", matchController.getMatchSummary);
+
 // ============================== For Player List ===========================================
 route.post(
   "/player/add",

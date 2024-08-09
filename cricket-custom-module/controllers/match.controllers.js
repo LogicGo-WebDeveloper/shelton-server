@@ -1489,24 +1489,33 @@ const getMatchSummary = async (req, res) => {
   try {
     const { matchId } = req.params;
 
-    // Fetch the scorecard details using the matchId
-    const scorecard = await CustomMatchScorecard.findOne({ matchId });
-    const match = await CustomMatch.findById(matchId);
-
-    if (!scorecard) {
+    // Validate matchId
+    if (!mongoose.Types.ObjectId.isValid(matchId)) {
       return apiResponse({
         res,
+        message: "Invalid matchId",
         status: false,
-        message: "Scorecard not found",
-        statusCode: StatusCodes.NOT_FOUND,
+        statusCode: StatusCodes.BAD_REQUEST,
       });
     }
+
+    const match = await CustomMatch.findById(matchId);
+    const scorecard = await CustomMatchScorecard.findOne({ matchId });
 
     if (!match) {
       return apiResponse({
         res,
-        status: false,
         message: "Match not found",
+        status: false,
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    }
+
+    if (!scorecard) {
+      return apiResponse({
+        res,
+        message: "Scorecard not found",
+        status: false,
         statusCode: StatusCodes.NOT_FOUND,
       });
     }
@@ -1538,12 +1547,38 @@ const getMatchSummary = async (req, res) => {
       }
     };
 
+    // Function to get team details
+    const getTeamDetails = async (teamId) => {
+      try {
+        const team = await CustomTeam.findById(teamId).select("teamName teamImage");
+        return {
+          id: teamId,
+          name: team?.teamName || "",
+          image: team?.teamImage || "",
+        };
+      } catch (error) {
+        console.error(`Error fetching details for team ${teamId}:`, error);
+        return {
+          id: teamId,
+          name: "",
+          image: "",
+        };
+      }
+    };
+
     const city = await CustomCityList.findById(match.city).select("city");
 
     // Fetch umpire names
     const umpires = await CustomMatchOfficial.find({
       _id: { $in: match.umpires },
     }).select("name");
+
+    // Fetch team data
+    const homeTeam = await getTeamDetails(match.homeTeamId);
+    homeTeam.score = match.homeTeamScore;
+
+    const awayTeam = await getTeamDetails(match.awayTeamId);
+    awayTeam.score = match.awayTeamScore;
 
     const responseData = {
       batters: await Promise.all(
@@ -1555,6 +1590,7 @@ const getMatchSummary = async (req, res) => {
             balls: player.balls,
             fours: player.fours,
             sixes: player.sixes,
+            activeStriker: player.activeStriker,
             id: player.id,
             image: image,
           };
@@ -1578,26 +1614,34 @@ const getMatchSummary = async (req, res) => {
         location: city ? city.city : "",
         venue: match.ground,
         referee: umpires.map((umpire) => umpire.name).join(", "),
+        tossResult: match.tossResult,
+        dateTime: match.dateTime,
+        status: match.status,
+        matchStatus: match.matchStatus,
+      },
+      teams: {
+        home: homeTeam,
+        away: awayTeam,
       },
     };
+
     return apiResponse({
       res,
+      message: "Summary fetched successfully",
       status: true,
       data: responseData,
-      message: "Summary fetched successfully",
       statusCode: StatusCodes.OK,
     });
   } catch (error) {
     console.error("Error fetching match summary:", error);
     return apiResponse({
       res,
-      status: false,
       message: "Internal server error",
+      status: false,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
     });
   }
 };
-
 const getMatchSquads = async (req, res) => {
   try {
     const { id } = req.params;

@@ -102,6 +102,14 @@ route.delete("/match/delete/:id", verifyToken, basketballMatchControllers.delete
 
 route.get("/match/statistics/:matchId", basketballMatchControllers.getBasketballMatchStatistics);
 
+route.post(
+  "/match/result/update",
+  verifyToken,
+  validate(validation.validateBasketballMatchResultUpdate),
+  basketballMatchControllers.updateBasketballMatchResult
+);
+
+
 // route.get("/match/detail/:id", basketballMatchControllers.basketballDetailMatch);
 
 // ============================== For common api routes =========================================
