@@ -69,7 +69,7 @@ route.post(
   teamController.createTeam
 );
 
-route.get("/team/list", verifyToken, teamController.listTeams);
+route.get("/team/list/:id?", verifyToken, teamController.listTeams);
 
 route.post(
   "/team/update/:id",

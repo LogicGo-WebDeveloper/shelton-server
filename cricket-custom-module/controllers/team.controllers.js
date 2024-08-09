@@ -5,6 +5,7 @@ import { validateObjectIds } from "../utils/utils.js";
 import { updateFile, uploadSingleFile } from "../../features/aws/service.js";
 import { CustomCityList } from "../models/common.models.js";
 import CustomTournament from "../models/tournament.models.js";
+import mongoose from "mongoose";
 
 const createTeam = async (req, res, next) => {
   try {
@@ -79,36 +80,71 @@ const createTeam = async (req, res, next) => {
   }
 };
 
+// const listTeams = async (req, res) => {
+//   const userId = req.user._id;
+//   const { tournamentId } = req.query;
+
+//   if (tournamentId) {
+//     const validation = validateObjectIds({ tournamentId });
+//     if (!validation.isValid) {
+//       return apiResponse({
+//         res,
+//         status: false,
+//         message: validation.message,
+//         statusCode: StatusCodes.BAD_REQUEST,
+//       });
+//     }
+//     const findTournament = await CustomTournament.findById(tournamentId);
+//     if (!findTournament) {
+//       return apiResponse({
+//         res,
+//         status: true,
+//         message: "Tournament not found",
+//         statusCode: StatusCodes.NOT_FOUND,
+//       });
+//     }
+//   }
+
+//   try {
+//     const teams = await CustomTeam.find({
+//       tournamentId,
+//       createdBy: userId,
+//     }).populate({
+//       path: "city",
+//       model: "CustomCityList",
+//       select: "city",
+//     });
+//     return apiResponse({
+//       res,
+//       status: true,
+//       data: teams,
+//       message: "Teams fetched successfully!",
+//       statusCode: StatusCodes.OK,
+//     });
+//   } catch (err) {
+//     return apiResponse({
+//       res,
+//       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+//       status: false,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
 const listTeams = async (req, res) => {
-  const userId = req.user._id;
-  const { tournamentId } = req.query;
-
-  if (tournamentId) {
-    const validation = validateObjectIds({ tournamentId });
-    if (!validation.isValid) {
-      return apiResponse({
-        res,
-        status: false,
-        message: validation.message,
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-    }
-    const findTournament = await CustomTournament.findById(tournamentId);
-    if (!findTournament) {
-      return apiResponse({
-        res,
-        status: true,
-        message: "Tournament not found",
-        statusCode: StatusCodes.NOT_FOUND,
-      });
-    }
-  }
-
   try {
-    const teams = await CustomTeam.find({
-      tournamentId,
-      createdBy: userId,
-    }).populate({
+    const userId = req.user._id;
+    const filter = {};
+    const { id } = req.params;
+    const { tournamentId } = req.query;
+
+    filter.createdBy = userId;
+    if (id) filter._id = new mongoose.Types.ObjectId(id);
+    if (tournamentId)
+      filter.tournamentId = new mongoose.Types.ObjectId(tournamentId);
+
+    console.log(filter);
+    const teams = await CustomTeam.find(filter).populate({
       path: "city",
       model: "CustomCityList",
       select: "city",
