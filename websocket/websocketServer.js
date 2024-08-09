@@ -1101,7 +1101,7 @@ const setupWebSocket = (server) => {
 
                 .filter(
                   (player) =>
-                    player.activeStriker === true || player.status === "not_out"  
+                    player.activeStriker === true || player.status === "not_out"
                 )
                 .map((player) => ({
                   name: player.name,
